@@ -3,6 +3,9 @@
 # environment changes that affect %%install need to go
 # here before the %%install macro is pre-built.
 
+# Enable source fetch
+%define _disable_source_fetch 0
+
 # Disable frame pointers
 %undefine _include_frame_pointers
 
@@ -158,7 +161,7 @@ Summary: The Linux kernel
 #  to build the base kernel using the debug configuration. (Specifying
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
-# define buildid .local
+%define buildid .tobor
 %define specrpmversion 6.15.4
 %define specversion 6.15.4
 %define patchversion 6.15
@@ -1059,8 +1062,8 @@ Source212: Module.kabi_dup_s390x
 Source213: Module.kabi_dup_x86_64
 Source214: Module.kabi_dup_riscv64
 
-Source300: kernel-abi-stablelists-%{kabiversion}.tar.xz
-Source301: kernel-kabi-dw-%{kabiversion}.tar.xz
+# Source300: kernel-abi-stablelists-%{kabiversion}.tar.xz
+# Source301: kernel-kabi-dw-%{kabiversion}.tar.xz
 
 %if 0%{include_rt}
 %if 0%{include_rhel}
@@ -1110,77 +1113,12 @@ Source4002: gating.yaml
 
 ## Patches needed for building this package
 
+Source5000: custom-patches.tar.xz
+
 %if !%{nopatches}
 
 Patch1: patch-%{patchversion}-redhat.patch
 %endif
-
-Patch100: patches/cachy-0001-amd-pstate.patch
-Patch101: patches/cachy-0001-bore.patch
-Patch102: patches/cachy-0001-handheld.patch
-Patch103: patches/cachy-0001-rt-i915.patch
-Patch104: patches/cachy-0002-asus.patch
-Patch105: patches/cachy-0003-bbr3.patch
-Patch106: patches/cachy-0004-block.patch
-Patch107: patches/cachy-0007-t2.patch
-Patch108: patches/cachy-nvidia-0001-Enable-atomic-kernel-modesetting-by-default.patch
-Patch109: patches/cachy-nvidia-0002-Add-IBT-support.patch
-Patch110: patches/cachy-nvidia-0003-Kbuild-Convert-EXTRA_CFLAGS-to-ccflags-y.patch
-Patch111: patches/cachy-nvidia-0003-Workaround-nv_vm_flags_-calling-GPL-only-code.patch
-Patch112: patches/cachy-nvidia-0004-kernel-open-nvidia-Use-new-timer-functions-for-6.15.patch
-Patch113: patches/cachy-nvidia-0005-nvidia-uvm-Use-__iowrite64_hi_lo.patch
-Patch114: patches/cachy-nvidia-0006-nvidia-uvm-Use-page_pgmap.patch
-Patch115: patches/cachy-nvidia-0007-nvidia-uvm-Convert-make_device_exclusive_range-to-ma.patch
-Patch116: patches/cachy-nvidia-0008-kbuild-Add-workaround-for-GCC-15-Compilation.patch
-Patch117: patches/clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
-Patch118: patches/clear-0101-i8042-decrease-debug-message-level-to-info.patch
-Patch119: patches/clear-0102-increase-the-ext4-default-commit-age.patch
-Patch120: patches/clear-0104-pci-pme-wakeups.patch
-Patch121: patches/clear-0106-intel_idle-tweak-cpuidle-cstates.patch
-Patch122: patches/clear-0108-smpboot-reuse-timer-calibration.patch
-Patch123: patches/clear-0109-initialize-ata-before-graphics.patch
-Patch124: patches/clear-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
-Patch125: patches/clear-0112-init-wait-for-partition-and-retry-scan.patch
-Patch126: patches/clear-0114-add-boot-option-to-allow-unsigned-modules.patch
-Patch127: patches/clear-0115-enable-stateless-firmware-loading.patch
-Patch128: patches/clear-0116-migrate-some-systemd-defaults-to-the-kernel-defaults.patch
-Patch129: patches/clear-0117-xattr-allow-setting-user.-attributes-on-symlinks-by-.patch
-Patch130: patches/clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
-Patch131: patches/clear-0121-locking-rwsem-spin-faster.patch
-Patch132: patches/clear-0122-ata-libahci-ignore-staggered-spin-up.patch
-Patch133: patches/clear-0123-print-CPU-that-faults.patch
-Patch134: patches/clear-0126-don-t-report-an-error-if-PowerClamp-run-on-other-CPU.patch
-Patch135: patches/clear-0127-lib-raid6-add-patch.patch
-Patch136: patches/clear-0130-itmt2-ADL-fixes.patch
-Patch137: patches/clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
-Patch138: patches/clear-0133-novector.patch
-Patch139: patches/clear-0134-md-raid6-algorithms-scale-test-duration-for-speedier.patch
-Patch140: patches/clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
-Patch141: patches/clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch
-Patch142: patches/clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
-Patch143: patches/clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
-Patch144: patches/clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
-Patch145: patches/clear-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
-Patch146: patches/clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
-Patch147: patches/clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
-Patch148: patches/clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
-Patch149: patches/clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
-Patch150: patches/clear-0169-mm-mincore-improve-performance-by-adding-an-unlikely.patch
-Patch151: patches/clear-0170-sched-Add-unlikey-branch-hints-to-several-system-cal.patch
-Patch152: patches/clear-0171-kcmp-improve-performance-adding-an-unlikely-hint-to-.patch
-Patch153: patches/clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
-Patch154: patches/clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
-Patch155: patches/clear-0175-readdir-add-unlikely-hint-on-len-check.patch
-Patch156: patches/clear-better_idle_balance.patch
-Patch157: patches/clear-cstatedemotion.patch
-Patch158: patches/clear-epp-retune.patch
-Patch159: patches/clear-libsgrowdown.patch
-Patch160: patches/clear-posted_msi.patch
-Patch161: patches/clear-ratelimit-sched-yield.patch
-Patch162: patches/clear-scale-net-alloc.patch
-Patch163: patches/clear-slack.patch
-Patch164: patches/other-more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch
-Patch165: patches/ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 
 # empty final patch to facilitate testing of kernel patches
 Patch999999: linux-kernel-test.patch
@@ -1967,12 +1905,12 @@ ApplyPatch()
   if [ ! -f $RPM_SOURCE_DIR/$patch ]; then
     exit 1
   fi
-  if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME}.spec ; then
-    if [ "${patch:0:8}" != "patch-%{kversion}." ] ; then
-	%{log_msg "ERROR: Patch  $patch  not listed as a source patch in specfile"}
-      exit 1
-    fi
-  fi 2>/dev/null
+  # if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME}.spec ; then
+  #   if [ "${patch:0:8}" != "patch-%{kversion}." ] ; then
+	# %{log_msg "ERROR: Patch  $patch  not listed as a source patch in specfile"}
+  #     exit 1
+  #   fi
+  # fi 2>/dev/null
   case "$patch" in
   *.bz2) bunzip2 < "$RPM_SOURCE_DIR/$patch" | $patch_command ${1+"$@"} ;;
   *.gz)  gunzip  < "$RPM_SOURCE_DIR/$patch" | $patch_command ${1+"$@"} ;;
@@ -2004,77 +1942,71 @@ cd linux-%{KVERREL}
 cp -a %{SOURCE1} .
 
 %{log_msg "Start of patch applications"}
+
+tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
+
 %if !%{nopatches}
 
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch patches/cachy-0001-amd-pstate.patch
-ApplyOptionalPatch patches/cachy-0001-bore.patch
-ApplyOptionalPatch patches/cachy-0001-handheld.patch
-ApplyOptionalPatch patches/cachy-0001-rt-i915.patch
-ApplyOptionalPatch patches/cachy-0002-asus.patch
-ApplyOptionalPatch patches/cachy-0003-bbr3.patch
-ApplyOptionalPatch patches/cachy-0004-block.patch
-ApplyOptionalPatch patches/cachy-0007-t2.patch
-ApplyOptionalPatch patches/cachy-nvidia-0001-Enable-atomic-kernel-modesetting-by-default.patch
-ApplyOptionalPatch patches/cachy-nvidia-0002-Add-IBT-support.patch
-ApplyOptionalPatch patches/cachy-nvidia-0003-Kbuild-Convert-EXTRA_CFLAGS-to-ccflags-y.patch
-ApplyOptionalPatch patches/cachy-nvidia-0003-Workaround-nv_vm_flags_-calling-GPL-only-code.patch
-ApplyOptionalPatch patches/cachy-nvidia-0004-kernel-open-nvidia-Use-new-timer-functions-for-6.15.patch
-ApplyOptionalPatch patches/cachy-nvidia-0005-nvidia-uvm-Use-__iowrite64_hi_lo.patch
-ApplyOptionalPatch patches/cachy-nvidia-0006-nvidia-uvm-Use-page_pgmap.patch
-ApplyOptionalPatch patches/cachy-nvidia-0007-nvidia-uvm-Convert-make_device_exclusive_range-to-ma.patch
-ApplyOptionalPatch patches/cachy-nvidia-0008-kbuild-Add-workaround-for-GCC-15-Compilation.patch
-ApplyOptionalPatch patches/clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
-ApplyOptionalPatch patches/clear-0101-i8042-decrease-debug-message-level-to-info.patch
-ApplyOptionalPatch patches/clear-0102-increase-the-ext4-default-commit-age.patch
-ApplyOptionalPatch patches/clear-0104-pci-pme-wakeups.patch
-ApplyOptionalPatch patches/clear-0106-intel_idle-tweak-cpuidle-cstates.patch
-ApplyOptionalPatch patches/clear-0108-smpboot-reuse-timer-calibration.patch
-ApplyOptionalPatch patches/clear-0109-initialize-ata-before-graphics.patch
-ApplyOptionalPatch patches/clear-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
-ApplyOptionalPatch patches/clear-0112-init-wait-for-partition-and-retry-scan.patch
-ApplyOptionalPatch patches/clear-0114-add-boot-option-to-allow-unsigned-modules.patch
-ApplyOptionalPatch patches/clear-0115-enable-stateless-firmware-loading.patch
-ApplyOptionalPatch patches/clear-0116-migrate-some-systemd-defaults-to-the-kernel-defaults.patch
-ApplyOptionalPatch patches/clear-0117-xattr-allow-setting-user.-attributes-on-symlinks-by-.patch
-ApplyOptionalPatch patches/clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
-ApplyOptionalPatch patches/clear-0121-locking-rwsem-spin-faster.patch
-ApplyOptionalPatch patches/clear-0122-ata-libahci-ignore-staggered-spin-up.patch
-ApplyOptionalPatch patches/clear-0123-print-CPU-that-faults.patch
-ApplyOptionalPatch patches/clear-0126-don-t-report-an-error-if-PowerClamp-run-on-other-CPU.patch
-ApplyOptionalPatch patches/clear-0127-lib-raid6-add-patch.patch
-ApplyOptionalPatch patches/clear-0130-itmt2-ADL-fixes.patch
-ApplyOptionalPatch patches/clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
-ApplyOptionalPatch patches/clear-0133-novector.patch
-ApplyOptionalPatch patches/clear-0134-md-raid6-algorithms-scale-test-duration-for-speedier.patch
-ApplyOptionalPatch patches/clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
-ApplyOptionalPatch patches/clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch
-ApplyOptionalPatch patches/clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
-ApplyOptionalPatch patches/clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
-ApplyOptionalPatch patches/clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
-ApplyOptionalPatch patches/clear-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
-ApplyOptionalPatch patches/clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
-ApplyOptionalPatch patches/clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
-ApplyOptionalPatch patches/clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
-ApplyOptionalPatch patches/clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
-ApplyOptionalPatch patches/clear-0169-mm-mincore-improve-performance-by-adding-an-unlikely.patch
-ApplyOptionalPatch patches/clear-0170-sched-Add-unlikey-branch-hints-to-several-system-cal.patch
-ApplyOptionalPatch patches/clear-0171-kcmp-improve-performance-adding-an-unlikely-hint-to-.patch
-ApplyOptionalPatch patches/clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
-ApplyOptionalPatch patches/clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
-ApplyOptionalPatch patches/clear-0175-readdir-add-unlikely-hint-on-len-check.patch
-ApplyOptionalPatch patches/clear-better_idle_balance.patch
-ApplyOptionalPatch patches/clear-cstatedemotion.patch
-ApplyOptionalPatch patches/clear-epp-retune.patch
-ApplyOptionalPatch patches/clear-libsgrowdown.patch
-ApplyOptionalPatch patches/clear-posted_msi.patch
-ApplyOptionalPatch patches/clear-ratelimit-sched-yield.patch
-ApplyOptionalPatch patches/clear-scale-net-alloc.patch
-ApplyOptionalPatch patches/clear-slack.patch
-ApplyOptionalPatch patches/other-more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch
-ApplyOptionalPatch patches/ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
+ApplyOptionalPatch cachy-0001-amd-pstate.patch
+ApplyOptionalPatch cachy-0001-bore.patch
+#ApplyOptionalPatch cachy-0001-handheld.patch
+ApplyOptionalPatch cachy-0001-rt-i915.patch
+ApplyOptionalPatch cachy-0002-asus.patch
+ApplyOptionalPatch cachy-0003-bbr3.patch
+ApplyOptionalPatch cachy-0004-block.patch
+ApplyOptionalPatch cachy-0007-t2.patch
+#ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
+ApplyOptionalPatch clear-0101-i8042-decrease-debug-message-level-to-info.patch
+ApplyOptionalPatch clear-0102-increase-the-ext4-default-commit-age.patch
+ApplyOptionalPatch clear-0104-pci-pme-wakeups.patch
+ApplyOptionalPatch clear-0106-intel_idle-tweak-cpuidle-cstates.patch
+ApplyOptionalPatch clear-0108-smpboot-reuse-timer-calibration.patch
+ApplyOptionalPatch clear-0109-initialize-ata-before-graphics.patch
+ApplyOptionalPatch clear-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
+ApplyOptionalPatch clear-0112-init-wait-for-partition-and-retry-scan.patch
+ApplyOptionalPatch clear-0114-add-boot-option-to-allow-unsigned-modules.patch
+ApplyOptionalPatch clear-0115-enable-stateless-firmware-loading.patch
+ApplyOptionalPatch clear-0116-migrate-some-systemd-defaults-to-the-kernel-defaults.patch
+ApplyOptionalPatch clear-0117-xattr-allow-setting-user.-attributes-on-symlinks-by-.patch
+ApplyOptionalPatch clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
+ApplyOptionalPatch clear-0121-locking-rwsem-spin-faster.patch
+ApplyOptionalPatch clear-0122-ata-libahci-ignore-staggered-spin-up.patch
+ApplyOptionalPatch clear-0123-print-CPU-that-faults.patch
+ApplyOptionalPatch clear-0126-don-t-report-an-error-if-PowerClamp-run-on-other-CPU.patch
+ApplyOptionalPatch clear-0127-lib-raid6-add-patch.patch
+ApplyOptionalPatch clear-0130-itmt2-ADL-fixes.patch
+ApplyOptionalPatch clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
+ApplyOptionalPatch clear-0133-novector.patch
+#ApplyOptionalPatch clear-0134-md-raid6-algorithms-scale-test-duration-for-speedier.patch
+ApplyOptionalPatch clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
+ApplyOptionalPatch clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch
+ApplyOptionalPatch clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
+ApplyOptionalPatch clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
+ApplyOptionalPatch clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
+ApplyOptionalPatch clear-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
+ApplyOptionalPatch clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
+ApplyOptionalPatch clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
+#ApplyOptionalPatch clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
+ApplyOptionalPatch clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
+#ApplyOptionalPatch clear-0169-mm-mincore-improve-performance-by-adding-an-unlikely.patch
+#ApplyOptionalPatch clear-0170-sched-Add-unlikey-branch-hints-to-several-system-cal.patch
+#ApplyOptionalPatch clear-0171-kcmp-improve-performance-adding-an-unlikely-hint-to-.patch
+ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
+ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
+ApplyOptionalPatch clear-0175-readdir-add-unlikely-hint-on-len-check.patch
+ApplyOptionalPatch clear-better_idle_balance.patch
+#ApplyOptionalPatch clear-cstatedemotion.patch
+ApplyOptionalPatch clear-epp-retune.patch
+ApplyOptionalPatch clear-libsgrowdown.patch
+ApplyOptionalPatch clear-posted_msi.patch
+ApplyOptionalPatch clear-ratelimit-sched-yield.patch
+#ApplyOptionalPatch clear-scale-net-alloc.patch
+ApplyOptionalPatch clear-slack.patch
+ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.15-rc1+.patch
+ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 
 ApplyOptionalPatch linux-kernel-test.patch
 
