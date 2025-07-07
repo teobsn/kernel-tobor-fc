@@ -1956,16 +1956,14 @@ ApplyOptionalPatch cachy-0001-bore.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
 ApplyOptionalPatch cachy-0002-asus.patch
 ApplyOptionalPatch cachy-0003-bbr3.patch
-ApplyOptionalPatch cachy-0004-block.patch
-ApplyOptionalPatch cachy-0007-t2.patch
+ApplyOptionalPatch cachy-0006-t2.patch
+#ApplyOptionalPatch clear-0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch
 #ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
+ApplyOptionalPatch clear-0050-Revert-ext4-do-not-create-EA-inode-under-buffer-lock.patch
 ApplyOptionalPatch clear-0101-i8042-decrease-debug-message-level-to-info.patch
 ApplyOptionalPatch clear-0102-increase-the-ext4-default-commit-age.patch
-ApplyOptionalPatch clear-0104-pci-pme-wakeups.patch
 ApplyOptionalPatch clear-0106-intel_idle-tweak-cpuidle-cstates.patch
 ApplyOptionalPatch clear-0108-smpboot-reuse-timer-calibration.patch
-ApplyOptionalPatch clear-0109-initialize-ata-before-graphics.patch
-ApplyOptionalPatch clear-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
 ApplyOptionalPatch clear-0112-init-wait-for-partition-and-retry-scan.patch
 ApplyOptionalPatch clear-0114-add-boot-option-to-allow-unsigned-modules.patch
 ApplyOptionalPatch clear-0115-enable-stateless-firmware-loading.patch
@@ -1977,6 +1975,7 @@ ApplyOptionalPatch clear-0122-ata-libahci-ignore-staggered-spin-up.patch
 ApplyOptionalPatch clear-0123-print-CPU-that-faults.patch
 ApplyOptionalPatch clear-0126-don-t-report-an-error-if-PowerClamp-run-on-other-CPU.patch
 ApplyOptionalPatch clear-0127-lib-raid6-add-patch.patch
+#ApplyOptionalPatch clear-0128-itmt_epb-use-epb-to-scale-itmt.patch
 ApplyOptionalPatch clear-0130-itmt2-ADL-fixes.patch
 ApplyOptionalPatch clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
 ApplyOptionalPatch clear-0133-novector.patch
@@ -1986,14 +1985,10 @@ ApplyOptionalPatch clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-c
 ApplyOptionalPatch clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
 ApplyOptionalPatch clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
 ApplyOptionalPatch clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
-ApplyOptionalPatch clear-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
 ApplyOptionalPatch clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
 ApplyOptionalPatch clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
 #ApplyOptionalPatch clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
 ApplyOptionalPatch clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
-#ApplyOptionalPatch clear-0169-mm-mincore-improve-performance-by-adding-an-unlikely.patch
-#ApplyOptionalPatch clear-0170-sched-Add-unlikey-branch-hints-to-several-system-cal.patch
-#ApplyOptionalPatch clear-0171-kcmp-improve-performance-adding-an-unlikely-hint-to-.patch
 ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
 ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
 ApplyOptionalPatch clear-0175-readdir-add-unlikely-hint-on-len-check.patch
@@ -2001,10 +1996,12 @@ ApplyOptionalPatch clear-better_idle_balance.patch
 #ApplyOptionalPatch clear-cstatedemotion.patch
 ApplyOptionalPatch clear-epp-retune.patch
 ApplyOptionalPatch clear-libsgrowdown.patch
-ApplyOptionalPatch clear-posted_msi.patch
 ApplyOptionalPatch clear-ratelimit-sched-yield.patch
+ApplyOptionalPatch clear_rebased-0104-pci-pme-wakeups.patch
+ApplyOptionalPatch clear_rebased-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
+ApplyOptionalPatch clear_rebased-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
+ApplyOptionalPatch clear_rebased-slack.patch
 #ApplyOptionalPatch clear-scale-net-alloc.patch
-ApplyOptionalPatch clear-slack.patch
 ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.15-rc1+.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 
