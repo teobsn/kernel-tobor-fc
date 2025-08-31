@@ -1999,9 +1999,9 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
+ApplyOptionalPatch bazzite-handheld.patch
 ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
-#ApplyOptionalPatch cachy-0001-handheld.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
 ApplyOptionalPatch cachy-0002-bbr3.patch
 ApplyOptionalPatch cachy-0003-block.patch
