@@ -1,17 +1,18 @@
-From f6d8f6b0166819f536040ccafa655f166523423b Mon Sep 17 00:00:00 2001
-From: Peter Jung <admin@ptr1337.dev>
-Date: Sun, 6 Jul 2025 12:04:35 +0200
+From c4cb2e06f2d72fb591e90cdde3e6a1c410585d6e Mon Sep 17 00:00:00 2001
+From: Eric Naim <dnaim@cachyos.org>
+Date: Mon, 28 Jul 2025 13:41:37 +0700
 Subject: [PATCH] handheld
 
-Signed-off-by: Peter Jung <admin@ptr1337.dev>
+Signed-off-by: Eric Naim <dnaim@cachyos.org>
 ---
  .../wmi/devices/lenovo-wmi-gamezone.rst       |  203 ++
  .../wmi/devices/lenovo-wmi-other.rst          |  108 +
  .../wmi/devices/msi-wmi-platform.rst          |   26 +
  MAINTAINERS                                   |   23 +
- drivers/acpi/acpica/acinterp.h                |    3 +
- drivers/acpi/acpica/dsmthdat.c                |    1 +
- drivers/acpi/acpica/extrace.c                 |   51 +
+ drivers/bus/mhi/host/boot.c                   |   15 +-
+ drivers/bus/mhi/host/init.c                   |   18 +-
+ drivers/bus/mhi/host/internal.h               |    2 +
+ drivers/bus/mhi/host/pm.c                     |    1 +
  drivers/extcon/Kconfig                        |    7 +
  drivers/extcon/Makefile                       |    1 +
  drivers/extcon/extcon-steamdeck.c             |  180 ++
@@ -53,6 +54,8 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/mfd/Makefile                          |    2 +
  drivers/mfd/steamdeck.c                       |  147 ++
  drivers/net/wireless/ath/ath11k/core.c        |    2 +-
+ drivers/net/wireless/ath/ath11k/mhi.c         |    8 +-
+ drivers/net/wireless/ath/ath12k/mhi.c         |   14 +-
  drivers/platform/x86/Kconfig                  |   54 +
  drivers/platform/x86/Makefile                 |    7 +
  drivers/platform/x86/lenovo-wmi-capdata01.c   |  302 +++
@@ -70,9 +73,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/usb/usbip/vhci_hcd.c                  |   35 +-
  drivers/video/backlight/backlight.c           |    2 +
  include/linux/hid.h                           |    2 +
+ include/linux/mhi.h                           |    2 +
  sound/soc/amd/acp/acp-mach.h                  |    2 +-
  sound/soc/codecs/max98388.c                   |   24 +-
- 67 files changed, 11927 insertions(+), 99 deletions(-)
+ 71 files changed, 11914 insertions(+), 117 deletions(-)
  create mode 100644 Documentation/wmi/devices/lenovo-wmi-gamezone.rst
  create mode 100644 Documentation/wmi/devices/lenovo-wmi-other.rst
  create mode 100644 drivers/extcon/extcon-steamdeck.c
@@ -466,10 +470,10 @@ index 73197b31926a..704bfdac5203 100644
  --------------------
  
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 4feb3b9f8f73..eae65abb447e 100644
+index c0b444e5fd5a..0e4095c91bd8 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -13479,12 +13479,35 @@ S:	Maintained
+@@ -13676,12 +13676,35 @@ S:	Maintained
  W:	http://legousb.sourceforge.net/
  F:	drivers/usb/misc/legousbtower.c
  
@@ -503,96 +507,100 @@ index 4feb3b9f8f73..eae65abb447e 100644
 +F:	drivers/hid/lenovo-legos-hid/lenovo-legos-hid-core.h
 +
  LETSKETCH HID TABLET DRIVER
- M:	Hans de Goede <hdegoede@redhat.com>
+ M:	Hans de Goede <hansg@kernel.org>
  L:	linux-input@vger.kernel.org
-diff --git a/drivers/acpi/acpica/acinterp.h b/drivers/acpi/acpica/acinterp.h
-index 955114c926bd..d02779ee9210 100644
---- a/drivers/acpi/acpica/acinterp.h
-+++ b/drivers/acpi/acpica/acinterp.h
-@@ -120,6 +120,9 @@ void
- acpi_ex_trace_point(acpi_trace_event_type type,
- 		    u8 begin, u8 *aml, char *pathname);
- 
-+void
-+acpi_ex_trace_args(union acpi_operand_object **params, u32 count);
-+
- /*
-  * exfield - ACPI AML (p-code) execution - field manipulation
-  */
-diff --git a/drivers/acpi/acpica/dsmthdat.c b/drivers/acpi/acpica/dsmthdat.c
-index eca50517ad82..5393de4dbc4c 100644
---- a/drivers/acpi/acpica/dsmthdat.c
-+++ b/drivers/acpi/acpica/dsmthdat.c
-@@ -188,6 +188,7 @@ acpi_ds_method_data_init_args(union acpi_operand_object **params,
- 
- 		index++;
- 	}
-+	acpi_ex_trace_args(params, index);
- 
- 	ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "%u args passed to method\n", index));
- 	return_ACPI_STATUS(AE_OK);
-diff --git a/drivers/acpi/acpica/extrace.c b/drivers/acpi/acpica/extrace.c
-index f1730221ff13..08fb94eb7870 100644
---- a/drivers/acpi/acpica/extrace.c
-+++ b/drivers/acpi/acpica/extrace.c
-@@ -147,6 +147,57 @@ acpi_ex_trace_point(acpi_trace_event_type type,
- 	}
- }
- 
-+/*******************************************************************************
-+ *
-+ * FUNCTION:    acpi_ex_trace_args
-+ *
-+ * PARAMETERS:  params            - AML method arguments
-+ *              count             - numer of method arguments
-+ *
-+ * RETURN:      None
-+ *
-+ * DESCRIPTION: Trace any arguments
-+ *
-+ ******************************************************************************/
-+
-+void
-+acpi_ex_trace_args(union acpi_operand_object **params, u32 count)
-+{
-+	u32 i;
-+
-+	ACPI_FUNCTION_NAME(ex_trace_args);
-+
-+	for (i = 0; i < count; i++) {
-+		union acpi_operand_object *obj_desc = params[i];
-+
-+		if (!i) {
-+			ACPI_DEBUG_PRINT((ACPI_DB_TRACE_POINT, " "));
+diff --git a/drivers/bus/mhi/host/boot.c b/drivers/bus/mhi/host/boot.c
+index efa3b6dddf4d..bc8459798bbe 100644
+--- a/drivers/bus/mhi/host/boot.c
++++ b/drivers/bus/mhi/host/boot.c
+@@ -584,10 +584,17 @@ void mhi_fw_load_handler(struct mhi_controller *mhi_cntrl)
+ 	 * device transitioning into MHI READY state
+ 	 */
+ 	if (fw_load_type == MHI_FW_LOAD_FBC) {
+-		ret = mhi_alloc_bhie_table(mhi_cntrl, &mhi_cntrl->fbc_image, fw_sz);
+-		if (ret) {
+-			release_firmware(firmware);
+-			goto error_fw_load;
++		if (mhi_cntrl->fbc_image && fw_sz != mhi_cntrl->prev_fw_sz) {
++			mhi_free_bhie_table(mhi_cntrl, mhi_cntrl->fbc_image);
++			mhi_cntrl->fbc_image = NULL;
 +		}
-+
-+		switch (obj_desc->common.type) {
-+		case ACPI_TYPE_INTEGER:
-+			ACPI_DEBUG_PRINT_RAW((ACPI_DB_TRACE_POINT, "%llx", obj_desc->integer.value));
-+			break;
-+		case ACPI_TYPE_STRING:
-+			if (!obj_desc->string.length) {
-+				ACPI_DEBUG_PRINT_RAW((ACPI_DB_TRACE_POINT, "NULL"));
-+				continue;
++		if (!mhi_cntrl->fbc_image) {
++			ret = mhi_alloc_bhie_table(mhi_cntrl, &mhi_cntrl->fbc_image, fw_sz);
++			if (ret) {
++				release_firmware(firmware);
++				goto error_fw_load;
 +			}
-+			if (ACPI_IS_DEBUG_ENABLED(ACPI_LV_TRACE_POINT, _COMPONENT))
-+				acpi_ut_print_string(obj_desc->string.pointer, ACPI_UINT8_MAX);
-+			break;
-+		default:
-+			ACPI_DEBUG_PRINT_RAW((ACPI_DB_TRACE_POINT, "Unknown"));
-+			break;
-+		}
-+		if (i+1 == count) {
-+			ACPI_DEBUG_PRINT_RAW((ACPI_DB_TRACE_POINT, "\n"));
-+		} else {
-+			ACPI_DEBUG_PRINT_RAW((ACPI_DB_TRACE_POINT, ", "));
-+		}
-+	}
++			mhi_cntrl->prev_fw_sz = fw_sz;
+ 		}
+ 
+ 		/* Load the firmware into BHIE vec table */
+diff --git a/drivers/bus/mhi/host/init.c b/drivers/bus/mhi/host/init.c
+index 13e7a55f54ff..8419ea8a5419 100644
+--- a/drivers/bus/mhi/host/init.c
++++ b/drivers/bus/mhi/host/init.c
+@@ -1173,8 +1173,9 @@ int mhi_prepare_for_power_up(struct mhi_controller *mhi_cntrl)
+ 		/*
+ 		 * Allocate RDDM table for debugging purpose if specified
+ 		 */
+-		mhi_alloc_bhie_table(mhi_cntrl, &mhi_cntrl->rddm_image,
+-				     mhi_cntrl->rddm_size);
++		if (!mhi_cntrl->rddm_image)
++			mhi_alloc_bhie_table(mhi_cntrl, &mhi_cntrl->rddm_image,
++					     mhi_cntrl->rddm_size);
+ 		if (mhi_cntrl->rddm_image) {
+ 			ret = mhi_rddm_prepare(mhi_cntrl,
+ 					       mhi_cntrl->rddm_image);
+@@ -1200,6 +1201,14 @@ int mhi_prepare_for_power_up(struct mhi_controller *mhi_cntrl)
+ }
+ EXPORT_SYMBOL_GPL(mhi_prepare_for_power_up);
+ 
++void __mhi_unprepare_keep_dev(struct mhi_controller *mhi_cntrl)
++{
++	mhi_cntrl->bhi = NULL;
++	mhi_cntrl->bhie = NULL;
++
++	mhi_deinit_dev_ctxt(mhi_cntrl);
 +}
 +
- /*******************************************************************************
-  *
-  * FUNCTION:    acpi_ex_start_trace_method
+ void mhi_unprepare_after_power_down(struct mhi_controller *mhi_cntrl)
+ {
+ 	if (mhi_cntrl->fbc_image) {
+@@ -1212,10 +1221,7 @@ void mhi_unprepare_after_power_down(struct mhi_controller *mhi_cntrl)
+ 		mhi_cntrl->rddm_image = NULL;
+ 	}
+ 
+-	mhi_cntrl->bhi = NULL;
+-	mhi_cntrl->bhie = NULL;
+-
+-	mhi_deinit_dev_ctxt(mhi_cntrl);
++	__mhi_unprepare_keep_dev(mhi_cntrl);
+ }
+ EXPORT_SYMBOL_GPL(mhi_unprepare_after_power_down);
+ 
+diff --git a/drivers/bus/mhi/host/internal.h b/drivers/bus/mhi/host/internal.h
+index ce566f7d2e92..41b3fb835880 100644
+--- a/drivers/bus/mhi/host/internal.h
++++ b/drivers/bus/mhi/host/internal.h
+@@ -427,4 +427,6 @@ void mhi_unmap_single_no_bb(struct mhi_controller *mhi_cntrl,
+ void mhi_unmap_single_use_bb(struct mhi_controller *mhi_cntrl,
+ 			     struct mhi_buf_info *buf_info);
+ 
++void __mhi_unprepare_keep_dev(struct mhi_controller *mhi_cntrl);
++
+ #endif /* _MHI_INT_H */
+diff --git a/drivers/bus/mhi/host/pm.c b/drivers/bus/mhi/host/pm.c
+index 33d92bf2fc3e..c9640c8be5bc 100644
+--- a/drivers/bus/mhi/host/pm.c
++++ b/drivers/bus/mhi/host/pm.c
+@@ -1263,6 +1263,7 @@ void mhi_power_down_keep_dev(struct mhi_controller *mhi_cntrl,
+ 			       bool graceful)
+ {
+ 	__mhi_power_down(mhi_cntrl, graceful, false);
++	__mhi_unprepare_keep_dev(mhi_cntrl);
+ }
+ EXPORT_SYMBOL_GPL(mhi_power_down_keep_dev);
+ 
 diff --git a/drivers/extcon/Kconfig b/drivers/extcon/Kconfig
 index a6f6d467aacf..4adec844c4b4 100644
 --- a/drivers/extcon/Kconfig
@@ -853,10 +861,10 @@ index a51f3414b65d..bc0f9759c5c5 100644
  	snprintf(bl_name, sizeof(bl_name),
  		 "amdgpu_bl%d", dev->primary->index);
 diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-index 927fb4992a6a..2f8193a5c803 100644
+index 3a39877bd790..5cc6a82fb32e 100644
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -166,6 +166,9 @@ MODULE_FIRMWARE(FIRMWARE_DCN_401_DMUB);
+@@ -168,6 +168,9 @@ MODULE_FIRMWARE(FIRMWARE_DCN_401_DMUB);
  /* Number of bytes in PSP footer for firmware. */
  #define PSP_FOOTER_BYTES 0x100
  
@@ -866,7 +874,7 @@ index 927fb4992a6a..2f8193a5c803 100644
  /**
   * DOC: overview
   *
-@@ -9171,7 +9174,7 @@ static void amdgpu_dm_commit_planes(struct drm_atomic_state *state,
+@@ -9249,7 +9252,7 @@ static void amdgpu_dm_commit_planes(struct drm_atomic_state *state,
  	int planes_count = 0, vpos, hpos;
  	unsigned long flags;
  	u32 target_vblank, last_flip_vblank;
@@ -876,7 +884,7 @@ index 927fb4992a6a..2f8193a5c803 100644
  	bool pflip_present = false;
  	bool dirty_rects_changed = false;
 diff --git a/drivers/gpu/drm/amd/display/dc/dc.h b/drivers/gpu/drm/amd/display/dc/dc.h
-index 0761fc95a158..2081f0f5b907 100644
+index f41073c0147e..0091a34af917 100644
 --- a/drivers/gpu/drm/amd/display/dc/dc.h
 +++ b/drivers/gpu/drm/amd/display/dc/dc.h
 @@ -58,7 +58,7 @@ struct dmub_notification;
@@ -889,7 +897,7 @@ index 0761fc95a158..2081f0f5b907 100644
   * MAX_PLANES - representative of the upper bound of planes that are supported by the HW
   */
 diff --git a/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c b/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c
-index a998c498a477..f4ef774e07e0 100644
+index 38e17b1796e1..bde89b8e98c8 100644
 --- a/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c
 +++ b/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c
 @@ -96,6 +96,8 @@
@@ -901,7 +909,7 @@ index a998c498a477..f4ef774e07e0 100644
  struct dce110_hw_seq_reg_offsets {
  	uint32_t crtc;
  };
-@@ -3246,6 +3248,13 @@ void dce110_enable_dp_link_output(
+@@ -3249,6 +3251,13 @@ void dce110_enable_dp_link_output(
  			link->dc->res_pool->dp_clock_source;
  	const struct link_hwss *link_hwss = get_link_hwss(link, link_res);
  	unsigned int i;
@@ -1009,10 +1017,10 @@ index 7ac0fd5391fe..323dd636352b 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 diff --git a/drivers/hid/Kconfig b/drivers/hid/Kconfig
-index e7688c7fdc56..4f7feaac983c 100644
+index 1c63bd5e8f5d..b316989d1daa 100644
 --- a/drivers/hid/Kconfig
 +++ b/drivers/hid/Kconfig
-@@ -1418,6 +1418,10 @@ config HID_KUNIT_TEST
+@@ -1419,6 +1419,10 @@ config HID_KUNIT_TEST
  
  	  If in doubt, say "N".
  
@@ -1023,7 +1031,7 @@ index e7688c7fdc56..4f7feaac983c 100644
  endmenu
  
  source "drivers/hid/bpf/Kconfig"
-@@ -1444,4 +1448,8 @@ source "drivers/hid/spi-hid/Kconfig"
+@@ -1445,4 +1449,8 @@ source "drivers/hid/spi-hid/Kconfig"
  
  source "drivers/hid/dockchannel-hid/Kconfig"
  
@@ -1033,10 +1041,10 @@ index e7688c7fdc56..4f7feaac983c 100644
 +
  endif # HID_SUPPORT
 diff --git a/drivers/hid/Makefile b/drivers/hid/Makefile
-index a0f58475434c..137fc917a174 100644
+index a0f58475434c..6cafb07c7181 100644
 --- a/drivers/hid/Makefile
 +++ b/drivers/hid/Makefile
-@@ -174,10 +174,16 @@ obj-$(CONFIG_AMD_SFH_HID)       += amd-sfh-hid/
+@@ -174,6 +174,8 @@ obj-$(CONFIG_AMD_SFH_HID)       += amd-sfh-hid/
  
  obj-$(CONFIG_ASUS_ALLY_HID)  += asus-ally-hid/
  
@@ -1045,19 +1053,19 @@ index a0f58475434c..137fc917a174 100644
  obj-$(CONFIG_SURFACE_HID_CORE)  += surface-hid/
  
  obj-$(CONFIG_INTEL_THC_HID)     += intel-thc-hid/
- 
-+obj-$(CONFIG_HID_MSI_CLAW)      += hid-msi-claw.o
-+
-+obj-$(CONFIG_LENOVO_LEGOS_HID)  += lenovo-legos-hid/
-+
+@@ -181,3 +183,7 @@ obj-$(CONFIG_INTEL_THC_HID)     += intel-thc-hid/
  obj-$(CONFIG_SPI_HID_APPLE_CORE)	+= spi-hid/
  
  obj-$(CONFIG_HID_DOCKCHANNEL)   += dockchannel-hid/
++
++obj-$(CONFIG_HID_MSI_CLAW)      += hid-msi-claw.o
++
++obj-$(CONFIG_LENOVO_LEGOS_HID)  += lenovo-legos-hid/
 diff --git a/drivers/hid/hid-core.c b/drivers/hid/hid-core.c
-index b991ed962366..a589f9c9b661 100644
+index 1b3099685ba0..3c34b230bfb4 100644
 --- a/drivers/hid/hid-core.c
 +++ b/drivers/hid/hid-core.c
-@@ -2838,6 +2838,17 @@ static int hid_uevent(const struct device *dev, struct kobj_uevent_env *env)
+@@ -2854,6 +2854,17 @@ static int hid_uevent(const struct device *dev, struct kobj_uevent_env *env)
  	if (add_uevent_var(env, "MODALIAS=hid:b%04Xg%04Xv%08Xp%08X",
  			   hdev->bus, hdev->group, hdev->vendor, hdev->product))
  		return -ENOMEM;
@@ -1076,10 +1084,10 @@ index b991ed962366..a589f9c9b661 100644
  	return 0;
  }
 diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
-index 70efd28b6bc3..69f6368d3f71 100644
+index bc2fba4e7a4d..25e674f6e850 100644
 --- a/drivers/hid/hid-ids.h
 +++ b/drivers/hid/hid-ids.h
-@@ -720,6 +720,10 @@
+@@ -724,6 +724,10 @@
  #define USB_DEVICE_ID_ITE8595		0x8595
  #define USB_DEVICE_ID_ITE_MEDION_E1239T	0xce50
  
@@ -1090,7 +1098,7 @@ index 70efd28b6bc3..69f6368d3f71 100644
  #define USB_VENDOR_ID_JABRA		0x0b0e
  #define USB_DEVICE_ID_JABRA_SPEAK_410	0x0412
  #define USB_DEVICE_ID_JABRA_SPEAK_510	0x0420
-@@ -1049,6 +1053,7 @@
+@@ -1054,6 +1058,7 @@
  #define USB_VENDOR_ID_NOVATEK		0x0603
  #define USB_DEVICE_ID_NOVATEK_PCT	0x0600
  #define USB_DEVICE_ID_NOVATEK_MOUSE	0x1602
@@ -1098,7 +1106,7 @@ index 70efd28b6bc3..69f6368d3f71 100644
  
  #define USB_VENDOR_ID_NTI               0x0757
  #define USB_DEVICE_ID_USB_SUN           0x0a00
-@@ -1502,6 +1507,10 @@
+@@ -1507,6 +1512,10 @@
  #define USB_VENDOR_ID_ZYTRONIC		0x14c8
  #define USB_DEVICE_ID_ZYTRONIC_ZXY100	0x0005
  
@@ -1110,7 +1118,7 @@ index 70efd28b6bc3..69f6368d3f71 100644
  #define USB_DEVICE_ID_PRIMAX_MOUSE_4D22	0x4d22
  #define USB_DEVICE_ID_PRIMAX_MOUSE_4E2A	0x4e2a
 diff --git a/drivers/hid/hid-input.c b/drivers/hid/hid-input.c
-index 9d80635a91eb..08e87577feef 100644
+index ff1784b5c2a4..0bf4346e3cf3 100644
 --- a/drivers/hid/hid-input.c
 +++ b/drivers/hid/hid-input.c
 @@ -390,6 +390,8 @@ static const struct hid_device_id hid_battery_quirks[] = {
@@ -7740,10 +7748,10 @@ index 000000000000..31188cee80f8
 +
 +#endif /* __HID_ZOTAC_ZONE_H */
 diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
-index f91f713b0105..4d645de56bec 100644
+index 079620dd4286..c8269ad241c5 100644
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -2110,6 +2110,17 @@ config SENSORS_SCH5636
+@@ -2118,6 +2118,17 @@ config SENSORS_SCH5636
  	  This driver can also be built as a module. If so, the module
  	  will be called sch5636.
  
@@ -7762,10 +7770,10 @@ index f91f713b0105..4d645de56bec 100644
  	tristate "ST Microelectronics STTS751"
  	depends on I2C
 diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
-index 766c652ef22b..d669fb4a8218 100644
+index 48e5866c0c9a..223147b5c964 100644
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -212,6 +212,7 @@ obj-$(CONFIG_SENSORS_SMSC47B397)+= smsc47b397.o
+@@ -214,6 +214,7 @@ obj-$(CONFIG_SENSORS_SMSC47B397)+= smsc47b397.o
  obj-$(CONFIG_SENSORS_SMSC47M1)	+= smsc47m1.o
  obj-$(CONFIG_SENSORS_SMSC47M192)+= smsc47m192.o
  obj-$(CONFIG_SENSORS_SPARX5)	+= sparx5-temp.o
@@ -8074,10 +8082,10 @@ index 000000000000..9d0a5471b181
 +MODULE_DESCRIPTION("Steam Deck EC sensors driver");
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/input/joystick/xpad.c b/drivers/input/joystick/xpad.c
-index 1008858f78e2..8e3cf2a55bea 100644
+index 1d8c579b5433..89d320dfda87 100644
 --- a/drivers/input/joystick/xpad.c
 +++ b/drivers/input/joystick/xpad.c
-@@ -353,7 +353,9 @@ static const struct xpad_device {
+@@ -357,7 +357,9 @@ static const struct xpad_device {
  	{ 0x1bad, 0xfa01, "MadCatz GamePad", 0, XTYPE_XBOX360 },
  	{ 0x1bad, 0xfd00, "Razer Onza TE", 0, XTYPE_XBOX360 },
  	{ 0x1bad, 0xfd01, "Razer Onza", 0, XTYPE_XBOX360 },
@@ -8087,7 +8095,7 @@ index 1008858f78e2..8e3cf2a55bea 100644
  	{ 0x20d6, 0x2001, "BDA Xbox Series X Wired Controller", 0, XTYPE_XBOXONE },
  	{ 0x20d6, 0x2009, "PowerA Enhanced Wired Controller for Xbox Series X|S", 0, XTYPE_XBOXONE },
  	{ 0x20d6, 0x2064, "PowerA Wired Controller for Xbox", MAP_SHARE_BUTTON, XTYPE_XBOXONE },
-@@ -550,7 +552,9 @@ static const struct usb_device_id xpad_table[] = {
+@@ -556,7 +558,9 @@ static const struct usb_device_id xpad_table[] = {
  	XPAD_XBOX360_VENDOR(0x1949),		/* Amazon controllers */
  	XPAD_XBOX360_VENDOR(0x1a86),		/* Nanjing Qinheng Microelectronics (WCH) */
  	XPAD_XBOX360_VENDOR(0x1bad),		/* Harmonix Rock Band guitar and drums */
@@ -8098,10 +8106,10 @@ index 1008858f78e2..8e3cf2a55bea 100644
  	XPAD_XBOXONE_VENDOR(0x20d6),		/* PowerA controllers */
  	XPAD_XBOX360_VENDOR(0x2345),		/* Machenike Controllers */
 diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
-index a104cbb0a001..6fd7921006f9 100644
+index 6e3dce7e35a4..531daa275634 100644
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -1013,6 +1013,13 @@ config LEDS_ACER_A500
+@@ -1020,6 +1020,13 @@ config LEDS_ACER_A500
  	  This option enables support for the Power Button LED of
  	  Acer Iconia Tab A500.
  
@@ -8116,10 +8124,10 @@ index a104cbb0a001..6fd7921006f9 100644
  
  comment "Flash and Torch LED drivers"
 diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
-index 2f170d69dcbf..10bf84080e28 100644
+index 9a0333ec1a86..e93fa6d6d2b9 100644
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -85,6 +85,7 @@ obj-$(CONFIG_LEDS_QNAP_MCU)		+= leds-qnap-mcu.o
+@@ -86,6 +86,7 @@ obj-$(CONFIG_LEDS_QNAP_MCU)		+= leds-qnap-mcu.o
  obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
  obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
  obj-$(CONFIG_LEDS_ST1202)		+= leds-st1202.o
@@ -8257,10 +8265,10 @@ index 000000000000..3d56ec4403cd
 +MODULE_DESCRIPTION("Steam Deck LEDs driver");
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index 22b936310039..a788bb645c95 100644
+index 6fb3768e3d71..8a3d0f75c4c5 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -2422,5 +2422,16 @@ config MFD_UPBOARD_FPGA
+@@ -2463,5 +2463,16 @@ config MFD_UPBOARD_FPGA
  	  To compile this driver as a module, choose M here: the module will be
  	  called upboard-fpga.
  
@@ -8278,10 +8286,10 @@ index 22b936310039..a788bb645c95 100644
  endmenu
  endif
 diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index 948cbdf42a18..e14823b233e3 100644
+index 79495f9f3457..d4afa76d37a7 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -289,4 +289,6 @@ obj-$(CONFIG_MFD_QNAP_MCU)	+= qnap-mcu.o
+@@ -293,4 +293,6 @@ obj-$(CONFIG_MFD_QNAP_MCU)	+= qnap-mcu.o
  obj-$(CONFIG_MFD_RSMU_I2C)	+= rsmu_i2c.o rsmu_core.o
  obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o rsmu_core.o
  
@@ -8442,7 +8450,7 @@ index 000000000000..a60fa7db9141
 +MODULE_DESCRIPTION("Steam Deck EC MFD core driver");
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
-index 0281ce6fb717..e76a020d4fbb 100644
+index 22a101136135..05f970016acf 100644
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
 @@ -732,7 +732,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
@@ -8454,8 +8462,63 @@ index 0281ce6fb717..e76a020d4fbb 100644
  			.board_size = 256 * 1024,
  			.cal_offset = 128 * 1024,
  		},
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index acd76e9392d3..c5dc776b2364 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -460,12 +460,12 @@ void ath11k_mhi_stop(struct ath11k_pci *ab_pci, bool is_suspend)
+ 	 * workaround, otherwise ath11k_core_resume() will timeout
+ 	 * during resume.
+ 	 */
+-	if (is_suspend)
++	if (is_suspend) {
+ 		mhi_power_down_keep_dev(ab_pci->mhi_ctrl, true);
+-	else
++	} else {
+ 		mhi_power_down(ab_pci->mhi_ctrl, true);
+-
+-	mhi_unprepare_after_power_down(ab_pci->mhi_ctrl);
++		mhi_unprepare_after_power_down(ab_pci->mhi_ctrl);
++	}
+ }
+ 
+ int ath11k_mhi_suspend(struct ath11k_pci *ab_pci)
+diff --git a/drivers/net/wireless/ath/ath12k/mhi.c b/drivers/net/wireless/ath/ath12k/mhi.c
+index 08f44baf182a..3af524ccf4a5 100644
+--- a/drivers/net/wireless/ath/ath12k/mhi.c
++++ b/drivers/net/wireless/ath/ath12k/mhi.c
+@@ -601,6 +601,12 @@ static int ath12k_mhi_set_state(struct ath12k_pci *ab_pci,
+ 
+ 	ath12k_mhi_set_state_bit(ab_pci, mhi_state);
+ 
++	/* mhi_power_down_keep_dev() has been updated to DEINIT without
++	 * freeing bhie tables
++	 */
++	if (mhi_state == ATH12K_MHI_POWER_OFF_KEEP_DEV)
++		ath12k_mhi_set_state_bit(ab_pci, ATH12K_MHI_DEINIT);
++
+ 	return 0;
+ 
+ out:
+@@ -635,12 +641,12 @@ void ath12k_mhi_stop(struct ath12k_pci *ab_pci, bool is_suspend)
+ 	 * workaround, otherwise ath12k_core_resume() will timeout
+ 	 * during resume.
+ 	 */
+-	if (is_suspend)
++	if (is_suspend) {
+ 		ath12k_mhi_set_state(ab_pci, ATH12K_MHI_POWER_OFF_KEEP_DEV);
+-	else
++	} else {
+ 		ath12k_mhi_set_state(ab_pci, ATH12K_MHI_POWER_OFF);
+-
+-	ath12k_mhi_set_state(ab_pci, ATH12K_MHI_DEINIT);
++		ath12k_mhi_set_state(ab_pci, ATH12K_MHI_DEINIT);
++	}
+ }
+ 
+ void ath12k_mhi_suspend(struct ath12k_pci *ab_pci)
 diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
-index 731d18308cb6..6507dffc2aa4 100644
+index 1236303b1f17..147ae2ebe828 100644
 --- a/drivers/platform/x86/Kconfig
 +++ b/drivers/platform/x86/Kconfig
 @@ -482,6 +482,47 @@ config IBM_RTL
@@ -8518,9 +8581,9 @@ index 731d18308cb6..6507dffc2aa4 100644
  	help
  	  Say Y here if you want to have support for WMI-based platform features
  	  like fan sensor access on MSI machines.
-@@ -1224,6 +1268,16 @@ config SEL3350_PLATFORM
- 	  To compile this driver as a module, choose M here: the module
- 	  will be called sel3350-platform.
+@@ -1264,6 +1308,16 @@ config OXP_EC
+ 
+ source "drivers/platform/x86/tuxedo/Kconfig"
  
 +config ZOTAC_ZONE_PLATFORM
 +	tristate "Zotac Zone platform driver"
@@ -8536,10 +8599,10 @@ index 731d18308cb6..6507dffc2aa4 100644
  
  config P2SB
 diff --git a/drivers/platform/x86/Makefile b/drivers/platform/x86/Makefile
-index 3a0085f941d9..14f22d19bda0 100644
+index 7e978fa52c2f..44b7d13f6133 100644
 --- a/drivers/platform/x86/Makefile
 +++ b/drivers/platform/x86/Makefile
-@@ -70,6 +70,11 @@ obj-$(CONFIG_THINKPAD_LMI)	+= think-lmi.o
+@@ -72,6 +72,11 @@ obj-$(CONFIG_THINKPAD_LMI)	+= think-lmi.o
  obj-$(CONFIG_YOGABOOK)		+= lenovo-yogabook.o
  obj-$(CONFIG_YT2_1380)		+= lenovo-yoga-tab2-pro-1380-fastcharger.o
  obj-$(CONFIG_LENOVO_WMI_CAMERA)	+= lenovo-wmi-camera.o
@@ -8551,12 +8614,14 @@ index 3a0085f941d9..14f22d19bda0 100644
  
  # Intel
  obj-y				+= intel/
-@@ -155,3 +160,5 @@ obj-$(CONFIG_WINMATE_FM07_KEYS)		+= winmate-fm07-keys.o
- 
+@@ -166,5 +171,7 @@ obj-$(CONFIG_WINMATE_FM07_KEYS)		+= winmate-fm07-keys.o
  # SEL
  obj-$(CONFIG_SEL3350_PLATFORM)		+= sel3350-platform.o
+ 
++obj-$(CONFIG_ZOTAC_ZONE_PLATFORM)	+= zotac-zone-platform.o
 +
-+obj-$(CONFIG_ZOTAC_ZONE_PLATFORM)		+= zotac-zone-platform.o
+ # OneXPlayer
+ obj-$(CONFIG_OXP_EC)			+= oxpec.o
 diff --git a/drivers/platform/x86/lenovo-wmi-capdata01.c b/drivers/platform/x86/lenovo-wmi-capdata01.c
 new file mode 100644
 index 000000000000..2bd862a75c71
@@ -12970,10 +13035,10 @@ index e70fba9f55d6..7297d790b664 100644
  
  static int vhci_hcd_resume(struct platform_device *pdev)
 diff --git a/drivers/video/backlight/backlight.c b/drivers/video/backlight/backlight.c
-index f699e5827ccb..99e86b983c77 100644
+index 9dc93c5e480b..05d5800c9756 100644
 --- a/drivers/video/backlight/backlight.c
 +++ b/drivers/video/backlight/backlight.c
-@@ -161,6 +161,7 @@ static inline void backlight_unregister_fb(struct backlight_device *bd)
+@@ -115,6 +115,7 @@ EXPORT_SYMBOL(backlight_notify_blank_all);
  static void backlight_generate_event(struct backlight_device *bd,
  				     enum backlight_update_reason reason)
  {
@@ -12981,7 +13046,7 @@ index f699e5827ccb..99e86b983c77 100644
  	char *envp[2];
  
  	switch (reason) {
-@@ -176,6 +177,7 @@ static void backlight_generate_event(struct backlight_device *bd,
+@@ -130,6 +131,7 @@ static void backlight_generate_event(struct backlight_device *bd,
  	}
  	envp[1] = NULL;
  	kobject_uevent_env(&bd->dev.kobj, KOBJ_CHANGE, envp);
@@ -12990,7 +13055,7 @@ index f699e5827ccb..99e86b983c77 100644
  }
  
 diff --git a/include/linux/hid.h b/include/linux/hid.h
-index 98aad4880f84..d3793f9b196b 100644
+index 7b1ee43d984b..1d6f1d8ac81a 100644
 --- a/include/linux/hid.h
 +++ b/include/linux/hid.h
 @@ -669,6 +669,7 @@ struct hid_device {
@@ -13009,6 +13074,26 @@ index 98aad4880f84..d3793f9b196b 100644
  
  	/* debugging support via debugfs */
  	unsigned short debug;
+diff --git a/include/linux/mhi.h b/include/linux/mhi.h
+index dd372b0123a6..6fd218a87785 100644
+--- a/include/linux/mhi.h
++++ b/include/linux/mhi.h
+@@ -306,6 +306,7 @@ struct mhi_controller_config {
+  *           if fw_image is NULL and fbc_download is true (optional)
+  * @fw_sz: Firmware image data size for normal booting, used only if fw_image
+  *         is NULL and fbc_download is true (optional)
++ * @prev_fw_sz: Previous firmware image data size, when fbc_download is true
+  * @edl_image: Firmware image name for emergency download mode (optional)
+  * @rddm_size: RAM dump size that host should allocate for debugging purpose
+  * @sbl_size: SBL image size downloaded through BHIe (optional)
+@@ -382,6 +383,7 @@ struct mhi_controller {
+ 	const char *fw_image;
+ 	const u8 *fw_data;
+ 	size_t fw_sz;
++	size_t prev_fw_sz;
+ 	const char *edl_image;
+ 	size_t rddm_size;
+ 	size_t sbl_size;
 diff --git a/sound/soc/amd/acp/acp-mach.h b/sound/soc/amd/acp/acp-mach.h
 index f94c30c20f20..c3b3f047969c 100644
 --- a/sound/soc/amd/acp/acp-mach.h
@@ -13106,5 +13191,5 @@ index 99986090b4a6..e259be44ce8f 100644
  
  	return 0;
 -- 
-2.50.0.145.g83014dc05f
+2.50.1
 

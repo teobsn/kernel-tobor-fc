@@ -1999,12 +1999,12 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch cachy-0001-amd-pstate.patch
+ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
 #ApplyOptionalPatch cachy-0001-handheld.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
-ApplyOptionalPatch cachy-0002-asus.patch
-ApplyOptionalPatch cachy-0003-bbr3.patch
+ApplyOptionalPatch cachy-0002-bbr3.patch
+ApplyOptionalPatch cachy-0003-block.patch
 ApplyOptionalPatch cachy-0006-t2.patch
 #ApplyOptionalPatch clear-0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch
 #ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
