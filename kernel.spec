@@ -2051,7 +2051,7 @@ ApplyOptionalPatch clear_rebased-0104-pci-pme-wakeups.patch
 ApplyOptionalPatch clear_rebased-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
 ApplyOptionalPatch clear_rebased-slack.patch
 #ApplyOptionalPatch clear-scale-net-alloc.patch
-ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.15-rc1+.patch
+ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.16+.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 
 ApplyOptionalPatch linux-kernel-test.patch
