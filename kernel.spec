@@ -2000,12 +2000,12 @@ ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
 ApplyOptionalPatch bazzite-handheld.patch
-ApplyOptionalPatch cachy-0001-asus.patch
+#ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
 ApplyOptionalPatch cachy-0002-bbr3.patch
 ApplyOptionalPatch cachy-0003-block.patch
-ApplyOptionalPatch cachy-0006-t2.patch
+#ApplyOptionalPatch cachy-0006-t2.patch
 #ApplyOptionalPatch clear-0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch
 #ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
 ApplyOptionalPatch clear-0050-Revert-ext4-do-not-create-EA-inode-under-buffer-lock.patch
@@ -2029,25 +2029,25 @@ ApplyOptionalPatch clear-0130-itmt2-ADL-fixes.patch
 ApplyOptionalPatch clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
 ApplyOptionalPatch clear-0133-novector.patch
 #ApplyOptionalPatch clear-0134-md-raid6-algorithms-scale-test-duration-for-speedier.patch
-ApplyOptionalPatch clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
+#ApplyOptionalPatch clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
 ApplyOptionalPatch clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch
-ApplyOptionalPatch clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
-ApplyOptionalPatch clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
+#ApplyOptionalPatch clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
+#ApplyOptionalPatch clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
 ApplyOptionalPatch clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
 ApplyOptionalPatch clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
-ApplyOptionalPatch clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
+#ApplyOptionalPatch clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
 #ApplyOptionalPatch clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
 ApplyOptionalPatch clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
-ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
+#ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
 ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
 ApplyOptionalPatch clear-0175-readdir-add-unlikely-hint-on-len-check.patch
 ApplyOptionalPatch clear-better_idle_balance.patch
 #ApplyOptionalPatch clear-cstatedemotion.patch
-ApplyOptionalPatch clear-epp-retune.patch
+#ApplyOptionalPatch clear-epp-retune.patch
 ApplyOptionalPatch clear-libsgrowdown.patch
 ApplyOptionalPatch clear-ratelimit-sched-yield.patch
 ApplyOptionalPatch clear_rebased-0104-pci-pme-wakeups.patch
-ApplyOptionalPatch clear_rebased-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
+#ApplyOptionalPatch clear_rebased-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
 ApplyOptionalPatch clear_rebased-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
 ApplyOptionalPatch clear_rebased-slack.patch
 #ApplyOptionalPatch clear-scale-net-alloc.patch
