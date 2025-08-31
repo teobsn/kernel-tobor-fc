@@ -2039,7 +2039,7 @@ ApplyOptionalPatch clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_
 #ApplyOptionalPatch clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
 ApplyOptionalPatch clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
 #ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
-ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
+#ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
 ApplyOptionalPatch clear-0175-readdir-add-unlikely-hint-on-len-check.patch
 ApplyOptionalPatch clear-better_idle_balance.patch
 #ApplyOptionalPatch clear-cstatedemotion.patch
