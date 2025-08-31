@@ -1,2 +1,3 @@
 # kernel-tobor-fc
-Default fedora kernel, but with (some, not all) patches from Clear Linux and CachyOS applied
+Default Fedora kernel, but with patches from certain distros like Clear Linux, CachyOS and Bazzite applied, along with other potentially useful ones.
+The kernel is built with Zen3 march.
