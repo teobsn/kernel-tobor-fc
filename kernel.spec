@@ -164,7 +164,7 @@ Summary: The Linux kernel
 #  to build the base kernel using the debug configuration. (Specifying
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
-# define buildid .tobor
+%define buildid .tobor
 %define specrpmversion 6.16.4
 %define specversion 6.16.4
 %define patchversion 6.16
