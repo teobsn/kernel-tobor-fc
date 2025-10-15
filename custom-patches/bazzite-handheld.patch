@@ -50173,82 +50173,6 @@ index a6e9527613cf..9f3a90280bfc 100644
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Fri, 20 Jun 2025 01:55:33 +0200
-Subject: Revert "platform/x86/amd: pmc: Require at least 2.5 seconds between
- HW sleep cycles"
-
-Prolongs wakeups before sleep and during EC checks too much.
-
-This reverts commit 9f5595d5f03fd4dc640607a71e89a1daa68fd19d.
----
- drivers/platform/x86/amd/pmc/pmc.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/platform/x86/amd/pmc/pmc.c b/drivers/platform/x86/amd/pmc/pmc.c
-index 0b9b23eb7c2c..833ed8bf26f5 100644
---- a/drivers/platform/x86/amd/pmc/pmc.c
-+++ b/drivers/platform/x86/amd/pmc/pmc.c
-@@ -646,9 +646,10 @@ static void amd_pmc_s2idle_check(void)
- 	struct smu_metrics table;
- 	int rc;
- 
--	/* Avoid triggering OVP */
--	if (!get_metrics_table(pdev, &table) && table.s0i3_last_entry_status)
--		msleep(2500);
-+	/* CZN: Ensure that future s0i3 entry attempts at least 10ms passed */
-+	if (pdev->cpu_id == AMD_CPU_ID_CZN && !get_metrics_table(pdev, &table) &&
-+	    table.s0i3_last_entry_status)
-+		usleep_range(10000, 20000);
- 
- 	/* Dump the IdleMask before we add to the STB */
- 	amd_pmc_idlemask_read(pdev, pdev->dev, NULL);
--- 
-2.51.0
-
-
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Fri, 20 Jun 2025 10:23:30 +0200
-Subject: add new form of suspend delay
-
-Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
----
- kernel/power/suspend.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/kernel/power/suspend.c b/kernel/power/suspend.c
-index 2f8a81abf2f8..d1c8d6e76ae0 100644
---- a/kernel/power/suspend.c
-+++ b/kernel/power/suspend.c
-@@ -154,6 +154,7 @@ static void s2idle_loop(void)
- 	 * Wakeups during the noirq suspend of devices may be spurious, so try
- 	 * to avoid them upfront.
- 	 */
-+	unsigned long curr, previous = 0;
- 	for (;;) {
- 		if (s2idle_ops && s2idle_ops->wake) {
- 			if (s2idle_ops->wake())
-@@ -165,7 +166,14 @@ static void s2idle_loop(void)
- 		if (s2idle_ops && s2idle_ops->check)
- 			s2idle_ops->check();
- 
-+		curr = jiffies;
-+		if (previous && !time_after(curr, previous + msecs_to_jiffies(1000))) {
-+			// Ensure we spin at least 1 second in the idle loop
-+			msleep(1000 - jiffies_to_msecs(curr - previous));
-+		}
-+		
- 		s2idle_enter();
-+		previous = jiffies;
- 	}
- 
- 	pm_pr_dbg("resume from suspend-to-idle\n");
--- 
-2.51.0
-
-
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Antheas Kapenekakis <lkml@antheas.dev>
 Date: Sat, 12 Jul 2025 11:35:37 +0200
 Subject: HID: asus: add Zenbook Duo Keyboard
 
@@ -52749,6 +52673,892 @@ index b7c6e8d13435..5902eb8cf119 100644
  	dm_atomic_plane_attach_color_mgmt_properties(dm, plane);
  #endif
  	/* Create (reset) the plane state */
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Oscar Maes <oscmaes92@gmail.com>
+Date: Wed, 27 Aug 2025 08:23:21 +0200
+Subject: net: ipv4: fix regression in local-broadcast routes
+
+Commit 9e30ecf23b1b ("net: ipv4: fix incorrect MTU in broadcast routes")
+introduced a regression where local-broadcast packets would have their
+gateway set in __mkroute_output, which was caused by fi = NULL being
+removed.
+
+Fix this by resetting the fib_info for local-broadcast packets. This
+preserves the intended changes for directed-broadcast packets.
+
+Cc: stable@vger.kernel.org
+Fixes: 9e30ecf23b1b ("net: ipv4: fix incorrect MTU in broadcast routes")
+Reported-by: Brett A C Sheffield <bacs@librecast.net>
+Closes: https://lore.kernel.org/regressions/20250822165231.4353-4-bacs@librecast.net
+Signed-off-by: Oscar Maes <oscmaes92@gmail.com>
+Reviewed-by: David Ahern <dsahern@kernel.org>
+---
+ net/ipv4/route.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/net/ipv4/route.c b/net/ipv4/route.c
+index 7b8e80c4f1d9..bf82434c3541 100644
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
+@@ -2573,12 +2573,16 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
+ 		    !netif_is_l3_master(dev_out))
+ 			return ERR_PTR(-EINVAL);
+ 
+-	if (ipv4_is_lbcast(fl4->daddr))
++	if (ipv4_is_lbcast(fl4->daddr)) {
+ 		type = RTN_BROADCAST;
+-	else if (ipv4_is_multicast(fl4->daddr))
++
++		/* reset fi to prevent gateway resolution */
++		fi = NULL;
++	} else if (ipv4_is_multicast(fl4->daddr)) {
+ 		type = RTN_MULTICAST;
+-	else if (ipv4_is_zeronet(fl4->daddr))
++	} else if (ipv4_is_zeronet(fl4->daddr)) {
+ 		return ERR_PTR(-EINVAL);
++	}
+ 
+ 	if (dev_out->flags & IFF_LOOPBACK)
+ 		flags |= RTCF_LOCAL;
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 3 Sep 2025 18:46:49 +0200
+Subject: Input: xpad - add ID for Flydigi Apex 5
+
+The Flydigi Apex 5 has an XInput mode. Add the vid and pid for it.
+
+Reported-by: Brandon Lin <brandon@emergence.ltd>
+Reported-by: Sergey Belozyorcev <belozyorcev@ya.ru>
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/input/joystick/xpad.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/input/joystick/xpad.c b/drivers/input/joystick/xpad.c
+index ab183c278f73..5ec7684f93ed 100644
+--- a/drivers/input/joystick/xpad.c
++++ b/drivers/input/joystick/xpad.c
+@@ -423,6 +423,7 @@ static const struct xpad_device {
+ 	{ 0x3537, 0x1010, "GameSir G7 SE", 0, XTYPE_XBOXONE },
+ 	{ 0x366c, 0x0005, "ByoWave Proteus Controller", MAP_SHARE_BUTTON, XTYPE_XBOXONE, FLAG_DELAY_INIT },
+ 	{ 0x3767, 0x0101, "Fanatec Speedster 3 Forceshock Wheel", 0, XTYPE_XBOX },
++	{ 0x37d7, 0x2501, "Flydigi Apex 5", 0, XTYPE_XBOX360 },
+ 	{ 0x413d, 0x2104, "Black Shark Green Ghost Gamepad", 0, XTYPE_XBOX360 },
+ 	{ 0xffff, 0xffff, "Chinese-made Xbox Controller", 0, XTYPE_XBOX },
+ 	{ 0x0000, 0x0000, "Generic X-Box pad", 0, XTYPE_UNKNOWN }
+@@ -579,6 +580,7 @@ static const struct usb_device_id xpad_table[] = {
+ 	XPAD_XBOX360_VENDOR(0x3537),		/* GameSir Controllers */
+ 	XPAD_XBOXONE_VENDOR(0x3537),		/* GameSir Controllers */
+ 	XPAD_XBOXONE_VENDOR(0x366c),		/* ByoWave controllers */
++	XPAD_XBOX360_VENDOR(0x37d7),		/* Flydigi Controllers */
+ 	XPAD_XBOX360_VENDOR(0x413d),		/* Black Shark Green Ghost Controller */
+ 	{ }
+ };
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Fri, 5 Sep 2025 12:54:46 +0200
+Subject: disable custom brightness curve for now
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+index f4ee147ae1c4..68793d16ade2 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+@@ -4760,6 +4760,8 @@ static void convert_custom_brightness(const struct amdgpu_dm_backlight_caps *cap
+ 	u8 prev_signal = 0, prev_lum = 0;
+ 	int i = 0;
+ 
++	return;
++
+ 	if (amdgpu_dc_debug_mask & DC_DISABLE_CUSTOM_BRIGHTNESS_CURVE)
+ 		return;
+ 
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lijo Lazar <lijo.lazar@amd.com>
+Date: Fri, 18 Jul 2025 18:50:58 +0530
+Subject: drm/amdgpu: Wait for bootloader after PSPv11 reset
+
+Some PSPv11 SOCs take a longer time for PSP based mode-1 reset. Instead
+of checking for C2PMSG_33 status, add the callback wait_for_bootloader.
+Wait for bootloader to be back to steady state is already part of the
+generic mode-1 reset flow. Increase the retry count for bootloader wait
+and also fix the mask to prevent fake pass.
+
+Signed-off-by: Lijo Lazar <lijo.lazar@amd.com>
+Reviewed-by: Alex Deucher <alexander.deucher@amd.com>
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/amd/amdgpu/psp_v11_0.c | 19 ++++---------------
+ 1 file changed, 4 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/psp_v11_0.c b/drivers/gpu/drm/amd/amdgpu/psp_v11_0.c
+index 1a4a26e6ffd2..4cd37fe96c6e 100644
+--- a/drivers/gpu/drm/amd/amdgpu/psp_v11_0.c
++++ b/drivers/gpu/drm/amd/amdgpu/psp_v11_0.c
+@@ -149,13 +149,13 @@ static int psp_v11_0_wait_for_bootloader(struct psp_context *psp)
+ 	int ret;
+ 	int retry_loop;
+ 
+-	for (retry_loop = 0; retry_loop < 10; retry_loop++) {
++	for (retry_loop = 0; retry_loop < 20; retry_loop++) {
+ 		/* Wait for bootloader to signify that is
+ 		    ready having bit 31 of C2PMSG_35 set to 1 */
+ 		ret = psp_wait_for(psp,
+ 				   SOC15_REG_OFFSET(MP0, 0, mmMP0_SMN_C2PMSG_35),
+ 				   0x80000000,
+-				   0x80000000,
++				   0x8000FFFF,
+ 				   false);
+ 
+ 		if (ret == 0)
+@@ -399,18 +399,6 @@ static int psp_v11_0_mode1_reset(struct psp_context *psp)
+ 
+ 	msleep(500);
+ 
+-	offset = SOC15_REG_OFFSET(MP0, 0, mmMP0_SMN_C2PMSG_33);
+-
+-	ret = psp_wait_for(psp, offset, MBOX_TOS_RESP_FLAG, MBOX_TOS_RESP_MASK,
+-			   false);
+-
+-	if (ret) {
+-		DRM_INFO("psp mode 1 reset failed!\n");
+-		return -EINVAL;
+-	}
+-
+-	DRM_INFO("psp mode1 reset succeed \n");
+-
+ 	return 0;
+ }
+ 
+@@ -666,7 +654,8 @@ static const struct psp_funcs psp_v11_0_funcs = {
+ 	.ring_get_wptr = psp_v11_0_ring_get_wptr,
+ 	.ring_set_wptr = psp_v11_0_ring_set_wptr,
+ 	.load_usbc_pd_fw = psp_v11_0_load_usbc_pd_fw,
+-	.read_usbc_pd_fw = psp_v11_0_read_usbc_pd_fw
++	.read_usbc_pd_fw = psp_v11_0_read_usbc_pd_fw,
++	.wait_for_bootloader = psp_v11_0_wait_for_bootloader
+ };
+ 
+ void psp_v11_0_set_psp_funcs(struct psp_context *psp)
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 10 Sep 2025 17:43:17 +0200
+Subject: drm: panel-orientation-quirks: add SuiPlay0X1
+
+Very similar to the AYANEO 2S, the Mysten SuiPlay0X1 is a handheld
+gaming device with a 1200x1920 display that is mounted in a
+right-side-up orientation. Add a quirk for it.
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/drm_panel_orientation_quirks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/drm_panel_orientation_quirks.c b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+index 81e23fb3cb8c..3fa1aa50af02 100644
+--- a/drivers/gpu/drm/drm_panel_orientation_quirks.c
++++ b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+@@ -502,6 +502,12 @@ static const struct dmi_system_id orientation_data[] = {
+ 		 DMI_MATCH(DMI_PRODUCT_VERSION, "Blade3-10A-001"),
+ 		},
+ 		.driver_data = (void *)&lcd1600x2560_rightside_up,
++	}, {	/* Mysten SuiPlay0X1 */
++		.matches = {
++		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "Mysten Labs, Inc."),
++		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "SuiPlay0X1"),
++		},
++		.driver_data = (void *)&lcd1200x1920_rightside_up,
+ 	}, {	/* Nanote UMPC-01 */
+ 		.matches = {
+ 		 DMI_MATCH(DMI_SYS_VENDOR, "RWC CO.,LTD"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 10 Sep 2025 17:45:42 +0200
+Subject: add suiplay
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/ayaneo-ec.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/platform/x86/ayaneo-ec.c b/drivers/platform/x86/ayaneo-ec.c
+index dd62f1f38132..52a129b74d58 100644
+--- a/drivers/platform/x86/ayaneo-ec.c
++++ b/drivers/platform/x86/ayaneo-ec.c
+@@ -163,6 +163,13 @@ static const struct dmi_system_id dmi_table[] = {
+ 		},
+ 		.driver_data = (void *)&ayaneo3,
+ 	},
++	{
++		.matches = {
++			DMI_EXACT_MATCH(DMI_SYS_VENDOR, "Mysten Labs, Inc."),
++			DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "SuiPlay0X1"),
++		},
++		.driver_data = (void *)&quirk_fan,
++	},
+ 	{},
+ };
+ 
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Thu, 18 Sep 2025 21:10:04 +0200
+Subject: platform/x86: oxpec: Add support for OneXPlayer X1z
+
+This is a variant of OneXPlayer X1 A with 8840U. It seems that only one
+user has this one.
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/oxpec.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/platform/x86/oxpec.c b/drivers/platform/x86/oxpec.c
+index 4dfb3189b6e4..c5926602b819 100644
+--- a/drivers/platform/x86/oxpec.c
++++ b/drivers/platform/x86/oxpec.c
+@@ -212,6 +212,13 @@ static const struct dmi_system_id dmi_table[] = {
+ 		},
+ 		.driver_data = (void *)oxp_mini_amd_pro,
+ 	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
++			DMI_EXACT_MATCH(DMI_BOARD_NAME, "ONEXPLAYER X1z"),
++		},
++		.driver_data = (void *)oxp_x1,
++	},
+ 	{
+ 		.matches = {
+ 			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Thu, 18 Sep 2025 21:12:24 +0200
+Subject: add orientation for x1z
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/drm_panel_orientation_quirks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/drm_panel_orientation_quirks.c b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+index 3fa1aa50af02..ed777b2a693b 100644
+--- a/drivers/gpu/drm/drm_panel_orientation_quirks.c
++++ b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+@@ -539,6 +539,12 @@ static const struct dmi_system_id orientation_data[] = {
+ 		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "ONEXPLAYER X1 A"),
+ 		},
+ 		.driver_data = (void *)&lcd1600x2560_leftside_up,
++	}, {	/* OneXPlayer X1 AMD second variant */
++		.matches = {
++		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
++		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "ONEXPLAYER X1z"),
++		},
++		.driver_data = (void *)&lcd1600x2560_leftside_up,
+ 	}, {	/* OneXPlayer X1 AMD Strix Point */
+ 		.matches = {
+ 		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 21 Sep 2025 15:47:29 +0200
+Subject: tmp: add MSI Center button event to msi-wmi
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/msi-wmi.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/platform/x86/msi-wmi.c b/drivers/platform/x86/msi-wmi.c
+index 4a7ac85c4db4..20de3173ecca 100644
+--- a/drivers/platform/x86/msi-wmi.c
++++ b/drivers/platform/x86/msi-wmi.c
+@@ -41,6 +41,7 @@ enum msi_scancodes {
+ 	MSI_KEY_MUTE,
+ 	/* MSI Wind keys */
+ 	WIND_KEY_TOUCHPAD	= 0x08,	/* Fn+F3 touchpad toggle */
++	WIND_KEY_MSI_CENTER	= 0x29,
+ 	WIND_KEY_BLUETOOTH	= 0x56,	/* Fn+F11 Bluetooth toggle */
+ 	WIND_KEY_CAMERA,		/* Fn+F6 webcam toggle */
+ 	WIND_KEY_WLAN		= 0x5f,	/* Fn+F11 Wi-Fi toggle */
+@@ -68,6 +69,7 @@ static struct key_entry msi_wmi_keymap[] = {
+ 	/* These are MSI Wind keys that should be handled via WMI */
+ 	{ KE_KEY, WIND_KEY_TURBO,		{KEY_PROG1} },
+ 	{ KE_KEY, WIND_KEY_ECO,			{KEY_PROG2} },
++	{ KE_KEY, WIND_KEY_MSI_CENTER,		{KEY_F15}},
+ 
+ 	{ KE_END, 0 }
+ };
+@@ -173,14 +175,24 @@ static const struct backlight_ops msi_backlight_ops = {
+ static void msi_wmi_notify(union acpi_object *obj, void *context)
+ {
+ 	struct key_entry *key;
++	int eventcode;
++
++	if (obj) {
++		if (obj->type == ACPI_TYPE_INTEGER)
++			eventcode = obj->integer.value;
++		else if (obj->type == ACPI_TYPE_BUFFER && obj->buffer.length)
++			eventcode = obj->buffer.pointer[0];
++		else {
++			pr_info("Unknown event received\n");
++			return;
++		}
+ 
+-	if (obj && obj->type == ACPI_TYPE_INTEGER) {
+-		int eventcode = obj->integer.value;
+ 		pr_debug("Eventcode: 0x%x\n", eventcode);
+ 		key = sparse_keymap_entry_from_scancode(msi_wmi_input_dev,
+ 				eventcode);
+ 		if (!key) {
+-			pr_info("Unknown key pressed - %x\n", eventcode);
++			pr_info("Unknown key pressed - %x (ACPI type: %d)\n",
++				eventcode, obj->type);
+ 			return;
+ 		}
+ 
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 21 Sep 2025 19:41:37 +0200
+Subject: oxpec: add a2 pro
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/oxpec.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/platform/x86/oxpec.c b/drivers/platform/x86/oxpec.c
+index c5926602b819..93728205796a 100644
+--- a/drivers/platform/x86/oxpec.c
++++ b/drivers/platform/x86/oxpec.c
+@@ -114,6 +114,13 @@ static const struct dmi_system_id dmi_table[] = {
+ 		},
+ 		.driver_data = (void *)aok_zoe_a1,
+ 	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "AOKZOE"),
++			DMI_EXACT_MATCH(DMI_BOARD_NAME, "AOKZOE A2 Pro"),
++		},
++		.driver_data = (void *)aok_zoe_a1,
++	},
+ 	{
+ 		.matches = {
+ 			DMI_MATCH(DMI_BOARD_VENDOR, "AOKZOE"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 21 Sep 2025 19:41:46 +0200
+Subject: panel quirks: add a2 pro
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/drm_panel_orientation_quirks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/drm_panel_orientation_quirks.c b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+index ed777b2a693b..236d9e4e6008 100644
+--- a/drivers/gpu/drm/drm_panel_orientation_quirks.c
++++ b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+@@ -184,6 +184,12 @@ static const struct dmi_system_id orientation_data[] = {
+ 		 DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "AOKZOE A1 Pro"),
+ 		},
+ 		.driver_data = (void *)&lcd1200x1920_leftside_up,
++	}, {	/* AOKZOE A2 Pro */
++		.matches = {
++		 DMI_EXACT_MATCH(DMI_SYS_VENDOR, "AOKZOE"),
++		 DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "AOKZOE A2 Pro"),
++		},
++		.driver_data = (void *)&lcd1200x1920_leftside_up,
+ 	}, {	/* Asus T100HA */
+ 		.matches = {
+ 		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 28 Sep 2025 17:05:22 +0200
+Subject: lower sleep interval to avoid waking up too long
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/amd/pmc/pmc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/platform/x86/amd/pmc/pmc.c b/drivers/platform/x86/amd/pmc/pmc.c
+index 0b9b23eb7c2c..c34054ab6f62 100644
+--- a/drivers/platform/x86/amd/pmc/pmc.c
++++ b/drivers/platform/x86/amd/pmc/pmc.c
+@@ -648,7 +648,7 @@ static void amd_pmc_s2idle_check(void)
+ 
+ 	/* Avoid triggering OVP */
+ 	if (!get_metrics_table(pdev, &table) && table.s0i3_last_entry_status)
+-		msleep(2500);
++		msleep(500);
+ 
+ 	/* Dump the IdleMask before we add to the STB */
+ 	amd_pmc_idlemask_read(pdev, pdev->dev, NULL);
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 28 Sep 2025 21:37:07 +0200
+Subject: drm/amdgpu: enable override by default for APUs
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_device.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+index 9f3a90280bfc..064974dc0091 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
+@@ -2766,6 +2766,9 @@ static int amdgpu_device_ip_early_init(struct amdgpu_device *adev)
+ 	}
+ 
+ 	adev->pm.pp_feature = amdgpu_pp_feature_mask;
++
++	if (adev->flags & AMD_IS_APU)
++		adev->pm.pp_feature |= PP_OVERDRIVE_MASK;
+ 	if (amdgpu_sriov_vf(adev) || sched_policy == KFD_SCHED_POLICY_NO_HWS)
+ 		adev->pm.pp_feature &= ~PP_GFXOFF_MASK;
+ 	if (amdgpu_sriov_vf(adev) && adev->asic_type == CHIP_SIENNA_CICHLID)
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 28 Sep 2025 22:23:11 +0200
+Subject: drm/amdgpu: defer overdrive taint until used
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c                 | 1 -
+ drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu10_hwmgr.c    | 6 ++++++
+ drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu7_hwmgr.c     | 6 ++++++
+ drivers/gpu/drm/amd/pm/powerplay/hwmgr/vega10_hwmgr.c   | 6 ++++++
+ drivers/gpu/drm/amd/pm/powerplay/inc/hwmgr.h            | 1 +
+ drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h           | 1 +
+ drivers/gpu/drm/amd/pm/swsmu/smu11/navi10_ppt.c         | 7 +++++++
+ drivers/gpu/drm/amd/pm/swsmu/smu11/sienna_cichlid_ppt.c | 7 +++++++
+ drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_0_ppt.c    | 7 +++++++
+ drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_7_ppt.c    | 7 +++++++
+ drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_2_ppt.c    | 7 +++++++
+ 11 files changed, 55 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
+index aa4bde9cc084..0b7a522b019e 100644
+--- a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
++++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
+@@ -3123,7 +3123,6 @@ static int __init amdgpu_init(void)
+ 	amdgpu_amdkfd_init();
+ 
+ 	if (amdgpu_pp_feature_mask & PP_OVERDRIVE_MASK) {
+-		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
+ 		pr_err("Overdrive is enabled, please disable it before "
+ 			"reporting any bugs unrelated to overdrive.\n");
+ 	}
+diff --git a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu10_hwmgr.c b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu10_hwmgr.c
+index 9a821563bc8e..e7ef9e5aff39 100644
+--- a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu10_hwmgr.c
++++ b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu10_hwmgr.c
+@@ -1551,6 +1551,12 @@ static int smu10_set_fine_grain_clk_vol(struct pp_hwmgr *hwmgr,
+ 		return -EINVAL;
+ 	}
+ 
++	if (!hwmgr->od_tainted) {
++		pr_err("OverDrive setting changed. Tainting kernel.\n");
++		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++		hwmgr->od_tainted = true;
++	}
++
+ 	if (type == PP_OD_EDIT_SCLK_VDDC_TABLE) {
+ 		if (size != 2) {
+ 			pr_err("Input parameter number not correct\n");
+diff --git a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu7_hwmgr.c b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu7_hwmgr.c
+index 8da882c51856..50aea23f49c1 100644
+--- a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu7_hwmgr.c
++++ b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/smu7_hwmgr.c
+@@ -5510,6 +5510,12 @@ static int smu7_odn_edit_dpm_table(struct pp_hwmgr *hwmgr,
+ 		return -EINVAL;
+ 	}
+ 
++	if (!hwmgr->od_tainted) {
++		pr_err("OverDrive setting changed. Tainting kernel.\n");
++		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++		hwmgr->od_tainted = true;
++	}
++
+ 	if (PP_OD_EDIT_SCLK_VDDC_TABLE == type) {
+ 		podn_dpm_table_in_backend = &data->odn_dpm_table.odn_core_clock_dpm_levels;
+ 		podn_vdd_dep_in_backend = &data->odn_dpm_table.vdd_dependency_on_sclk;
+diff --git a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/vega10_hwmgr.c b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/vega10_hwmgr.c
+index 9ace863792d4..b38e49125332 100644
+--- a/drivers/gpu/drm/amd/pm/powerplay/hwmgr/vega10_hwmgr.c
++++ b/drivers/gpu/drm/amd/pm/powerplay/hwmgr/vega10_hwmgr.c
+@@ -5609,6 +5609,12 @@ static int vega10_odn_edit_dpm_table(struct pp_hwmgr *hwmgr,
+ 		return -EINVAL;
+ 	}
+ 
++	if (!hwmgr->od_tainted) {
++		pr_err("OverDrive setting changed. Tainting kernel.\n");
++		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++		hwmgr->od_tainted = true;
++	}
++
+ 	if (PP_OD_EDIT_SCLK_VDDC_TABLE == type) {
+ 		dpm_table = &data->dpm_table.gfx_table;
+ 		podn_vdd_dep_table = &data->odn_dpm_table.vdd_dep_on_sclk;
+diff --git a/drivers/gpu/drm/amd/pm/powerplay/inc/hwmgr.h b/drivers/gpu/drm/amd/pm/powerplay/inc/hwmgr.h
+index c661185753b4..a6d129582d83 100644
+--- a/drivers/gpu/drm/amd/pm/powerplay/inc/hwmgr.h
++++ b/drivers/gpu/drm/amd/pm/powerplay/inc/hwmgr.h
+@@ -800,6 +800,7 @@ struct pp_hwmgr {
+ 	uint32_t pstate_sclk;
+ 	uint32_t pstate_mclk;
+ 	bool od_enabled;
++	bool od_tainted;
+ 	uint32_t power_limit;
+ 	uint32_t default_power_limit;
+ 	uint32_t workload_mask;
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h b/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
+index 9aacc7bc1c69..8a84f47722aa 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
++++ b/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
+@@ -539,6 +539,7 @@ struct smu_context {
+ 	uint32_t pstate_mclk;
+ 
+ 	bool od_enabled;
++	bool od_tainted;
+ 	uint32_t current_power_limit;
+ 	uint32_t default_power_limit;
+ 	uint32_t max_power_limit;
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu11/navi10_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu11/navi10_ppt.c
+index 7fad5dfb39c4..7f036309f435 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu11/navi10_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu11/navi10_ppt.c
+@@ -2643,6 +2643,13 @@ static int navi10_od_edit_dpm_table(struct smu_context *smu, enum PP_OD_DPM_TABL
+ 		return -ENOENT;
+ 	}
+ 
++	if (!smu->od_tainted) {
++		dev_err(smu->adev->dev,
++			"OverDrive setting changed. Tainting kernel.\n");
++		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++		smu->od_tainted = true;
++	}
++
+ 	od_settings = smu->od_settings;
+ 
+ 	switch (type) {
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu11/sienna_cichlid_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu11/sienna_cichlid_ppt.c
+index 115e3fa456bc..33026dc23b35 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu11/sienna_cichlid_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu11/sienna_cichlid_ppt.c
+@@ -2297,6 +2297,13 @@ static int sienna_cichlid_od_edit_dpm_table(struct smu_context *smu,
+ 		return -EINVAL;
+ 	}
+ 
++	if (!smu->od_tainted) {
++		dev_err(smu->adev->dev,
++			"OverDrive setting changed. Tainting kernel.\n");
++		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++		smu->od_tainted = true;
++	}
++
+ 	switch (type) {
+ 	case PP_OD_EDIT_SCLK_VDDC_TABLE:
+ 		if (!sienna_cichlid_is_od_feature_supported(od_settings,
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_0_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_0_ppt.c
+index 5a9711e8cf68..5d4c158d3b40 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_0_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_0_ppt.c
+@@ -3129,6 +3129,13 @@ static int smu_v13_0_0_set_power_limit(struct smu_context *smu,
+ 		}
+ 		return smu_v13_0_set_power_limit(smu, limit_type, limit);
+ 	} else if (smu->od_enabled) {
++		if (!smu->od_tainted) {
++			dev_err(smu->adev->dev,
++				"OverDrive setting changed. Tainting kernel.\n");
++			add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++			smu->od_tainted = true;
++		}
++
+ 		ret = smu_v13_0_set_power_limit(smu, limit_type, msg_limit);
+ 		if (ret)
+ 			return ret;
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_7_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_7_ppt.c
+index c8f4f6fb4083..b09e289b78c1 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_7_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu13/smu_v13_0_7_ppt.c
+@@ -2718,6 +2718,13 @@ static int smu_v13_0_7_set_power_limit(struct smu_context *smu,
+ 		}
+ 		return smu_v13_0_set_power_limit(smu, limit_type, limit);
+ 	} else if (smu->od_enabled) {
++		if (!smu->od_tainted) {
++			dev_err(smu->adev->dev,
++				"OverDrive setting changed. Tainting kernel.\n");
++			add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++			smu->od_tainted = true;
++		}
++
+ 		ret = smu_v13_0_set_power_limit(smu, limit_type, msg_limit);
+ 		if (ret)
+ 			return ret;
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_2_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_2_ppt.c
+index 7c8d19cfa324..9bda9cf2b656 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_2_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_2_ppt.c
+@@ -2832,6 +2832,13 @@ static int smu_v14_0_2_set_power_limit(struct smu_context *smu,
+ 		}
+ 		return smu_v14_0_set_power_limit(smu, limit_type, limit);
+ 	} else if (smu->od_enabled) {
++		if (!smu->od_tainted) {
++			dev_err(smu->adev->dev,
++				"OverDrive setting changed. Tainting kernel.\n");
++			add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
++			smu->od_tainted = true;
++		}
++
+ 		ret = smu_v14_0_set_power_limit(smu, limit_type, msg_limit);
+ 		if (ret)
+ 			return ret;
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Tue, 7 Oct 2025 22:11:29 +0200
+Subject: platform/x86/amd: pmc: Add Lenovo Legion Go 2 to pmc quirk list
+
+The Lenovo Legion Go 2 takes a long time to resume from suspend.
+Adding it to the pmc quirk list fixes this issue.
+
+Closes: https://gitlab.freedesktop.org/drm/amd/-/issues/4618
+Suggested-by: Mario Limonciello <mario.limonciello@amd.com>
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/amd/pmc/pmc-quirks.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/drivers/platform/x86/amd/pmc/pmc-quirks.c b/drivers/platform/x86/amd/pmc/pmc-quirks.c
+index ded4c84f5ed1..1be4355904eb 100644
+--- a/drivers/platform/x86/amd/pmc/pmc-quirks.c
++++ b/drivers/platform/x86/amd/pmc/pmc-quirks.c
+@@ -199,6 +199,22 @@ static const struct dmi_system_id fwbug_list[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "82ND"),
+ 		}
+ 	},
++	{
++		.ident = "Lenovo Legion Go 2",
++		.driver_data = &quirk_s2idle_bug,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "83N0"),
++		}
++	},
++	{
++		.ident = "Lenovo Legion Go 2",
++		.driver_data = &quirk_s2idle_bug,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "83N1"),
++		}
++	},
+ 	/* https://gitlab.freedesktop.org/drm/amd/-/issues/2684 */
+ 	{
+ 		.ident = "HP Laptop 15s-eq2xxx",
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Tue, 7 Oct 2025 22:06:32 +0200
+Subject: oxpec: add x1 air
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/oxpec.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/platform/x86/oxpec.c b/drivers/platform/x86/oxpec.c
+index 93728205796a..e6e0ab3b632a 100644
+--- a/drivers/platform/x86/oxpec.c
++++ b/drivers/platform/x86/oxpec.c
+@@ -240,6 +240,13 @@ static const struct dmi_system_id dmi_table[] = {
+ 		},
+ 		.driver_data = (void *)oxp_x1,
+ 	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
++			DMI_EXACT_MATCH(DMI_BOARD_NAME, "ONEXPLAYER X1Air"),
++		},
++		.driver_data = (void *)oxp_x1,
++	},
+ 	{
+ 		.matches = {
+ 			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Tue, 7 Oct 2025 22:07:28 +0200
+Subject: orientation: add x1 air
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/gpu/drm/drm_panel_orientation_quirks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/drm_panel_orientation_quirks.c b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+index 236d9e4e6008..e31cc1a2ed70 100644
+--- a/drivers/gpu/drm/drm_panel_orientation_quirks.c
++++ b/drivers/gpu/drm/drm_panel_orientation_quirks.c
+@@ -569,6 +569,12 @@ static const struct dmi_system_id orientation_data[] = {
+ 		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "ONEXPLAYER X1 i"),
+ 		},
+ 		.driver_data = (void *)&lcd1600x2560_leftside_up,
++	}, {	/* OneXPlayer X1 Intel */
++		.matches = {
++		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
++		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "ONEXPLAYER X1Air"),
++		},
++		.driver_data = (void *)&lcd1600x2560_leftside_up,
+ 	}, {	/* OneXPlayer X1 mini (AMD) */
+ 		.matches = {
+ 		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 15 Oct 2025 22:28:37 +0200
+Subject: add new ally units
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/acpi/x86/s2idle.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/acpi/x86/s2idle.c b/drivers/acpi/x86/s2idle.c
+index 86adad4a7f25..dd2a8845f23c 100644
+--- a/drivers/acpi/x86/s2idle.c
++++ b/drivers/acpi/x86/s2idle.c
+@@ -137,6 +137,18 @@ static const struct dmi_system_id s2idle_delay_quirks[] = {
+ 		},
+ 		.driver_data = (void *)&rog_ally_quirks
+ 	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_BOARD_NAME, "RC73Y"), // non-x (YA)
++		},
++		.driver_data = (void *)&rog_ally_quirks
++	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_BOARD_NAME, "RC73X"), // x (XA)
++		},
++		.driver_data = (void *)&rog_ally_quirks
++	},
+ 	/* Legion Go S */
+ 	{
+ 		.matches = {
+-- 
+2.51.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 15 Oct 2025 22:31:32 +0200
+Subject: add legion go 2 mics
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ sound/soc/amd/yc/acp6x-mach.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/sound/soc/amd/yc/acp6x-mach.c b/sound/soc/amd/yc/acp6x-mach.c
+index f210a253da9f..924d081437da 100644
+--- a/sound/soc/amd/yc/acp6x-mach.c
++++ b/sound/soc/amd/yc/acp6x-mach.c
+@@ -346,6 +346,20 @@ static const struct dmi_system_id yc_acp_quirk_table[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "83Q2"),
+ 		}
+ 	},
++	{
++		.driver_data = &acp6x_card,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "83N0"),
++		}
++	},
++	{
++		.driver_data = &acp6x_card,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "83N1"),
++		}
++	},
+ 	{
+ 		.driver_data = &acp6x_card,
+ 		.matches = {
 -- 
 2.51.0
 
