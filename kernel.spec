@@ -2021,6 +2021,7 @@ ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
 ApplyOptionalPatch bazzite-handheld.patch
+ApplyOptionalPatch bazzite-akmods.patch
 #ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
@@ -2039,7 +2040,7 @@ ApplyOptionalPatch clear-0114-add-boot-option-to-allow-unsigned-modules.patch
 ApplyOptionalPatch clear-0115-enable-stateless-firmware-loading.patch
 ApplyOptionalPatch clear-0116-migrate-some-systemd-defaults-to-the-kernel-defaults.patch
 ApplyOptionalPatch clear-0117-xattr-allow-setting-user.-attributes-on-symlinks-by-.patch
-ApplyOptionalPatch clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
+#ApplyOptionalPatch clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
 ApplyOptionalPatch clear-0121-locking-rwsem-spin-faster.patch
 ApplyOptionalPatch clear-0122-ata-libahci-ignore-staggered-spin-up.patch
 ApplyOptionalPatch clear-0123-print-CPU-that-faults.patch

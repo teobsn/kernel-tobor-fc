@@ -1,6 +1,6 @@
-From f09c200bcc4510ccc6d0894eea5d5a988afe2b8a Mon Sep 17 00:00:00 2001
+From 1c6d110573cbb6d69c85bc353d23b6c4dba5e14c Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
-Date: Fri, 5 Sep 2025 16:46:52 +0200
+Date: Sat, 25 Oct 2025 09:18:31 +0200
 Subject: [PATCH 6/6] t2
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
@@ -11,21 +11,19 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/gpu/drm/i915/display/intel_quirks.c   |   15 +
  drivers/gpu/drm/i915/display/intel_quirks.h   |    1 +
  drivers/gpu/vga/vga_switcheroo.c              |    7 +-
- drivers/hid/Kconfig                           |   11 +-
+ drivers/hid/Kconfig                           |   10 +-
  drivers/hid/Makefile                          |    4 +
  drivers/hid/dockchannel-hid/Kconfig           |   14 +
  drivers/hid/dockchannel-hid/Makefile          |    6 +
  drivers/hid/dockchannel-hid/dockchannel-hid.c | 1213 +++++++++++++++++
- drivers/hid/hid-apple.c                       |   62 +-
+ drivers/hid/hid-apple.c                       |   45 +-
  drivers/hid/hid-core.c                        |   11 +-
- drivers/hid/hid-ids.h                         |   25 +-
- drivers/hid/hid-magicmouse.c                  |  924 +++++++++++--
- drivers/hid/hid-multitouch.c                  |   62 +-
- drivers/hid/hid-quirks.c                      |    9 +-
+ drivers/hid/hid-ids.h                         |   10 +
+ drivers/hid/hid-magicmouse.c                  |  765 ++++++++++-
  drivers/hid/spi-hid/Kconfig                   |   26 +
  drivers/hid/spi-hid/Makefile                  |   10 +
  drivers/hid/spi-hid/spi-hid-apple-core.c      | 1194 ++++++++++++++++
- drivers/hid/spi-hid/spi-hid-apple-of.c        |  151 ++
+ drivers/hid/spi-hid/spi-hid-apple-of.c        |  153 +++
  drivers/hid/spi-hid/spi-hid-apple.h           |   35 +
  drivers/hwmon/applesmc.c                      | 1138 ++++++++++++----
  drivers/pci/vgaarb.c                          |    1 +
@@ -64,7 +62,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/staging/apple-bce/vhci/vhci.h         |   52 +
  include/linux/hid.h                           |    6 +-
  include/linux/soc/apple/dockchannel.h         |   26 +
- 59 files changed, 10795 insertions(+), 458 deletions(-)
+ 57 files changed, 10645 insertions(+), 347 deletions(-)
  create mode 100644 drivers/hid/dockchannel-hid/Kconfig
  create mode 100644 drivers/hid/dockchannel-hid/Makefile
  create mode 100644 drivers/hid/dockchannel-hid/dockchannel-hid.c
@@ -104,10 +102,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  create mode 100644 include/linux/soc/apple/dockchannel.h
 
 diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
-index a5db963da610..90d83b721ed3 100644
+index 72ca35acd44a..fa6988ff3eb8 100644
 --- a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
 +++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
-@@ -2315,6 +2315,9 @@ static int amdgpu_pci_probe(struct pci_dev *pdev,
+@@ -2321,6 +2321,9 @@ static int amdgpu_pci_probe(struct pci_dev *pdev,
  	int ret, retry = 0, i;
  	bool supports_atomic = false;
  
@@ -118,10 +116,10 @@ index a5db963da610..90d83b721ed3 100644
  	    (pdev->class >> 8) == PCI_CLASS_DISPLAY_OTHER) {
  		if (drm_firmware_drivers_only() && amdgpu_modeset == -1)
 diff --git a/drivers/gpu/drm/i915/display/intel_ddi.c b/drivers/gpu/drm/i915/display/intel_ddi.c
-index d58f8fc37326..38df2d26baf2 100644
+index 9ecbb4b99c37..872356315e9e 100644
 --- a/drivers/gpu/drm/i915/display/intel_ddi.c
 +++ b/drivers/gpu/drm/i915/display/intel_ddi.c
-@@ -4832,6 +4832,9 @@ static bool intel_ddi_a_force_4_lanes(struct intel_digital_port *dig_port)
+@@ -4866,6 +4866,9 @@ static bool intel_ddi_a_force_4_lanes(struct intel_digital_port *dig_port)
  	if (dig_port->ddi_a_4_lanes)
  		return false;
  
@@ -132,7 +130,7 @@ index d58f8fc37326..38df2d26baf2 100644
  	 *                     supported configuration
  	 */
 diff --git a/drivers/gpu/drm/i915/display/intel_fbdev.c b/drivers/gpu/drm/i915/display/intel_fbdev.c
-index 2dc4029d71ed..eaa82801ef01 100644
+index 7c4709d58aa3..a2444dff75fe 100644
 --- a/drivers/gpu/drm/i915/display/intel_fbdev.c
 +++ b/drivers/gpu/drm/i915/display/intel_fbdev.c
 @@ -224,10 +224,10 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
@@ -195,13 +193,13 @@ index cafdebda7535..a5296f82776e 100644
  
  void intel_init_quirks(struct intel_display *display);
 diff --git a/drivers/gpu/vga/vga_switcheroo.c b/drivers/gpu/vga/vga_switcheroo.c
-index 18f2c92beff8..3de1bca45ed2 100644
+index 68e45a26e85f..7580172daade 100644
 --- a/drivers/gpu/vga/vga_switcheroo.c
 +++ b/drivers/gpu/vga/vga_switcheroo.c
 @@ -438,12 +438,7 @@ find_active_client(struct list_head *head)
  bool vga_switcheroo_client_probe_defer(struct pci_dev *pdev)
  {
- 	if ((pdev->class >> 16) == PCI_BASE_CLASS_DISPLAY) {
+ 	if (pci_is_display(pdev)) {
 -		/*
 -		 * apple-gmux is needed on pre-retina MacBook Pro
 -		 * to probe the panel if pdev is the inactive GPU.
@@ -213,7 +211,7 @@ index 18f2c92beff8..3de1bca45ed2 100644
  	}
  
 diff --git a/drivers/hid/Kconfig b/drivers/hid/Kconfig
-index 2524e55a1096..e2fb06ecea1f 100644
+index 7f9f2d7b82d2..7e6c7591bd6f 100644
 --- a/drivers/hid/Kconfig
 +++ b/drivers/hid/Kconfig
 @@ -129,7 +129,7 @@ config HID_APPLE
@@ -225,7 +223,7 @@ index 2524e55a1096..e2fb06ecea1f 100644
  	help
  	Support for some Apple devices which less or more break
  	HID specification.
-@@ -726,11 +726,13 @@ config LOGIWHEELS_FF
+@@ -724,11 +724,13 @@ config LOGIWHEELS_FF
  
  config HID_MAGICMOUSE
  	tristate "Apple Magic Mouse/Trackpad multi-touch support"
@@ -240,15 +238,7 @@ index 2524e55a1096..e2fb06ecea1f 100644
  
  config HID_MALTRON
  	tristate "Maltron L90 keyboard"
-@@ -780,6 +782,7 @@ config HID_MULTITOUCH
- 	  Say Y here if you have one of the following devices:
- 	  - 3M PCT touch screens
- 	  - ActionStar dual touch panels
-+	  - Apple Touch Bar on x86 MacBook Pros
- 	  - Atmel panels
- 	  - Cando dual touch panels
- 	  - Chunghwa panels
-@@ -1444,4 +1447,8 @@ endif # HID
+@@ -1443,4 +1445,8 @@ endif # HID
  
  source "drivers/hid/usbhid/Kconfig"
  
@@ -1521,35 +1511,36 @@ index 000000000000..a712a724ded3
 +MODULE_AUTHOR("Hector Martin <marcan@marcan.st>");
 +MODULE_LICENSE("Dual MIT/GPL");
 diff --git a/drivers/hid/hid-apple.c b/drivers/hid/hid-apple.c
-index 3bed3f0c90c2..21ff5d1da011 100644
+index 61404d7a43ee..cdc008c6696c 100644
 --- a/drivers/hid/hid-apple.c
 +++ b/drivers/hid/hid-apple.c
-@@ -486,6 +486,7 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
- 			table = apple2021_fn_keys;
- 		else if (hid->product == USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132 ||
- 			 hid->product == USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680 ||
-+			 hid->product == USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT ||
- 			 hid->product == USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213)
- 				table = macbookpro_no_esc_fn_keys;
- 		else if (hid->product == USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K ||
-@@ -498,6 +499,16 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
- 		else if (hid->product >= USB_DEVICE_ID_APPLE_WELLSPRING4_ANSI &&
- 				hid->product <= USB_DEVICE_ID_APPLE_WELLSPRING4A_JIS)
- 			table = macbookair_fn_keys;
-+		else if (hid->bus == BUS_HOST || hid->bus == BUS_SPI)
-+			switch (hid->product) {
-+			case SPI_DEVICE_ID_APPLE_MACBOOK_PRO13_2020:
-+			case HOST_DEVICE_ID_APPLE_MACBOOK_PRO13_2022:
-+				table = macbookpro_dedicated_esc_fn_keys;
-+				break;
-+			default:
-+				table = apple2021_fn_keys;
-+				break;
-+			}
- 		else if (hid->product < 0x21d || hid->product >= 0x300)
- 			table = powerbook_fn_keys;
- 		else
-@@ -911,6 +922,13 @@ static int apple_probe(struct hid_device *hdev,
+@@ -30,7 +30,7 @@
+ #include "hid-ids.h"
+ 
+ #define APPLE_RDESC_JIS		BIT(0)
+-/* BIT(1) reserved, was: APPLE_IGNORE_MOUSE */
++#define APPLE_IGNORE_MOUSE	BIT(1)
+ #define APPLE_HAS_FN		BIT(2)
+ /* BIT(3) reserved, was: APPLE_HIDDEV */
+ #define APPLE_ISO_TILDE_QUIRK	BIT(4)
+@@ -517,6 +517,16 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
+ 				table = macbookair_fn_keys;
+ 			else if (hid->product < 0x21d || hid->product >= 0x300)
+ 				table = powerbook_fn_keys;
++			else if (hid->bus == BUS_HOST || hid->bus == BUS_SPI)
++				switch (hid->product) {
++				case SPI_DEVICE_ID_APPLE_MACBOOK_PRO13_2020:
++				case HOST_DEVICE_ID_APPLE_MACBOOK_PRO13_2022:
++					table = macbookpro_dedicated_esc_fn_keys;
++					break;
++				default:
++					table = magic_keyboard_2021_and_2024_fn_keys;
++					break;
++				}
+ 			else
+ 				table = apple_fn_keys;
+ 		}
+@@ -937,6 +947,13 @@ static int apple_probe(struct hid_device *hdev,
  	struct apple_sc *asc;
  	int ret;
  
@@ -1563,45 +1554,7 @@ index 3bed3f0c90c2..21ff5d1da011 100644
  	asc = devm_kzalloc(&hdev->dev, sizeof(*asc), GFP_KERNEL);
  	if (asc == NULL) {
  		hid_err(hdev, "can't alloc apple descriptor\n");
-@@ -934,12 +952,10 @@ static int apple_probe(struct hid_device *hdev,
- 		return ret;
- 	}
- 
--	if (quirks & APPLE_RDESC_BATTERY) {
--		timer_setup(&asc->battery_timer, apple_battery_timer_tick, 0);
--		mod_timer(&asc->battery_timer,
--			  jiffies + msecs_to_jiffies(APPLE_BATTERY_TIMEOUT_MS));
--		apple_fetch_battery(hdev);
--	}
-+	timer_setup(&asc->battery_timer, apple_battery_timer_tick, 0);
-+	mod_timer(&asc->battery_timer,
-+		  jiffies + msecs_to_jiffies(APPLE_BATTERY_TIMEOUT_MS));
-+	apple_fetch_battery(hdev);
- 
- 	if (quirks & APPLE_BACKLIGHT_CTL)
- 		apple_backlight_init(hdev);
-@@ -953,9 +969,7 @@ static int apple_probe(struct hid_device *hdev,
- 	return 0;
- 
- out_err:
--	if (quirks & APPLE_RDESC_BATTERY)
--		timer_delete_sync(&asc->battery_timer);
--
-+	timer_delete_sync(&asc->battery_timer);
- 	hid_hw_stop(hdev);
- 	return ret;
- }
-@@ -964,8 +978,7 @@ static void apple_remove(struct hid_device *hdev)
- {
- 	struct apple_sc *asc = hid_get_drvdata(hdev);
- 
--	if (asc->quirks & APPLE_RDESC_BATTERY)
--		timer_delete_sync(&asc->battery_timer);
-+	timer_delete_sync(&asc->battery_timer);
- 
- 	hid_hw_stop(hdev);
- }
-@@ -1133,21 +1146,28 @@ static const struct hid_device_id apple_devices[] = {
+@@ -1159,27 +1176,31 @@ static const struct hid_device_id apple_devices[] = {
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING9_JIS),
  		.driver_data = APPLE_HAS_FN | APPLE_RDESC_JIS },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K),
@@ -1609,38 +1562,42 @@ index 3bed3f0c90c2..21ff5d1da011 100644
 +		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
 +				APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132),
--		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
-+				APPLE_IGNORE_MOUSE },
+ 		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
+-			APPLE_DISABLE_FKEYS },
++			APPLE_DISABLE_FKEYS | APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680),
--		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
-+				APPLE_IGNORE_MOUSE },
-+	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT),
-+		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
-+				APPLE_IGNORE_MOUSE },
+ 		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
+-			APPLE_DISABLE_FKEYS },
++			APPLE_DISABLE_FKEYS | APPLE_IGNORE_MOUSE },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT),
+ 		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
+-			APPLE_DISABLE_FKEYS },
++			APPLE_DISABLE_FKEYS | APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213),
--		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
-+				APPLE_IGNORE_MOUSE },
+ 		.driver_data = APPLE_HAS_FN | APPLE_BACKLIGHT_CTL | APPLE_ISO_TILDE_QUIRK |
+-			APPLE_DISABLE_FKEYS },
++			APPLE_DISABLE_FKEYS | APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K),
--		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_IGNORE_MOUSE },
+-		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS },
++		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS |
++				APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223),
--		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_IGNORE_MOUSE },
+-		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS },
++		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS |
++				APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K),
 -		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
 +		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_IGNORE_MOUSE },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F),
--		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
-+		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_IGNORE_MOUSE },
+-		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS },
++		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_DISABLE_FKEYS |
++				APPLE_IGNORE_MOUSE },
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_ALU_WIRELESS_2009_ANSI),
  		.driver_data = APPLE_NUMLOCK_EMULATION | APPLE_HAS_FN },
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_ALU_WIRELESS_2009_ISO),
-@@ -1175,6 +1195,10 @@ static const struct hid_device_id apple_devices[] = {
+@@ -1215,6 +1236,10 @@ static const struct hid_device_id apple_devices[] = {
  		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_RDESC_BATTERY },
- 	{ HID_BLUETOOTH_DEVICE(BT_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_MAGIC_KEYBOARD_NUMPAD_2021),
+ 	{ HID_BLUETOOTH_DEVICE(BT_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_MAGIC_KEYBOARD_NUMPAD_2024),
  		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
 +	{ HID_SPI_DEVICE(SPI_VENDOR_ID_APPLE, HID_ANY_ID),
 +		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
@@ -1650,7 +1607,7 @@ index 3bed3f0c90c2..21ff5d1da011 100644
  		.driver_data = APPLE_MAGIC_BACKLIGHT },
  
 diff --git a/drivers/hid/hid-core.c b/drivers/hid/hid-core.c
-index 4fd3fff4661c..cd6c1cc7d010 100644
+index 5419a6c10907..de382dcb3991 100644
 --- a/drivers/hid/hid-core.c
 +++ b/drivers/hid/hid-core.c
 @@ -468,7 +468,10 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
@@ -1675,11 +1632,11 @@ index 4fd3fff4661c..cd6c1cc7d010 100644
 +	case BUS_HOST:
 +		bus = "HOST";
 +		break;
- 	case BUS_VIRTUAL:
- 		bus = "VIRTUAL";
+ 	case BUS_SDW:
+ 		bus = "SOUNDWIRE";
  		break;
 diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
-index 784593dd296f..7b47dd2d7c5b 100644
+index 4c0c0cbcd06b..e8f2fda0073a 100644
 --- a/drivers/hid/hid-ids.h
 +++ b/drivers/hid/hid-ids.h
 @@ -93,6 +93,8 @@
@@ -1691,32 +1648,8 @@ index 784593dd296f..7b47dd2d7c5b 100644
  #define USB_DEVICE_ID_APPLE_MIGHTYMOUSE	0x0304
  #define USB_DEVICE_ID_APPLE_MAGICMOUSE	0x030d
  #define USB_DEVICE_ID_APPLE_MAGICMOUSE2	0x0269
-@@ -173,14 +175,15 @@
- #define USB_DEVICE_ID_APPLE_WELLSPRING9_ANSI	0x0272
- #define USB_DEVICE_ID_APPLE_WELLSPRING9_ISO		0x0273
- #define USB_DEVICE_ID_APPLE_WELLSPRING9_JIS		0x0274
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K	0x027a
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132	0x027b
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680	0x027c
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213	0x027d
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K	0x027e
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223	0x027f
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K	0x0280
--#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F	0x0340
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K		0x027a
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132		0x027b
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680		0x027c
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT	0x0278
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213		0x027d
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K		0x027e
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223		0x027f
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K		0x0280
-+#define USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F		0x0340
- #define USB_DEVICE_ID_APPLE_FOUNTAIN_TP_ONLY	0x030a
- #define USB_DEVICE_ID_APPLE_GEYSER1_TP_ONLY	0x030b
- #define USB_DEVICE_ID_APPLE_IRCONTROL	0x8240
-@@ -194,6 +197,12 @@
- #define USB_DEVICE_ID_APPLE_MAGIC_KEYBOARD_NUMPAD_2021   0x029f
+@@ -197,6 +199,14 @@
+ #define USB_DEVICE_ID_APPLE_IRCONTROL5	0x8243
  #define USB_DEVICE_ID_APPLE_TOUCHBAR_BACKLIGHT 0x8102
  #define USB_DEVICE_ID_APPLE_TOUCHBAR_DISPLAY 0x8302
 +#define SPI_DEVICE_ID_APPLE_MACBOOK_AIR_2020	0x0281
@@ -1724,12 +1657,14 @@ index 784593dd296f..7b47dd2d7c5b 100644
 +#define SPI_DEVICE_ID_APPLE_MACBOOK_PRO14_2021	0x0342
 +#define SPI_DEVICE_ID_APPLE_MACBOOK_PRO16_2021	0x0343
 +#define HOST_DEVICE_ID_APPLE_MACBOOK_AIR13_2022	0x0351
++#define HOST_DEVICE_ID_APPLE_MACBOOK_PRO14_2023	0x0352
++#define HOST_DEVICE_ID_APPLE_MACBOOK_PRO16_2023	0x0353
 +#define HOST_DEVICE_ID_APPLE_MACBOOK_PRO13_2022	0x0354
  
  #define USB_VENDOR_ID_ASETEK			0x2433
  #define USB_DEVICE_ID_ASETEK_INVICTA		0xf300
 diff --git a/drivers/hid/hid-magicmouse.c b/drivers/hid/hid-magicmouse.c
-index 226682762db3..328df8118384 100644
+index 7d4a25c6de0e..b40f411687d5 100644
 --- a/drivers/hid/hid-magicmouse.c
 +++ b/drivers/hid/hid-magicmouse.c
 @@ -60,8 +60,14 @@ MODULE_PARM_DESC(report_undeciphered, "Report undeciphered multi-touch state fie
@@ -1740,7 +1675,7 @@ index 226682762db3..328df8118384 100644
 +#define SPI_RESET_REPORT_ID 0x60
 +#define MTP_REPORT_ID      0x75
 +#define SENSOR_DIMENSIONS_REPORT_ID 0xd9
- #define USB_BATTERY_TIMEOUT_MS 60000
+ #define USB_BATTERY_TIMEOUT_SEC 60
  
 +#define MAX_CONTACTS 16
 +
@@ -1906,7 +1841,7 @@ index 226682762db3..328df8118384 100644
  		short scroll_x;
  		short scroll_y;
  		short scroll_x_hr;
-@@ -143,14 +275,187 @@ struct magicmouse_sc {
+@@ -143,14 +275,112 @@ struct magicmouse_sc {
  		u8 size;
  		bool scroll_x_active;
  		bool scroll_y_active;
@@ -1921,84 +1856,11 @@ index 226682762db3..328df8118384 100644
 +	struct magicmouse_input_ops input_ops;
  };
  
++static int magicmouse_enable_multitouch(struct hid_device *hdev);
++
 +static inline int le16_to_int(__le16 x)
 +{
 +	return (signed short)le16_to_cpu(x);
-+}
-+
-+static int magicmouse_enable_multitouch(struct hid_device *hdev)
-+{
-+	const u8 *feature;
-+	const u8 feature_mt[] = { 0xD7, 0x01 };
-+	const u8 feature_mt_mouse2[] = { 0xF1, 0x02, 0x01 };
-+	const u8 feature_mt_trackpad2_usb[] = { 0x02, 0x01 };
-+	const u8 feature_mt_trackpad2_bt[] = { 0xF1, 0x02, 0x01 };
-+	u8 *buf;
-+	int ret;
-+	int feature_size;
-+
-+	switch (hdev->bus) {
-+	case BUS_SPI:
-+	case BUS_HOST:
-+		feature_size = sizeof(feature_mt_trackpad2_usb);
-+		feature = feature_mt_trackpad2_usb;
-+		break;
-+	default:
-+		switch (hdev->product) {
-+		case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2:
-+		case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC:
-+			switch (hdev->vendor) {
-+			case BT_VENDOR_ID_APPLE:
-+				feature_size = sizeof(feature_mt_trackpad2_bt);
-+				feature = feature_mt_trackpad2_bt;
-+				break;
-+			default: /* USB_VENDOR_ID_APPLE */
-+				feature_size = sizeof(feature_mt_trackpad2_usb);
-+				feature = feature_mt_trackpad2_usb;
-+			}
-+			break;
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K:
-+		case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F:
-+			feature_size = sizeof(feature_mt_trackpad2_usb);
-+			feature = feature_mt_trackpad2_usb;
-+			break;
-+		case USB_DEVICE_ID_APPLE_MAGICMOUSE2:
-+		case USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC:
-+			feature_size = sizeof(feature_mt_mouse2);
-+			feature = feature_mt_mouse2;
-+			break;
-+		default:
-+			feature_size = sizeof(feature_mt);
-+			feature = feature_mt;
-+		}
-+	}
-+
-+	buf = kmemdup(feature, feature_size, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	ret = hid_hw_raw_request(hdev, buf[0], buf, feature_size,
-+				HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
-+	kfree(buf);
-+	return ret;
-+}
-+
-+static void magicmouse_enable_mt_work(struct work_struct *work)
-+{
-+	struct magicmouse_sc *msc =
-+		container_of(work, struct magicmouse_sc, work.work);
-+	int ret;
-+
-+	ret = magicmouse_enable_multitouch(msc->hdev);
-+	if (ret < 0)
-+		hid_err(msc->hdev, "unable to request touch data (%d)\n", ret);
 +}
 +
 +static int magicmouse_open(struct input_dev *dev)
@@ -2023,17 +1885,15 @@ index 226682762db3..328df8118384 100644
 +	 */
 +	if (hdev->bus != BUS_HOST) {
 +		ret = magicmouse_enable_multitouch(hdev);
-+		if (ret == -EIO && hdev->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2) {
-+			schedule_delayed_work(&msc->work, msecs_to_jiffies(500));
-+			return 0;
-+		}
-+		if (ret < 0)
++		if (ret != -EIO && ret < 0) {
 +			hid_err(hdev, "unable to request touch data (%d)\n", ret);
++			return ret;
++		}
++		if (ret == -EIO && (hdev->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2 ||
++				hdev->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC)) {
++			schedule_delayed_work(&msc->work, msecs_to_jiffies(500));
++		}
 +	}
-+	/*
-+	 * MT enable is usually not required after the first time, so don't
-+	 * consider it fatal.
-+	 */
 +
 +	/*
 +	 * For Apple Silicon trackpads, we want to query the dimensions on
@@ -2096,7 +1956,7 @@ index 226682762db3..328df8118384 100644
  static int magicmouse_firm_touch(struct magicmouse_sc *msc)
  {
  	int touch = -1;
-@@ -192,7 +497,7 @@ static void magicmouse_emit_buttons(struct magicmouse_sc *msc, int state)
+@@ -192,7 +422,7 @@ static void magicmouse_emit_buttons(struct magicmouse_sc *msc, int state)
  		} else if (last_state != 0) {
  			state = last_state;
  		} else if ((id = magicmouse_firm_touch(msc)) >= 0) {
@@ -2105,7 +1965,7 @@ index 226682762db3..328df8118384 100644
  			if (x < middle_button_start)
  				state = 1;
  			else if (x > middle_button_stop)
-@@ -256,8 +561,8 @@ static void magicmouse_emit_touch(struct magicmouse_sc *msc, int raw_id, u8 *tda
+@@ -256,8 +486,8 @@ static void magicmouse_emit_touch(struct magicmouse_sc *msc, int raw_id, u8 *tda
  
  	/* Store tracking ID and other fields. */
  	msc->tracking_ids[raw_id] = id;
@@ -2116,7 +1976,7 @@ index 226682762db3..328df8118384 100644
  	msc->touches[id].size = size;
  
  	/* If requested, emulate a scroll wheel by detecting small
-@@ -387,6 +692,14 @@ static int magicmouse_raw_event(struct hid_device *hdev,
+@@ -387,6 +617,14 @@ static int magicmouse_raw_event(struct hid_device *hdev,
  		struct hid_report *report, u8 *data, int size)
  {
  	struct magicmouse_sc *msc = hid_get_drvdata(hdev);
@@ -2131,7 +1991,7 @@ index 226682762db3..328df8118384 100644
  	struct input_dev *input = msc->input;
  	int x = 0, y = 0, ii, clicks = 0, npoints;
  
-@@ -518,6 +831,191 @@ static int magicmouse_raw_event(struct hid_device *hdev,
+@@ -518,6 +756,188 @@ static int magicmouse_raw_event(struct hid_device *hdev,
  	return 1;
  }
  
@@ -2152,9 +2012,6 @@ index 226682762db3..328df8118384 100644
 + * @unused:		zeros
 + * @pressure:		pressure on forcetouch touchpad
 + * @multi:		one finger: varies, more fingers: constant
-+ * @crc16:		on last finger: crc over the whole message struct
-+ *			(i.e. message header + this struct) minus the last
-+ *			@crc16 field; unknown on all other fingers.
 + */
 +struct tp_finger {
 +	__le16 unknown1;
@@ -2300,7 +2157,7 @@ index 226682762db3..328df8118384 100644
 +		return 1;
 +	}
 +
-+	if (data[0] != TRACKPAD2_USB_REPORT_ID || size < hdr_sz)
++	if (data[0] != SPI_REPORT_ID || size < hdr_sz)
 +		return 0;
 +
 +	return magicmouse_raw_event_mtp(hdev, report, data + hdr_sz, size - hdr_sz);
@@ -2323,7 +2180,7 @@ index 226682762db3..328df8118384 100644
  static int magicmouse_event(struct hid_device *hdev, struct hid_field *field,
  		struct hid_usage *usage, __s32 value)
  {
-@@ -536,7 +1034,17 @@ static int magicmouse_event(struct hid_device *hdev, struct hid_field *field,
+@@ -536,7 +956,17 @@ static int magicmouse_event(struct hid_device *hdev, struct hid_field *field,
  	return 0;
  }
  
@@ -2342,7 +2199,7 @@ index 226682762db3..328df8118384 100644
  {
  	int error;
  	int mt_flags = 0;
-@@ -615,7 +1123,7 @@ static int magicmouse_setup_input(struct input_dev *input, struct hid_device *hd
+@@ -615,7 +1045,7 @@ static int magicmouse_setup_input(struct input_dev *input, struct hid_device *hd
  
  	__set_bit(EV_ABS, input->evbit);
  
@@ -2351,7 +2208,7 @@ index 226682762db3..328df8118384 100644
  	if (error)
  		return error;
  	input_set_abs_params(input, ABS_MT_TOUCH_MAJOR, 0, 255 << 2,
-@@ -695,6 +1203,171 @@ static int magicmouse_setup_input(struct input_dev *input, struct hid_device *hd
+@@ -695,6 +1125,171 @@ static int magicmouse_setup_input(struct input_dev *input, struct hid_device *hd
  	 */
  	__clear_bit(EV_REP, input->evbit);
  
@@ -2523,99 +2380,43 @@ index 226682762db3..328df8118384 100644
  	return 0;
  }
  
-@@ -736,86 +1409,17 @@ static int magicmouse_input_configured(struct hid_device *hdev,
- 	return 0;
- }
+@@ -748,6 +1343,10 @@ static int magicmouse_enable_multitouch(struct hid_device *hdev)
+ 	int feature_size;
  
--static int magicmouse_enable_multitouch(struct hid_device *hdev)
--{
--	const u8 *feature;
--	const u8 feature_mt[] = { 0xD7, 0x01 };
--	const u8 feature_mt_mouse2[] = { 0xF1, 0x02, 0x01 };
--	const u8 feature_mt_trackpad2_usb[] = { 0x02, 0x01 };
--	const u8 feature_mt_trackpad2_bt[] = { 0xF1, 0x02, 0x01 };
--	u8 *buf;
--	int ret;
--	int feature_size;
--
--	switch (hdev->product) {
--	case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2:
--	case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC:
--		switch (hdev->vendor) {
--		case BT_VENDOR_ID_APPLE:
--			feature_size = sizeof(feature_mt_trackpad2_bt);
--			feature = feature_mt_trackpad2_bt;
--			break;
+ 	switch (hdev->product) {
++	case SPI_DEVICE_ID_APPLE_MACBOOK_AIR_2020:
++	case SPI_DEVICE_ID_APPLE_MACBOOK_PRO13_2020:
++	case SPI_DEVICE_ID_APPLE_MACBOOK_PRO14_2021:
++	case SPI_DEVICE_ID_APPLE_MACBOOK_PRO16_2021:
+ 	case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2:
+ 	case USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC:
+ 		switch (hdev->vendor) {
+@@ -755,11 +1354,23 @@ static int magicmouse_enable_multitouch(struct hid_device *hdev)
+ 			feature_size = sizeof(feature_mt_trackpad2_bt);
+ 			feature = feature_mt_trackpad2_bt;
+ 			break;
 -		default: /* USB_VENDOR_ID_APPLE */
--			feature_size = sizeof(feature_mt_trackpad2_usb);
--			feature = feature_mt_trackpad2_usb;
--		}
--		break;
--	case USB_DEVICE_ID_APPLE_MAGICMOUSE2:
--	case USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC:
--		feature_size = sizeof(feature_mt_mouse2);
--		feature = feature_mt_mouse2;
--		break;
--	default:
--		feature_size = sizeof(feature_mt);
--		feature = feature_mt;
--	}
--
--	buf = kmemdup(feature, feature_size, GFP_KERNEL);
--	if (!buf)
--		return -ENOMEM;
--
--	ret = hid_hw_raw_request(hdev, buf[0], buf, feature_size,
--				HID_FEATURE_REPORT, HID_REQ_SET_REPORT);
--	kfree(buf);
--	return ret;
--}
--
--static void magicmouse_enable_mt_work(struct work_struct *work)
--{
--	struct magicmouse_sc *msc =
--		container_of(work, struct magicmouse_sc, work.work);
--	int ret;
--
--	ret = magicmouse_enable_multitouch(msc->hdev);
--	if (ret < 0)
--		hid_err(msc->hdev, "unable to request touch data (%d)\n", ret);
--}
--
--static bool is_usb_magicmouse2(__u32 vendor, __u32 product)
--{
--	if (vendor != USB_VENDOR_ID_APPLE)
--		return false;
--	return product == USB_DEVICE_ID_APPLE_MAGICMOUSE2 ||
--	       product == USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC;
--}
--
--static bool is_usb_magictrackpad2(__u32 vendor, __u32 product)
--{
--	if (vendor != USB_VENDOR_ID_APPLE)
--		return false;
--	return product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2 ||
--	       product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC;
--}
--
- static int magicmouse_fetch_battery(struct hid_device *hdev)
- {
- #ifdef CONFIG_HID_BATTERY_STRENGTH
- 	struct hid_report_enum *report_enum;
- 	struct hid_report *report;
- 
--	if (!hdev->battery ||
--	    (!is_usb_magicmouse2(hdev->vendor, hdev->product) &&
--	     !is_usb_magictrackpad2(hdev->vendor, hdev->product)))
-+	if (!hdev->battery || hdev->vendor != USB_VENDOR_ID_APPLE ||
-+	    (hdev->product != USB_DEVICE_ID_APPLE_MAGICMOUSE2 &&
-+	     hdev->product != USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC &&
-+	     hdev->product != USB_DEVICE_ID_APPLE_MAGICTRACKPAD2 &&
-+	     hdev->product != USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC))
- 		return -1;
- 
- 	report_enum = &hdev->report_enum[hdev->battery_report_type];
-@@ -852,12 +1456,62 @@ static int magicmouse_probe(struct hid_device *hdev,
++		default:  /* USB_VENDOR_ID_APPLE || SPI_VENDOR_ID_APPLE */
+ 			feature_size = sizeof(feature_mt_trackpad2_usb);
+ 			feature = feature_mt_trackpad2_usb;
+ 		}
+ 		break;
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K:
++	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F:
++		feature_size = sizeof(feature_mt_trackpad2_usb);
++		feature = feature_mt_trackpad2_usb;
++		break;
+ 	case USB_DEVICE_ID_APPLE_MAGICMOUSE2:
+ 	case USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC:
+ 		feature_size = sizeof(feature_mt_mouse2);
+@@ -852,12 +1463,62 @@ static int magicmouse_probe(struct hid_device *hdev,
  	struct hid_report *report;
  	int ret;
  
@@ -2678,42 +2479,10 @@ index 226682762db3..328df8118384 100644
  	msc->scroll_accel = SCROLL_ACCEL_DEFAULT;
  	msc->hdev = hdev;
  	INIT_DEFERRABLE_WORK(&msc->work, magicmouse_enable_mt_work);
-@@ -877,17 +1531,17 @@ static int magicmouse_probe(struct hid_device *hdev,
- 		return ret;
- 	}
- 
--	if (is_usb_magicmouse2(id->vendor, id->product) ||
--	    is_usb_magictrackpad2(id->vendor, id->product)) {
--		timer_setup(&msc->battery_timer, magicmouse_battery_timer_tick, 0);
--		mod_timer(&msc->battery_timer,
--			  jiffies + msecs_to_jiffies(USB_BATTERY_TIMEOUT_MS));
--		magicmouse_fetch_battery(hdev);
--	}
--
--	if (is_usb_magicmouse2(id->vendor, id->product) ||
--	    (is_usb_magictrackpad2(id->vendor, id->product) &&
--	     hdev->type != HID_TYPE_USBMOUSE))
-+	timer_setup(&msc->battery_timer, magicmouse_battery_timer_tick, 0);
-+	mod_timer(&msc->battery_timer,
-+		  jiffies + msecs_to_jiffies(USB_BATTERY_TIMEOUT_MS));
-+	magicmouse_fetch_battery(hdev);
-+
-+	if (id->vendor == USB_VENDOR_ID_APPLE &&
-+	    (id->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2 ||
-+	     id->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC ||
-+	     ((id->product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2 ||
-+	       id->product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC) &&
-+	      hdev->type != HID_TYPE_USBMOUSE)))
- 		return 0;
- 
- 	if (!msc->input) {
-@@ -916,11 +1570,29 @@ static int magicmouse_probe(struct hid_device *hdev,
+@@ -916,6 +1577,30 @@ static int magicmouse_probe(struct hid_device *hdev,
  				TRACKPAD2_USB_REPORT_ID, 0);
  		}
  		break;
--	default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
--		report = hid_register_report(hdev, HID_INPUT_REPORT,
--			TRACKPAD_REPORT_ID, 0);
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680:
@@ -2723,73 +2492,56 @@ index 226682762db3..328df8118384 100644
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F:
- 		report = hid_register_report(hdev, HID_INPUT_REPORT,
--			DOUBLE_REPORT_ID, 0);
++		report = hid_register_report(hdev, HID_INPUT_REPORT,
 +			TRACKPAD2_USB_REPORT_ID, 0);
 +		break;
-+	default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
-+		if (id->bus == BUS_SPI) {
-+			report = hid_register_report(hdev, HID_INPUT_REPORT, SPI_REPORT_ID, 0);
-+		} else if (id->bus == BUS_HOST) {
++	case HID_ANY_ID:
++		switch (id->bus) {
++		case BUS_HOST:
 +			report = hid_register_report(hdev, HID_INPUT_REPORT, MTP_REPORT_ID, 0);
-+		} else {
-+			report = hid_register_report(hdev, HID_INPUT_REPORT,
-+				TRACKPAD_REPORT_ID, 0);
-+			report = hid_register_report(hdev, HID_INPUT_REPORT,
-+				DOUBLE_REPORT_ID, 0);
++			break;
++		case BUS_SPI:
++			report = hid_register_report(hdev, HID_INPUT_REPORT, SPI_REPORT_ID, 0);
++			break;
++		default:
++			break;
 +		}
- 	}
- 
- 	if (!report) {
-@@ -930,6 +1602,10 @@ static int magicmouse_probe(struct hid_device *hdev,
++		break;
+ 	default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
+ 		report = hid_register_report(hdev, HID_INPUT_REPORT,
+ 			TRACKPAD_REPORT_ID, 0);
+@@ -930,22 +1615,14 @@ static int magicmouse_probe(struct hid_device *hdev,
  	}
  	report->size = 6;
  
+-	/*
+-	 * Some devices repond with 'invalid report id' when feature
+-	 * report switching it into multitouch mode is sent to it.
+-	 *
+-	 * This results in -EIO from the _raw low-level transport callback,
+-	 * but there seems to be no other way of switching the mode.
+-	 * Thus the super-ugly hacky success check below.
+-	 */
+-	ret = magicmouse_enable_multitouch(hdev);
+-	if (ret != -EIO && ret < 0) {
+-		hid_err(hdev, "unable to request touch data (%d)\n", ret);
+-		goto err_stop_hw;
+-	}
+-	if (ret == -EIO && (id->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2 ||
+-			    id->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC)) {
+-		schedule_delayed_work(&msc->work, msecs_to_jiffies(500));
 +	/* MTP devices do not need the MT enable, this is handled by the MTP driver */
 +	if (id->bus == BUS_HOST)
 +		return 0;
 +
- 	/*
- 	 * Some devices repond with 'invalid report id' when feature
- 	 * report switching it into multitouch mode is sent to it.
-@@ -950,10 +1626,7 @@ static int magicmouse_probe(struct hid_device *hdev,
- 
- 	return 0;
- err_stop_hw:
--	if (is_usb_magicmouse2(id->vendor, id->product) ||
--	    is_usb_magictrackpad2(id->vendor, id->product))
--		timer_delete_sync(&msc->battery_timer);
--
-+	timer_delete_sync(&msc->battery_timer);
- 	hid_hw_stop(hdev);
- 	return ret;
- }
-@@ -964,9 +1637,7 @@ static void magicmouse_remove(struct hid_device *hdev)
- 
- 	if (msc) {
- 		cancel_delayed_work_sync(&msc->work);
--		if (is_usb_magicmouse2(hdev->vendor, hdev->product) ||
--		    is_usb_magictrackpad2(hdev->vendor, hdev->product))
--			timer_delete_sync(&msc->battery_timer);
-+		timer_delete_sync(&msc->battery_timer);
++	/* SPI devices need to watch for reset events to re-send the MT enable */
++	if (id->bus == BUS_SPI) {
++		report = hid_register_report(hdev, HID_INPUT_REPORT, SPI_RESET_REPORT_ID, 0);
++		report->size = 2;
  	}
  
- 	hid_hw_stop(hdev);
-@@ -983,8 +1654,11 @@ static const __u8 *magicmouse_report_fixup(struct hid_device *hdev, __u8 *rdesc,
- 	 *   0x05, 0x01,       // Usage Page (Generic Desktop)        0
- 	 *   0x09, 0x02,       // Usage (Mouse)                       2
- 	 */
--	if ((is_usb_magicmouse2(hdev->vendor, hdev->product) ||
--	     is_usb_magictrackpad2(hdev->vendor, hdev->product)) &&
-+	if (hdev->vendor == USB_VENDOR_ID_APPLE &&
-+	    (hdev->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2 ||
-+	     hdev->product == USB_DEVICE_ID_APPLE_MAGICMOUSE2_USBC ||
-+	     hdev->product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2 ||
-+	     hdev->product == USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC) &&
- 	    *rsize == 83 && rdesc[46] == 0x84 && rdesc[58] == 0x85) {
- 		hid_info(hdev,
- 			 "fixing up magicmouse battery report descriptor\n");
-@@ -1023,10 +1697,42 @@ static const struct hid_device_id magic_mice[] = {
+ 	return 0;
+@@ -1023,10 +1700,42 @@ static const struct hid_device_id magic_mice[] = {
  		USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC), .driver_data = 0 },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE,
  		USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC), .driver_data = 0 },
@@ -2832,7 +2584,7 @@ index 226682762db3..328df8118384 100644
  static struct hid_driver magicmouse_driver = {
  	.name = "magicmouse",
  	.id_table = magic_mice,
-@@ -1037,6 +1743,10 @@ static struct hid_driver magicmouse_driver = {
+@@ -1037,6 +1746,10 @@ static struct hid_driver magicmouse_driver = {
  	.event = magicmouse_event,
  	.input_mapping = magicmouse_input_mapping,
  	.input_configured = magicmouse_input_configured,
@@ -2843,182 +2595,6 @@ index 226682762db3..328df8118384 100644
  };
  module_hid_driver(magicmouse_driver);
  
-diff --git a/drivers/hid/hid-multitouch.c b/drivers/hid/hid-multitouch.c
-index 4c22bd2ba170..22c6314a8843 100644
---- a/drivers/hid/hid-multitouch.c
-+++ b/drivers/hid/hid-multitouch.c
-@@ -73,6 +73,7 @@ MODULE_LICENSE("GPL");
- #define MT_QUIRK_FORCE_MULTI_INPUT	BIT(20)
- #define MT_QUIRK_DISABLE_WAKEUP		BIT(21)
- #define MT_QUIRK_ORIENTATION_INVERT	BIT(22)
-+#define MT_QUIRK_APPLE_TOUCHBAR		BIT(23)
- 
- #define MT_INPUTMODE_TOUCHSCREEN	0x02
- #define MT_INPUTMODE_TOUCHPAD		0x03
-@@ -220,6 +221,7 @@ static void mt_post_parse(struct mt_device *td, struct mt_application *app);
- #define MT_CLS_GOOGLE				0x0111
- #define MT_CLS_RAZER_BLADE_STEALTH		0x0112
- #define MT_CLS_SMART_TECH			0x0113
-+#define MT_CLS_APPLE_TOUCHBAR			0x0114
- #define MT_CLS_SIS				0x0457
- 
- #define MT_DEFAULT_MAXCONTACT	10
-@@ -405,6 +407,12 @@ static const struct mt_class mt_classes[] = {
- 			MT_QUIRK_CONTACT_CNT_ACCURATE |
- 			MT_QUIRK_SEPARATE_APP_REPORT,
- 	},
-+	{ .name = MT_CLS_APPLE_TOUCHBAR,
-+		.quirks = MT_QUIRK_HOVERING |
-+			MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE |
-+			MT_QUIRK_APPLE_TOUCHBAR,
-+		.maxcontacts = 11,
-+	},
- 	{ .name = MT_CLS_SIS,
- 		.quirks = MT_QUIRK_NOT_SEEN_MEANS_UP |
- 			MT_QUIRK_ALWAYS_VALID |
-@@ -625,6 +633,7 @@ static struct mt_application *mt_find_application(struct mt_device *td,
- static struct mt_report_data *mt_allocate_report_data(struct mt_device *td,
- 						      struct hid_report *report)
- {
-+	struct mt_class *cls = &td->mtclass;
- 	struct mt_report_data *rdata;
- 	struct hid_field *field;
- 	int r, n;
-@@ -649,7 +658,11 @@ static struct mt_report_data *mt_allocate_report_data(struct mt_device *td,
- 
- 		if (field->logical == HID_DG_FINGER || td->hdev->group != HID_GROUP_MULTITOUCH_WIN_8) {
- 			for (n = 0; n < field->report_count; n++) {
--				if (field->usage[n].hid == HID_DG_CONTACTID) {
-+				unsigned int hid = field->usage[n].hid;
-+
-+				if (hid == HID_DG_CONTACTID ||
-+				   (cls->quirks & MT_QUIRK_APPLE_TOUCHBAR &&
-+				   hid == HID_DG_TRANSDUCER_INDEX)) {
- 					rdata->is_mt_collection = true;
- 					break;
- 				}
-@@ -821,12 +834,31 @@ static int mt_touch_input_mapping(struct hid_device *hdev, struct hid_input *hi,
- 
- 			MT_STORE_FIELD(confidence_state);
- 			return 1;
-+		case HID_DG_TOUCH:
-+			/*
-+			 * Legacy devices use TIPSWITCH and not TOUCH.
-+			 * One special case here is of the Apple Touch Bars.
-+			 * In these devices, the tip state is contained in
-+			 * fields with the HID_DG_TOUCH usage.
-+			 * Let's just ignore this field for other devices.
-+			 */
-+			if (!(cls->quirks & MT_QUIRK_APPLE_TOUCHBAR))
-+				return -1;
-+			fallthrough;
- 		case HID_DG_TIPSWITCH:
- 			if (field->application != HID_GD_SYSTEM_MULTIAXIS)
- 				input_set_capability(hi->input,
- 						     EV_KEY, BTN_TOUCH);
- 			MT_STORE_FIELD(tip_state);
- 			return 1;
-+		case HID_DG_TRANSDUCER_INDEX:
-+			/*
-+			 * Contact ID in case of Apple Touch Bars is contained
-+			 * in fields with HID_DG_TRANSDUCER_INDEX usage.
-+			 */
-+			if (!(cls->quirks & MT_QUIRK_APPLE_TOUCHBAR))
-+				return 0;
-+			fallthrough;
- 		case HID_DG_CONTACTID:
- 			MT_STORE_FIELD(contactid);
- 			app->touches_by_report++;
-@@ -883,10 +915,6 @@ static int mt_touch_input_mapping(struct hid_device *hdev, struct hid_input *hi,
- 		case HID_DG_CONTACTMAX:
- 			/* contact max are global to the report */
- 			return -1;
--		case HID_DG_TOUCH:
--			/* Legacy devices use TIPSWITCH and not TOUCH.
--			 * Let's just ignore this field. */
--			return -1;
- 		}
- 		/* let hid-input decide for the others */
- 		return 0;
-@@ -1314,6 +1342,13 @@ static int mt_touch_input_configured(struct hid_device *hdev,
- 	struct input_dev *input = hi->input;
- 	int ret;
- 
-+	/*
-+	 * HID_DG_CONTACTMAX field is not present on Apple Touch Bars,
-+	 * but the maximum contact count is greater than the default.
-+	 */
-+	if (cls->quirks & MT_QUIRK_APPLE_TOUCHBAR && cls->maxcontacts)
-+		td->maxcontacts = cls->maxcontacts;
-+
- 	if (!td->maxcontacts)
- 		td->maxcontacts = MT_DEFAULT_MAXCONTACT;
- 
-@@ -1321,6 +1356,13 @@ static int mt_touch_input_configured(struct hid_device *hdev,
- 	if (td->serial_maybe)
- 		mt_post_parse_default_settings(td, app);
- 
-+	/*
-+	 * The application for Apple Touch Bars is HID_DG_TOUCHPAD,
-+	 * but these devices are direct.
-+	 */
-+	if (cls->quirks & MT_QUIRK_APPLE_TOUCHBAR)
-+		app->mt_flags |= INPUT_MT_DIRECT;
-+
- 	if (cls->is_indirect)
- 		app->mt_flags |= INPUT_MT_POINTER;
- 
-@@ -1831,6 +1873,11 @@ static int mt_probe(struct hid_device *hdev, const struct hid_device_id *id)
- 	if (ret != 0)
- 		return ret;
- 
-+	if (mtclass->name == MT_CLS_APPLE_TOUCHBAR &&
-+	    !hid_find_field(hdev, HID_INPUT_REPORT,
-+			    HID_DG_TOUCHPAD, HID_DG_TRANSDUCER_INDEX))
-+		return -ENODEV;
-+
- 	if (mtclass->quirks & MT_QUIRK_FIX_CONST_CONTACT_ID)
- 		mt_fix_const_fields(hdev, HID_DG_CONTACTID);
- 
-@@ -2328,6 +2375,11 @@ static const struct hid_device_id mt_devices[] = {
- 		MT_USB_DEVICE(USB_VENDOR_ID_XIROKU,
- 			USB_DEVICE_ID_XIROKU_CSR2) },
- 
-+	/* Apple Touch Bar */
-+	{ .driver_data = MT_CLS_APPLE_TOUCHBAR,
-+		HID_USB_DEVICE(USB_VENDOR_ID_APPLE,
-+			USB_DEVICE_ID_APPLE_TOUCHBAR_DISPLAY) },
-+
- 	/* Google MT devices */
- 	{ .driver_data = MT_CLS_GOOGLE,
- 		HID_DEVICE(HID_BUS_ANY, HID_GROUP_ANY, USB_VENDOR_ID_GOOGLE,
-diff --git a/drivers/hid/hid-quirks.c b/drivers/hid/hid-quirks.c
-index 416160cfde77..f619ed10535d 100644
---- a/drivers/hid/hid-quirks.c
-+++ b/drivers/hid/hid-quirks.c
-@@ -316,6 +316,7 @@ static const struct hid_device_id hid_have_special_driver[] = {
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680) },
-+	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680_ALT) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223) },
-@@ -976,14 +977,6 @@ static const struct hid_device_id hid_mouse_ignore_list[] = {
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING9_ANSI) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING9_ISO) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING9_JIS) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J213) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J214K) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K) },
--	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_FOUNTAIN_TP_ONLY) },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_GEYSER1_TP_ONLY) },
- 	{ }
 diff --git a/drivers/hid/spi-hid/Kconfig b/drivers/hid/spi-hid/Kconfig
 new file mode 100644
 index 000000000000..8e37f0fec28a
@@ -3069,7 +2645,7 @@ index 000000000000..f276ee12cb94
 +obj-$(CONFIG_SPI_HID_APPLE_OF)			+= spi-hid-apple-of.o
 diff --git a/drivers/hid/spi-hid/spi-hid-apple-core.c b/drivers/hid/spi-hid/spi-hid-apple-core.c
 new file mode 100644
-index 000000000000..1f8fa64d6d86
+index 000000000000..2ed909895391
 --- /dev/null
 +++ b/drivers/hid/spi-hid/spi-hid-apple-core.c
 @@ -0,0 +1,1194 @@
@@ -3209,7 +2785,7 @@ index 000000000000..1f8fa64d6d86
 + * @unknown0:	request type? output, input (0x10), feature, protocol
 + * @unknown1:	maybe report id?
 + * @unknown2:	mostly zero, in info request maybe device num
-+ * @msgid:	incremented on each message, rolls over after 255; there is a
++ * @id:		incremented on each message, rolls over after 255; there is a
 + *		separate counter for each message type.
 + * @rsplen:	response length (the exact nature of this field is quite
 + *		speculative). On a request/write this is often the same as
@@ -4269,10 +3845,10 @@ index 000000000000..1f8fa64d6d86
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/hid/spi-hid/spi-hid-apple-of.c b/drivers/hid/spi-hid/spi-hid-apple-of.c
 new file mode 100644
-index 000000000000..3f87b299351d
+index 000000000000..b631212b836d
 --- /dev/null
 +++ b/drivers/hid/spi-hid/spi-hid-apple-of.c
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,153 @@
 +/*
 + * SPDX-License-Identifier: GPL-2.0
 + *
@@ -4423,6 +3999,8 @@ index 000000000000..3f87b299351d
 +
 +module_spi_driver(spihid_apple_of_driver);
 +
++MODULE_DESCRIPTION("Apple SPI HID transport driver for OpenFirmware systems");
++MODULE_AUTHOR("Janne Grunau <j@jannau.net>");
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/hid/spi-hid/spi-hid-apple.h b/drivers/hid/spi-hid/spi-hid-apple.h
 new file mode 100644
@@ -13000,10 +12578,10 @@ index 000000000000..6c2e22622f4c
 +
 +#endif //BCE_VHCI_H
 diff --git a/include/linux/hid.h b/include/linux/hid.h
-index 7f260e0e2049..0075b9956d05 100644
+index c32425b5d011..f55d1e59a63b 100644
 --- a/include/linux/hid.h
 +++ b/include/linux/hid.h
-@@ -594,7 +594,9 @@ struct hid_input {
+@@ -596,7 +596,9 @@ struct hid_input {
  enum hid_type {
  	HID_TYPE_OTHER = 0,
  	HID_TYPE_USBMOUSE,
@@ -13014,7 +12592,7 @@ index 7f260e0e2049..0075b9956d05 100644
  };
  
  enum hid_battery_status {
-@@ -755,6 +757,8 @@ struct hid_descriptor {
+@@ -757,6 +759,8 @@ struct hid_descriptor {
  	.bus = BUS_BLUETOOTH, .vendor = (ven), .product = (prod)
  #define HID_I2C_DEVICE(ven, prod)				\
  	.bus = BUS_I2C, .vendor = (ven), .product = (prod)
@@ -13056,5 +12634,5 @@ index 000000000000..0b7093935ddf
 +#endif
 +#endif
 -- 
-2.51.0
+2.51.1
 
