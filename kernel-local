@@ -148,6 +148,12 @@ CONFIG_IKCONFIG_PROC=y
 
 
 ### Tobor Kernel Config
+
+## initrd-less boot experiment -> make nvme built-in
+CONFIG_BLK_DEV_NVME=y
+CONFIG_NVME_KEYRING=y
+CONFIG_NVME_AUTH=y
+
 CONFIG_MZEN3=y
 # CONFIG_X86_NATIVE_CPU is not set
 # CONFIG_GENERIC_CPU is not set
