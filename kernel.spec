@@ -2020,14 +2020,14 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch bazzite-handheld.patch
+#ApplyOptionalPatch bazzite-handheld.patch
 ApplyOptionalPatch bazzite-akmods.patch
-#ApplyOptionalPatch cachy-0001-asus.patch
+ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
 ApplyOptionalPatch cachy-0001-rt-i915.patch
 ApplyOptionalPatch cachy-0002-bbr3.patch
 ApplyOptionalPatch cachy-0003-block.patch
-#ApplyOptionalPatch cachy-0006-t2.patch
+ApplyOptionalPatch cachy-0006-t2.patch
 #ApplyOptionalPatch clear-0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch
 #ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
 ApplyOptionalPatch clear-0050-Revert-ext4-do-not-create-EA-inode-under-buffer-lock.patch

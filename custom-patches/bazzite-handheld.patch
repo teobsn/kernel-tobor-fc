@@ -5,12 +5,12 @@ Subject: [NA] add dev tools
 
 ---
  README       |  18 ---------
- README.md    |  21 +++++++++++
+ README.md    |  21 ++++++++++
  localversion |   0
  sync-arch.sh |  22 +++++++++++
  sync-ko.sh   |  25 ++++++++++++
- sync.sh      | 105 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 173 insertions(+), 18 deletions(-)
+ sync.sh      | 107 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 175 insertions(+), 18 deletions(-)
  delete mode 100644 README
  create mode 100644 README.md
  create mode 100644 localversion
@@ -135,10 +135,10 @@ index 000000000000..5fbe0a4b1c1a
 \ No newline at end of file
 diff --git a/sync.sh b/sync.sh
 new file mode 100755
-index 000000000000..cd6053bae417
+index 000000000000..d46a6ed6b0ce
 --- /dev/null
 +++ b/sync.sh
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,107 @@
 +#!/bin/bash
 +
 +# This script temporarily replaces the kernel in a remote Bazzite system
@@ -192,17 +192,19 @@ index 000000000000..cd6053bae417
 +fi
 +
 +# Make kernel
++echo "Building kernel"
 +time PATH="/usr/lib/ccache/bin:$PATH" \
 +    CCACHE_DIR=$(pwd)/../cache CCACHE_FILECLONE=1 \
-+    CCACHE_MAXSIZE=30G CCACHE_IGNORECONFIG=1 \
-+    make -j $(expr $(nproc) - 2)
++    CCACHE_MAXSIZE=4G CCACHE_IGNORECONFIG=1 \
++    make -s -j $(expr $(nproc) - 2)
 +
 +# Sync to out dir
++echo "Installing to ./out"
 +rm -rf out
 +mkdir -p out
-+make -j $(expr $(nproc) - 2) install INSTALL_PATH=./out/
++make -j $(expr $(nproc) - 2) install INSTALL_PATH=./out/ -s
 +# sudo sbsign --key key.pem --cert key.cert.pem ./arch/x86/boot/bzImage --output vmlinuz
-+make -j $(expr $(nproc) - 2) modules_install INSTALL_MOD_PATH=./out/
++make -j $(expr $(nproc) - 2) modules_install INSTALL_MOD_PATH=./out/ -s
 +
 +KNAME=$(make -s kernelrelease)
 +$RSYNC --rsync-path="sudo rsync" --delete out/lib/modules/$KNAME/ $HOST:/lib/modules/$KNAME/
@@ -246,7 +248,7 @@ index 000000000000..cd6053bae417
 +EOF
 \ No newline at end of file
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -273,7 +275,7 @@ index 009da46e7027..ac2ac1321cae 100644
  static char sd_probe_type[6] = "async";
  module_param_string(probe, sd_probe_type, sizeof(sd_probe_type),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -311,7 +313,7 @@ index 9bea5a1e2c52..25848f886ad6 100644
  	.long	0				# SizeOfStackReserve
  	.long	0				# SizeOfStackCommit
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -412,7 +414,7 @@ index e4c3492a0c28..0b930c91bccb 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -579,7 +581,7 @@ index d6ff964aec5b..5d30ae39d65e 100644
  void mwifiex_initialize_quirks(struct pcie_service_card *card);
  int mwifiex_pcie_reset_d3cold_quirk(struct pci_dev *pdev);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -735,7 +737,7 @@ index 5d30ae39d65e..c14eb56eb911 100644
  void mwifiex_initialize_quirks(struct pcie_service_card *card);
  int mwifiex_pcie_reset_d3cold_quirk(struct pci_dev *pdev);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -813,7 +815,7 @@ index 3595a8bad6bd..e7a0c60286d5 100644
  	    (id->driver_info & BTUSB_MEDIATEK)) {
  		hdev->setup = btusb_mtk_setup;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -934,7 +936,7 @@ index 6f78f1752cd6..8f7be9cf8a9d 100644
  		snprintf(filename, sizeof(filename), "%s/%s/%s",
  			 dir, ar->board_name, file);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -950,7 +952,7 @@ Patchset: ipts
  2 files changed, 2 insertions(+)
 
 diff --git a/drivers/misc/mei/hw-me-regs.h b/drivers/misc/mei/hw-me-regs.h
-index bc40b940ae21..45fbd856d416 100644
+index a4f75dc36929..e4a561b257d7 100644
 --- a/drivers/misc/mei/hw-me-regs.h
 +++ b/drivers/misc/mei/hw-me-regs.h
 @@ -92,6 +92,7 @@
@@ -962,7 +964,7 @@ index bc40b940ae21..45fbd856d416 100644
  
  #define MEI_DEV_ID_JSP_N      0x4DE0  /* Jasper Lake Point N */
 diff --git a/drivers/misc/mei/pci-me.c b/drivers/misc/mei/pci-me.c
-index 3f9c60b579ae..853a67753333 100644
+index bc0fc584a8e4..51a91ef66cda 100644
 --- a/drivers/misc/mei/pci-me.c
 +++ b/drivers/misc/mei/pci-me.c
 @@ -97,6 +97,7 @@ static const struct pci_device_id mei_me_pci_tbl[] = {
@@ -974,7 +976,7 @@ index 3f9c60b579ae..853a67753333 100644
  
  	{MEI_PCI_DEVICE(MEI_DEV_ID_TGP_LP, MEI_ME_PCH15_CFG)},
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -1082,7 +1084,7 @@ index e236c7ec221f..9e31a5fe1f66 100644
  {
  	if (risky_device(dev))
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -4180,7 +4182,7 @@ index 000000000000..1f966b8b32c4
 +
 +#endif /* IPTS_THREAD_H */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -4222,7 +4224,7 @@ index 4f9b01dc91e8..e4d73e45473c 100644
  	 * DMA alias provides us with a PCI device and alias.  The only case
  	 * where the it will return an alias on a different bus than the
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -6955,7 +6957,7 @@ index 000000000000..aec320d4e945
 +int ithc_reset(struct ithc *ithc);
 +
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7067,7 +7069,7 @@ index ed90858a27b7..070c36637811 100644
  		dev_warn(&adapter->dev, "protocol 0x%02x not supported for client 0x%02x\n",
  			 accessor_type, client->addr);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7265,7 +7267,7 @@ index 000000000000..68db237734a1
 +MODULE_DESCRIPTION("Discrete GPU Power-Switch for Surface Book 1");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7343,7 +7345,7 @@ index b8cad415c62c..43b5d56383e3 100644
  
  /*
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7415,7 +7417,7 @@ index 2755601f979c..4240c98ca226 100644
  
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7442,7 +7444,7 @@ Patchset: surface-typecover
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/usb/core/quirks.c b/drivers/usb/core/quirks.c
-index f5bc53875330..31fa895d73c4 100644
+index 47f589c4104a..6b00aec67ee2 100644
 --- a/drivers/usb/core/quirks.c
 +++ b/drivers/usb/core/quirks.c
 @@ -223,6 +223,9 @@ static const struct usb_device_id usb_quirk_list[] = {
@@ -7456,7 +7458,7 @@ index f5bc53875330..31fa895d73c4 100644
  	{ USB_DEVICE(0x046a, 0x0023), .driver_info = USB_QUIRK_RESET_RESUME },
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7691,7 +7693,7 @@ index a9ff84f0bd9b..d961b750653e 100644
  	/* Google MT devices */
  	{ .driver_data = MT_CLS_GOOGLE,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -7990,7 +7992,7 @@ index d961b750653e..525d3c307237 100644
  	unregister_pm_notifier(&td->pm_notifier);
  	timer_delete_sync(&td->release_timer);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8088,7 +8090,7 @@ index 59876de13860..41d0a274a550 100644
  	atomic_t	enable_cnt;	/* pci_enable_device has been called */
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8140,7 +8142,7 @@ index b359413903b1..b4496db79f39 100644
  		.ident = "Surface Book 1",
  		.matches = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8217,7 +8219,7 @@ index 1a857d373b3d..d9a4d274def3 100644
  	 * Do not enumerate devices with enumeration_by_parent flag set as
  	 * they will be enumerated by their respective parents.
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8328,7 +8330,7 @@ index 9e31a5fe1f66..bdd32551c452 100644
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x9D3E, quirk_iommu_ipts);
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x34E4, quirk_iommu_ipts);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8366,7 +8368,7 @@ index 0133405697dc..9e0763bdc758 100644
  
  	return 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8423,7 +8425,7 @@ index 1505fc3ef7a8..1d3fec1924af 100644
  					    agpio, con_id, gpio_flags);
  	if (ret)
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8463,7 +8465,7 @@ index 31a42d81e970..0d5a8fd86e67 100644
  				     V4L2_CID_TEST_PATTERN,
  				     ARRAY_SIZE(ov7251_test_pattern_menu) - 1,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8514,7 +8516,7 @@ index cb153ce42c45..f11b499e14bb 100644
  	if (ret < 0)
  		goto out_cleanup;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8556,7 +8558,7 @@ index 9e0763bdc758..0976b267972b 100644
  		for (i = 0; i < board_data->n_gpiod_lookups; i++)
  			gpiod_add_lookup_table(board_data->tps68470_gpio_lookup_tables[i]);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8598,7 +8600,7 @@ index 7807fa329db0..2d2abb25b944 100644
 +
  #endif /* __LINUX_MFD_TPS68470_H */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8850,7 +8852,7 @@ index 000000000000..35aeb5db89c8
 +MODULE_DESCRIPTION("LED driver for TPS68470 PMIC");
 +MODULE_LICENSE("GPL v2");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8883,7 +8885,7 @@ index 032fbcb981f2..e03a1d8cdcb4 100644
  	cci_write(dw9719->regmap, DW9719_CONTROL, DW9719_SHUTDOWN, &ret);
  	fsleep(100);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8950,7 +8952,7 @@ index 9fa321a95eb3..8914a922be2b 100644
  	mp_config_acpi_legacy_irqs();
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -8992,7 +8994,7 @@ index 8914a922be2b..c43d0a553867 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9103,7 +9105,7 @@ index 33418dd6768a..f94bbdc1de06 100644
  		ret = sysfs_create_group(&dev->kobj, &acpi_tad_dc_attr_group);
  		if (ret)
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9131,7 +9133,7 @@ index a400c9a31fea..cddef7120a9a 100644
  #define CAPTURE_MAX_NUM_PERIODS     8
  #define CAPTURE_MAX_PERIOD_SIZE     4096
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9184,7 +9186,7 @@ index b30aea8b0540..cff2c5761a23 100644
  				pins = "gpio52", "gpio53", "gpio54", "gpio55";
  				function = "qup17";
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9565,7 +9567,7 @@ index 000000000000..3d4c0d36077d
 +MODULE_DESCRIPTION("DRM driver for CH13726A DSI panels");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9873,7 +9875,7 @@ index 000000000000..eeddcf5df569
 +MODULE_AUTHOR("Molly Sophia <mollysophia379@gmail.com>");
 +MODULE_AUTHOR("BigfootACA <bigfoot@classfun.cn>");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9936,7 +9938,7 @@ index 3f7b0b6a1d10..d0cfe6361954 100644
  				reg = <ADC5_CHG_TEMP>;
  				qcom,pre-scaling = <1 1>;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -9968,7 +9970,7 @@ index d0cfe6361954..42ef21238f18 100644
  			compatible = "qcom,spmi-adc5";
  			reg = <0x3100>;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -11414,7 +11416,7 @@ index 000000000000..63d0dda470f0
 +	};
 +};
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -11498,7 +11500,7 @@ index 3d4c0d36077d..0af26b65bca6 100644
  MODULE_DEVICE_TABLE(of, ch13726a_of_match);
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -11861,7 +11863,7 @@ index 000000000000..cef5a80477c0
 +MODULE_DESCRIPTION("PWM driver for HEROIC HTR3212");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -11966,7 +11968,7 @@ index 7b20553ccdb5..e16b61d4c11a 100644
  		pins = "gpio39";
  		function = "gpio";
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12076,7 +12078,7 @@ index eeddcf5df569..5145e2423171 100644
 +MODULE_AUTHOR("Teguh Sobirin <teguh@sobir.in>");
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12107,7 +12109,7 @@ index e16b61d4c11a..e0f49e8e75cd 100644
  		enable-gpios = <&tlmm 111 GPIO_ACTIVE_HIGH>;
  		pinctrl-0 = <&mcu_en_default>;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12148,7 +12150,7 @@ index 63d0dda470f0..f71065573acd 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12175,7 +12177,7 @@ index 2c743e35c1d3..2f156bc08daa 100644
  		USB_DEVICE_ID_APPLE_ALU_WIRELESS_2009_ISO),
  	  HID_BATTERY_QUIRK_PERCENT | HID_BATTERY_QUIRK_FEATURE },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12364,7 +12366,7 @@ index 000000000000..0e504b3c2796
 +MODULE_DESCRIPTION("Steam Deck EC MFD core driver");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12418,7 +12420,7 @@ index 0e504b3c2796..a60fa7db9141 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12547,7 +12549,7 @@ index 000000000000..686500b8de73
 +MODULE_DESCRIPTION("Steam Deck LEDs driver");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12634,7 +12636,7 @@ index 686500b8de73..ada9fffc0a42 100644
  	ret = devm_led_classdev_register(dev, &sd->cdev);
  	if (ret) {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -12864,7 +12866,7 @@ index 000000000000..74f190adc8ea
 +MODULE_DESCRIPTION("Steam Deck extcon driver");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13149,7 +13151,7 @@ index 000000000000..fab9e9460bd4
 +MODULE_DESCRIPTION("Steam Deck EC sensors driver");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13257,7 +13259,7 @@ index fab9e9460bd4..9d0a5471b181 100644
  		dev_err(dev, "Failed to register HWMON device");
  		return PTR_ERR(hwmon);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13291,7 +13293,7 @@ index 39c72cb52ce7..c899332a1078 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13328,7 +13330,7 @@ index c899332a1078..8efdfad732fc 100644
  	PROPERTY_ENTRY_STRING("linux,extcon-name", "VLV0100:00"),
  	{}
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13356,7 +13358,7 @@ index 8efdfad732fc..a4e0bfec04c8 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13396,7 +13398,7 @@ index 419b9a7abcce..22282578ab99 100644
  
  static struct device *cros_ec_cec_find_hdmi_dev(struct device *dev,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13504,7 +13506,7 @@ index 076f15a9867e..42f1e0b7f38a 100644
  
  	return 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13618,7 +13620,7 @@ index a3d16eece0d2..2c66a391dfeb 100644
  
  unlock:
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13645,7 +13647,7 @@ index 4cff4d9be313..5824c4d02eb7 100644
  };
  MODULE_DEVICE_TABLE(acpi, qca_bluetooth_acpi_match);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13683,7 +13685,7 @@ index eefdb6134ca5..d39845d0d86f 100644
  			/* Set state to BT_RUNNING so resume doesn't notify */
  			hdev->suspend_state = BT_RUNNING;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -13746,7 +13748,7 @@ index d39845d0d86f..32b9b57f9c61 100644
  	}
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14049,7 +14051,7 @@ index e7a0c60286d5..cffd9b1fd588 100644
  
  failed:
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14101,7 +14103,7 @@ index f94c30c20f20..c3b3f047969c 100644
  
  enum cpu_endpoints {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14134,7 +14136,7 @@ index a8ff2ce70be9..0278c610ae4c 100644
  	return 0;
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14416,7 +14418,7 @@ index cffd9b1fd588..e7a0c60286d5 100644
  
  failed:
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14456,7 +14458,7 @@ index c69194e04ff9..672cc5cbe647 100644
  	/*
  	 * Add the logic to extract BOTH power up and power down sequences
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14544,7 +14546,7 @@ index ddcdf23d731c..a01c02681776 100644
  #define MMC_QUIRK_BLKSZ_FOR_BYTE_MODE (1<<1)	/* use func->cur_blksize */
  						/* for byte mode */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14603,7 +14605,7 @@ index 672cc5cbe647..69725b0304f1 100644
  
  	// Check seamless boot support
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14633,7 +14635,7 @@ index 827b630daf49..a10242ed9598 100644
  	unsigned long long enter_timestamp;
  	unsigned long long finish_timestamp;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14675,7 +14677,7 @@ index aecaf37eee35..58d69ddc14f9 100644
  
  	/* TODO: DYNAMIC_VALIDATION needs to be implemented */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14719,7 +14721,7 @@ index 82a205a7c25c..13e4a0e2e4df 100644
  	dc->caps.post_blend_color_processing = true;
  	dc->caps.force_dp_tps4_for_cp2520 = true;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14800,7 +14802,7 @@ index 01479dd94e76..baa29357085a 100644
  			  u32 format, u64 modifier);
  bool drm_any_plane_has_format(struct drm_device *dev,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14833,7 +14835,7 @@ index 3bd44c24f692..f1ba6a518ee5 100644
  
  		DRM_INFO("use_doorbell being set to: [%s]\n",
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14863,7 +14865,7 @@ index 163780030eb1..8c698b25c99c 100644
  	else if (drm_mode_is_420_also(info, mode_in)
  			&& aconnector
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -14908,7 +14910,7 @@ index 8c698b25c99c..c018d98064ea 100644
  		amdgpu_dm_connector_add_freesync_modes(connector, drm_edid);
  	}
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15002,7 +15004,7 @@ index b4ca17c2fecf..9c13e819db84 100644
  		return -EINVAL;
  	}
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15044,7 +15046,7 @@ index 9dc93c5e480b..05d5800c9756 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15162,7 +15164,7 @@ index 918aca7c4db4..4a482de2e55d 100644
  	acpi_os_printf(ACPI_MSG_ERROR);
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15199,7 +15201,7 @@ index ffd034566e2e..59d75fe74f02 100644
  #if IS_ENABLED(CONFIG_HID_MAYFLASH)
  	{ HID_USB_DEVICE(USB_VENDOR_ID_DRAGONRISE, USB_DEVICE_ID_DRAGONRISE_PS3) },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15288,7 +15290,7 @@ index 889e5b05c739..676f363d536c 100644
  		if (!IS_ERR(pd))
  			goto put_device;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15420,7 +15422,7 @@ index 8f34f4b8183d..a2200aa92705 100644
  	 * @vics: Array of vics_len VICs. Internal to EDID parsing.
  	 */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15480,7 +15482,7 @@ index 375ca2f13b7a..6abefba6ae82 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -15987,7 +15989,7 @@ index 000000000000..925e46b81f67
 +module_exit(unload_acpi_call);
 \ No newline at end of file
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16015,7 +16017,7 @@ index 10721a125226..cab885efd289 100644
  	return NULL;
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16168,7 +16170,7 @@ index c9e677e3af1d..84d4fa142830 100644
  #define UI_BEGIN_FF_UPLOAD	_IOWR(UINPUT_IOCTL_BASE, 200, struct uinput_ff_upload)
  #define UI_END_FF_UPLOAD	_IOW(UINPUT_IOCTL_BASE, 201, struct uinput_ff_upload)
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16321,7 +16323,7 @@ index f0b131853155..e5416a6772cb 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16374,7 +16376,7 @@ index e5416a6772cb..06598be9cea3 100644
  	if (!pci_is_pcie(dev) ||
  		pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ACS))
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16423,7 +16425,7 @@ index 9deb91970d4d..5db16c20bd17 100644
  		}
  		if ((rdev->pdev->revision == 0xC3) ||
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16437,7 +16439,7 @@ This reverts commit 907830b0fc9e374d00f3c83de5e426157b482c01.
  1 file changed, 1 insertion(+), 7 deletions(-)
 
 diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
-index b0f4d98036cd..887c90f632fd 100644
+index 005b92e6585e..8cdb67dd0fda 100644
 --- a/drivers/pci/pci.c
 +++ b/drivers/pci/pci.c
 @@ -3800,14 +3800,8 @@ u32 pci_rebar_get_possible_sizes(struct pci_dev *pdev, int bar)
@@ -16457,7 +16459,7 @@ index b0f4d98036cd..887c90f632fd 100644
  EXPORT_SYMBOL(pci_rebar_get_possible_sizes);
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16593,7 +16595,7 @@ index d0fc045a8d31..c2f3bb3188cf 100644
  	/*
  	 * Modern (>=Nehalem) Intel systems use ACPI via intel_idle,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16696,7 +16698,7 @@ index 408f05dfab90..4eb99b74a04f 100644
  			"New power limit (%d) is out of range [%d,%d]\n",
  			limit, smu->min_power_limit, smu->max_power_limit);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16957,7 +16959,7 @@ index a9b37aeb515b..f46788799632 100644
  		struct usb_host_interface *intf,
  		struct usb_endpoint_descriptor *epd);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -16985,7 +16987,7 @@ index 1468fb11e39d..52f48be5fc55 100644
  #define DS4_OUTPUT_HWCTL_HID		0x80
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -17059,12 +17061,12 @@ index 88e821d67af7..16c8776dc4bf 100644
  
  static const struct pci_device_id pciidlist[] = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Wed, 15 Oct 2025 13:29:06 +0200
+Date: Sat, 1 Nov 2025 11:47:03 +0100
 Subject: HID: asus: simplify RGB init sequence
 
 Currently, RGB initialization forks depending on whether a device is
@@ -17162,12 +17164,12 @@ index 8db9d4e7c3b0..6848a64245cb 100644
  					      sizeof(struct asus_kbd_leds),
  					      GFP_KERNEL);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Wed, 15 Oct 2025 13:34:34 +0200
+Date: Sat, 1 Nov 2025 11:47:04 +0100
 Subject: HID: asus: use same report_id in response
 
 Currently, asus_kbd_get_functions prods the device using feature
@@ -17195,12 +17197,12 @@ index 6848a64245cb..a9a9d208ca6c 100644
  				 HID_REQ_GET_REPORT);
  	if (ret < 0) {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Wed, 15 Oct 2025 13:37:55 +0200
+Date: Sat, 1 Nov 2025 11:47:05 +0100
 Subject: HID: asus: fortify keyboard handshake
 
 Handshaking with an Asus device involves sending it a feature report
@@ -17278,12 +17280,12 @@ index a9a9d208ca6c..459d91fddacb 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Tue, 25 Mar 2025 19:45:51 +0100
+Date: Sat, 1 Nov 2025 11:47:06 +0100
 Subject: HID: asus: prevent binding to all HID devices on ROG
 
 Currently, when hid-asus is not loaded, NKEY keyboards load as ~6
@@ -17292,22 +17294,18 @@ all applications per HID endpoint, renames them, and prints errors
 when some of them do not have an input device.
 
 Therefore, change probe so that this is no longer the case. Stop
-renaming the devices, omit the check for .input which causes errors on
-e.g., the Z13 for some hiddev only devices, and add
-HID_QUIRK_INPUT_PER_APP so that each application gets its own event.
-
-When this is done, the probes are called multiple times. Due to this,
-the rgb check needs to be moved into probe, and the report fixup should
-be skipped for non-vendor endpoints (prevents multiple prints).
+renaming the devices, omit the check for .input which causes errors
+on e.g., the Z13 for some hiddev only devices, and move RGB checks
+into probe.
 
 Reviewed-by: Luke D. Jones <luke@ljones.dev>
 Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
 ---
- drivers/hid/hid-asus.c | 59 +++++++++++++++++++++++++++---------------
- 1 file changed, 38 insertions(+), 21 deletions(-)
+ drivers/hid/hid-asus.c | 52 ++++++++++++++++++++++++++++--------------
+ 1 file changed, 35 insertions(+), 17 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 459d91fddacb..e575962f73c8 100644
+index 459d91fddacb..6b843dce6f5e 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
 @@ -47,6 +47,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
@@ -17383,7 +17381,7 @@ index 459d91fddacb..e575962f73c8 100644
  
  	drvdata = devm_kzalloc(&hdev->dev, sizeof(*drvdata), GFP_KERNEL);
  	if (drvdata == NULL) {
-@@ -1218,18 +1207,42 @@ static int asus_probe(struct hid_device *hdev, const struct hid_device_id *id)
+@@ -1218,12 +1207,37 @@ static int asus_probe(struct hid_device *hdev, const struct hid_device_id *id)
  		return ret;
  	}
  
@@ -17395,15 +17393,10 @@ index 459d91fddacb..e575962f73c8 100644
 +	}
 +
 +	/*
-+	 * For ROG keyboards, make them HID/hiddev compliant by creating one
-+	 * input per application. For interfaces other than the vendor one,
-+	 * disable report fixups.
++	 * For ROG keyboards, disable fixups except vendor devices.
 +	 */
-+	if (drvdata->quirks & QUIRK_ROG_NKEY_KEYBOARD) {
-+		if (!is_vendor)
-+			drvdata->quirks |= QUIRK_SKIP_REPORT_FIXUP;
-+		hdev->quirks |= HID_QUIRK_INPUT_PER_APP;
-+	}
++	if (drvdata->quirks & QUIRK_ROG_NKEY_KEYBOARD && !is_vendor)
++		drvdata->quirks |= QUIRK_SKIP_REPORT_FIXUP;
 +
  	ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
  	if (ret) {
@@ -17416,21 +17409,17 @@ index 459d91fddacb..e575962f73c8 100644
 +	    asus_kbd_register_leds(hdev))
 +		hid_warn(hdev, "Failed to initialize backlight.\n");
 +
- 	/*
--	 * Check that input registration succeeded. Checking that
--	 * HID_CLAIMED_INPUT is set prevents a UAF when all input devices
--	 * were freed during registration due to no usages being mapped,
--	 * leaving drvdata->input pointing to freed memory.
++	/*
 +	 * For ROG keyboards, skip rename for consistency and ->input check as
 +	 * some devices do not have inputs.
- 	 */
++	 */
 +	if (drvdata->quirks & QUIRK_ROG_NKEY_KEYBOARD)
 +		return 0;
 +
- 	if (!drvdata->input || !(hdev->claimed & HID_CLAIMED_INPUT)) {
- 		hid_err(hdev, "Asus input not registered\n");
- 		ret = -ENOMEM;
-@@ -1352,6 +1365,10 @@ static const __u8 *asus_report_fixup(struct hid_device *hdev, __u8 *rdesc,
+ 	/*
+ 	 * Check that input registration succeeded. Checking that
+ 	 * HID_CLAIMED_INPUT is set prevents a UAF when all input devices
+@@ -1352,6 +1366,10 @@ static const __u8 *asus_report_fixup(struct hid_device *hdev, __u8 *rdesc,
  		rdesc = new_rdesc;
  	}
  
@@ -17442,12 +17431,72 @@ index 459d91fddacb..e575962f73c8 100644
  			*rsize == 331 && rdesc[190] == 0x85 && rdesc[191] == 0x5a &&
  			rdesc[204] == 0x95 && rdesc[205] == 0x05) {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Sat, 18 Oct 2025 09:21:15 +0200
+Date: Sat, 1 Nov 2025 11:47:07 +0100
+Subject: HID: asus: initialize LED endpoint early for old NKEY keyboards
+
+These keyboards have always had initialization in the kernel for 0x5d.
+At this point, it is hard to verify again and we risk regressions by
+removing this. Therefore, initialize with 0x5d as well.
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/hid/hid-asus.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
+index 6b843dce6f5e..92a1cd0c5806 100644
+--- a/drivers/hid/hid-asus.c
++++ b/drivers/hid/hid-asus.c
+@@ -91,6 +91,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
+ #define QUIRK_ROG_CLAYMORE_II_KEYBOARD BIT(12)
+ #define QUIRK_ROG_ALLY_XPAD		BIT(13)
+ #define QUIRK_SKIP_REPORT_FIXUP		BIT(14)
++#define QUIRK_ROG_NKEY_LEGACY		BIT(15)
+ 
+ #define I2C_KEYBOARD_QUIRKS			(QUIRK_FIX_NOTEBOOK_REPORT | \
+ 						 QUIRK_NO_INIT_REPORTS | \
+@@ -669,6 +670,16 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	if (drvdata->quirks & QUIRK_ROG_NKEY_LEGACY) {
++		/*
++		 * These keyboards might need 0x5d for shortcuts to work.
++		 * As it has been more than 5 years, it is hard to verify.
++		 */
++		ret = asus_kbd_init(hdev, FEATURE_KBD_LED_REPORT_ID1);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	/* Get keyboard functions */
+ 	ret = asus_kbd_get_functions(hdev, &kbd_func, FEATURE_KBD_REPORT_ID);
+ 	if (ret < 0)
+@@ -1409,10 +1420,10 @@ static const struct hid_device_id asus_devices[] = {
+ 	  QUIRK_USE_KBD_BACKLIGHT },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
+ 	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD),
+-	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
++	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
+ 	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD2),
+-	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
++	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
+ 	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD3),
+ 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sat, 1 Nov 2025 11:47:08 +0100
 Subject: platform/x86: asus-wmi: Add support for multiple kbd led handlers
 
 Some devices, such as the Z13 have multiple Aura devices connected
@@ -17469,12 +17518,12 @@ Reviewed-by: Luke D. Jones <luke@ljones.dev>
 Tested-by: Luke D. Jones <luke@ljones.dev>
 Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
 ---
- drivers/platform/x86/asus-wmi.c            | 175 ++++++++++++++++++---
+ drivers/platform/x86/asus-wmi.c            | 174 ++++++++++++++++++---
  include/linux/platform_data/x86/asus-wmi.h |  17 ++
- 2 files changed, 168 insertions(+), 24 deletions(-)
+ 2 files changed, 167 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index e72a2b5d158e..aab779142323 100644
+index e72a2b5d158e..5f23aedbf34f 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
 @@ -36,6 +36,7 @@
@@ -17503,7 +17552,7 @@ index e72a2b5d158e..aab779142323 100644
  
  	struct asus_rfkill wlan;
  	struct asus_rfkill bluetooth;
-@@ -1530,6 +1535,100 @@ static void asus_wmi_battery_exit(struct asus_wmi *asus)
+@@ -1530,6 +1535,99 @@ static void asus_wmi_battery_exit(struct asus_wmi *asus)
  
  /* LEDs ***********************************************************************/
  
@@ -17561,10 +17610,9 @@ index e72a2b5d158e..aab779142323 100644
 +
 +static void kbd_led_update_all(struct work_struct *work)
 +{
-+	enum led_brightness value;
 +	struct asus_wmi *asus;
 +	bool registered, notify;
-+	int ret;
++	int ret, value;
 +
 +	asus = container_of(work, struct asus_wmi, kbd_led_work);
 +
@@ -17604,7 +17652,7 @@ index e72a2b5d158e..aab779142323 100644
  /*
   * These functions actually update the LED's, and are called from a
   * workqueue. By doing this as separate work rather than when the LED
-@@ -1576,7 +1675,8 @@ static void kbd_led_update(struct asus_wmi *asus)
+@@ -1576,7 +1674,8 @@ static void kbd_led_update(struct asus_wmi *asus)
  {
  	int ctrl_param = 0;
  
@@ -17614,7 +17662,7 @@ index e72a2b5d158e..aab779142323 100644
  	asus_wmi_set_devstate(ASUS_WMI_DEVID_KBD_BACKLIGHT, ctrl_param, NULL);
  }
  
-@@ -1609,14 +1709,23 @@ static int kbd_led_read(struct asus_wmi *asus, int *level, int *env)
+@@ -1609,14 +1708,23 @@ static int kbd_led_read(struct asus_wmi *asus, int *level, int *env)
  
  static void do_kbd_led_set(struct led_classdev *led_cdev, int value)
  {
@@ -17640,7 +17688,7 @@ index e72a2b5d158e..aab779142323 100644
  }
  
  static void kbd_led_set(struct led_classdev *led_cdev,
-@@ -1631,10 +1740,11 @@ static void kbd_led_set(struct led_classdev *led_cdev,
+@@ -1631,10 +1739,11 @@ static void kbd_led_set(struct led_classdev *led_cdev,
  
  static void kbd_led_set_by_kbd(struct asus_wmi *asus, enum led_brightness value)
  {
@@ -17656,7 +17704,7 @@ index e72a2b5d158e..aab779142323 100644
  }
  
  static enum led_brightness kbd_led_get(struct led_classdev *led_cdev)
-@@ -1644,10 +1754,18 @@ static enum led_brightness kbd_led_get(struct led_classdev *led_cdev)
+@@ -1644,10 +1753,18 @@ static enum led_brightness kbd_led_get(struct led_classdev *led_cdev)
  
  	asus = container_of(led_cdev, struct asus_wmi, kbd_led);
  
@@ -17675,7 +17723,7 @@ index e72a2b5d158e..aab779142323 100644
  	return value;
  }
  
-@@ -1759,7 +1877,9 @@ static int camera_led_set(struct led_classdev *led_cdev,
+@@ -1759,7 +1876,9 @@ static int camera_led_set(struct led_classdev *led_cdev,
  
  static void asus_wmi_led_exit(struct asus_wmi *asus)
  {
@@ -17686,7 +17734,7 @@ index e72a2b5d158e..aab779142323 100644
  	led_classdev_unregister(&asus->tpd_led);
  	led_classdev_unregister(&asus->wlan_led);
  	led_classdev_unregister(&asus->lightbar_led);
-@@ -1797,22 +1917,25 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+@@ -1797,22 +1916,25 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
  			goto error;
  	}
  
@@ -17724,7 +17772,7 @@ index e72a2b5d158e..aab779142323 100644
  	}
  
  	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_WIRELESS_LED)
-@@ -4272,6 +4395,7 @@ static int asus_wmi_get_event_code(union acpi_object *obj)
+@@ -4272,6 +4394,7 @@ static int asus_wmi_get_event_code(union acpi_object *obj)
  
  static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
  {
@@ -17732,7 +17780,7 @@ index e72a2b5d158e..aab779142323 100644
  	unsigned int key_value = 1;
  	bool autorelease = 1;
  
-@@ -4288,19 +4412,22 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
+@@ -4288,19 +4411,22 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
  		return;
  	}
  
@@ -17800,12 +17848,12 @@ index 8a515179113d..1165039013b1 100644
  
  /* To be used by both hid-asus and asus-wmi to determine which controls kbd_brightness */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Tue, 25 Mar 2025 19:45:54 +0100
+Date: Sat, 1 Nov 2025 11:47:09 +0100
 Subject: HID: asus: listen to the asus-wmi brightness device instead of
  creating one
 
@@ -17824,10 +17872,10 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 10 insertions(+), 54 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index e575962f73c8..ee3387294d89 100644
+index 92a1cd0c5806..c67ebc65b2de 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -102,7 +102,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
+@@ -103,7 +103,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
  #define TRKID_SGN       ((TRKID_MAX + 1) >> 1)
  
  struct asus_kbd_leds {
@@ -17836,7 +17884,7 @@ index e575962f73c8..ee3387294d89 100644
  	struct hid_device *hdev;
  	struct work_struct work;
  	unsigned int brightness;
-@@ -494,11 +494,11 @@ static void asus_schedule_work(struct asus_kbd_leds *led)
+@@ -495,11 +495,11 @@ static void asus_schedule_work(struct asus_kbd_leds *led)
  	spin_unlock_irqrestore(&led->lock, flags);
  }
  
@@ -17852,7 +17900,7 @@ index e575962f73c8..ee3387294d89 100644
  	unsigned long flags;
  
  	spin_lock_irqsave(&led->lock, flags);
-@@ -508,20 +508,6 @@ static void asus_kbd_backlight_set(struct led_classdev *led_cdev,
+@@ -509,20 +509,6 @@ static void asus_kbd_backlight_set(struct led_classdev *led_cdev,
  	asus_schedule_work(led);
  }
  
@@ -17873,7 +17921,7 @@ index e575962f73c8..ee3387294d89 100644
  static void asus_kbd_backlight_work(struct work_struct *work)
  {
  	struct asus_kbd_leds *led = container_of(work, struct asus_kbd_leds, work);
-@@ -538,34 +524,6 @@ static void asus_kbd_backlight_work(struct work_struct *work)
+@@ -539,34 +525,6 @@ static void asus_kbd_backlight_work(struct work_struct *work)
  		hid_err(led->hdev, "Asus failed to set keyboard backlight: %d\n", ret);
  }
  
@@ -17908,7 +17956,7 @@ index e575962f73c8..ee3387294d89 100644
  /*
   * We don't care about any other part of the string except the version section.
   * Example strings: FGA80100.RC72LA.312_T01, FGA80100.RC71LS.318_T01
-@@ -700,14 +658,11 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
+@@ -711,14 +669,11 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
  	drvdata->kbd_backlight->removed = false;
  	drvdata->kbd_backlight->brightness = 0;
  	drvdata->kbd_backlight->hdev = hdev;
@@ -17925,7 +17973,7 @@ index e575962f73c8..ee3387294d89 100644
  	if (ret < 0) {
  		/* No need to have this still around */
  		devm_kfree(&hdev->dev, drvdata->kbd_backlight);
-@@ -1096,7 +1051,7 @@ static int __maybe_unused asus_resume(struct hid_device *hdev) {
+@@ -1107,7 +1062,7 @@ static int __maybe_unused asus_resume(struct hid_device *hdev) {
  
  	if (drvdata->kbd_backlight) {
  		const u8 buf[] = { FEATURE_KBD_REPORT_ID, 0xba, 0xc5, 0xc4,
@@ -17934,7 +17982,7 @@ index e575962f73c8..ee3387294d89 100644
  		ret = asus_kbd_set_report(hdev, buf, sizeof(buf));
  		if (ret < 0) {
  			hid_err(hdev, "Asus failed to set keyboard backlight: %d\n", ret);
-@@ -1232,7 +1187,6 @@ static int asus_probe(struct hid_device *hdev, const struct hid_device_id *id)
+@@ -1238,7 +1193,6 @@ static int asus_probe(struct hid_device *hdev, const struct hid_device_id *id)
  	}
  
  	if (is_vendor && (drvdata->quirks & QUIRK_USE_KBD_BACKLIGHT) &&
@@ -17942,7 +17990,7 @@ index e575962f73c8..ee3387294d89 100644
  	    asus_kbd_register_leds(hdev))
  		hid_warn(hdev, "Failed to initialize backlight.\n");
  
-@@ -1273,6 +1227,8 @@ static void asus_remove(struct hid_device *hdev)
+@@ -1285,6 +1239,8 @@ static void asus_remove(struct hid_device *hdev)
  	unsigned long flags;
  
  	if (drvdata->kbd_backlight) {
@@ -17952,12 +18000,12 @@ index e575962f73c8..ee3387294d89 100644
  		drvdata->kbd_backlight->removed = true;
  		spin_unlock_irqrestore(&drvdata->kbd_backlight->lock, flags);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Tue, 25 Mar 2025 19:45:55 +0100
+Date: Sat, 1 Nov 2025 11:47:10 +0100
 Subject: platform/x86: asus-wmi: remove unused keyboard backlight quirk
 
 The quirk for selecting whether keyboard backlight should be controlled
@@ -18019,12 +18067,12 @@ index 1165039013b1..d8c5269854b0 100644
 -
  #endif	/* __PLATFORM_DATA_X86_ASUS_WMI_H */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Sat, 18 Oct 2025 09:30:17 +0200
+Date: Sat, 1 Nov 2025 11:47:11 +0100
 Subject: platform/x86: asus-wmi: add keyboard brightness event handler
 
 The keyboard brightness control of Asus WMI keyboards is handled in
@@ -18052,10 +18100,10 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  2 files changed, 54 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index aab779142323..f229a50bd69e 100644
+index 5f23aedbf34f..a7482c97cc5b 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
-@@ -1629,6 +1629,44 @@ static void kbd_led_update_all(struct work_struct *work)
+@@ -1628,6 +1628,44 @@ static void kbd_led_update_all(struct work_struct *work)
  	}
  }
  
@@ -18100,7 +18148,7 @@ index aab779142323..f229a50bd69e 100644
  /*
   * These functions actually update the LED's, and are called from a
   * workqueue. By doing this as separate work rather than when the LED
-@@ -1711,13 +1749,11 @@ static void do_kbd_led_set(struct led_classdev *led_cdev, int value)
+@@ -1710,13 +1748,11 @@ static void do_kbd_led_set(struct led_classdev *led_cdev, int value)
  {
  	struct asus_hid_listener *listener;
  	struct asus_wmi *asus;
@@ -18115,7 +18163,7 @@ index aab779142323..f229a50bd69e 100644
  
  	if (asus->kbd_led_avail)
  		kbd_led_update(asus);
-@@ -1921,7 +1957,7 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+@@ -1920,7 +1956,7 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
  	asus->kbd_led.flags = LED_BRIGHT_HW_CHANGED;
  	asus->kbd_led.brightness_set = kbd_led_set;
  	asus->kbd_led.brightness_get = kbd_led_get;
@@ -18124,7 +18172,7 @@ index aab779142323..f229a50bd69e 100644
  	asus->kbd_led_avail = !kbd_led_read(asus, &led_val, NULL);
  	INIT_WORK(&asus->kbd_led_work, kbd_led_update_all);
  
-@@ -4424,7 +4460,7 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
+@@ -4423,7 +4459,7 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
  		return;
  	}
  	if (code == NOTIFY_KBD_BRTTOGGLE) {
@@ -18172,12 +18220,12 @@ index d8c5269854b0..3f679598b629 100644
  
  #endif	/* __PLATFORM_DATA_X86_ASUS_WMI_H */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Tue, 25 Mar 2025 19:45:57 +0100
+Date: Sat, 1 Nov 2025 11:47:12 +0100
 Subject: HID: asus: add support for the asus-wmi brightness handler
 
 If the asus-wmi brightness handler is available, send the
@@ -18192,10 +18240,10 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 11 insertions(+)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index ee3387294d89..2b04397ed571 100644
+index c67ebc65b2de..5d062097fe78 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -324,6 +324,17 @@ static int asus_event(struct hid_device *hdev, struct hid_field *field,
+@@ -325,6 +325,17 @@ static int asus_event(struct hid_device *hdev, struct hid_field *field,
  			 usage->hid & HID_USAGE);
  	}
  
@@ -18214,7 +18262,7 @@ index ee3387294d89..2b04397ed571 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18238,20 +18286,20 @@ Signed-off-by: Jiri Kosina <jkosina@suse.com>
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 2b04397ed571..c2c25825cb42 100644
+index 5d062097fe78..de64451e315d 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -1379,9 +1379,6 @@ static const struct hid_device_id asus_devices[] = {
+@@ -1391,9 +1391,6 @@ static const struct hid_device_id asus_devices[] = {
  	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
  	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD2),
- 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
+ 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
 -	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
 -	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD3),
 -	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
  	    USB_DEVICE_ID_ASUSTEK_ROG_Z13_LIGHTBAR),
  	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
-@@ -1411,6 +1408,9 @@ static const struct hid_device_id asus_devices[] = {
+@@ -1423,6 +1420,9 @@ static const struct hid_device_id asus_devices[] = {
  	 * Note bind to the HID_GROUP_GENERIC group, so that we only bind to the keyboard
  	 * part, while letting hid-multitouch.c handle the touchpad.
  	 */
@@ -18275,7 +18323,7 @@ index ded5348d190c..5721b8414bbd 100644
  #define USB_DEVICE_ID_ASUSTEK_ROG_NKEY_ALLY		0x1abe
  #define USB_DEVICE_ID_ASUSTEK_ROG_NKEY_ALLY_X		0x1b4c
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18292,8 +18340,8 @@ userspace programs.
 Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
 ---
  drivers/hid/Kconfig    |   1 +
- drivers/hid/hid-asus.c | 171 +++++++++++++++++++++++++++++++++++++----
- 2 files changed, 156 insertions(+), 16 deletions(-)
+ drivers/hid/hid-asus.c | 173 +++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 158 insertions(+), 16 deletions(-)
 
 diff --git a/drivers/hid/Kconfig b/drivers/hid/Kconfig
 index 707983ce6854..2526d8e20b4f 100644
@@ -18308,7 +18356,7 @@ index 707983ce6854..2526d8e20b4f 100644
  	depends on ASUS_WMI || ASUS_WMI=n
  	select POWER_SUPPLY
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index c2c25825cb42..e19edc778ca4 100644
+index de64451e315d..799cf43d2cea 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
 @@ -23,6 +23,7 @@
@@ -18335,15 +18383,15 @@ index c2c25825cb42..e19edc778ca4 100644
  
  #define ROG_ALLY_REPORT_SIZE 64
  #define ROG_ALLY_X_MIN_MCU 313
-@@ -91,6 +94,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
- #define QUIRK_ROG_CLAYMORE_II_KEYBOARD BIT(12)
+@@ -92,6 +95,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
  #define QUIRK_ROG_ALLY_XPAD		BIT(13)
  #define QUIRK_SKIP_REPORT_FIXUP		BIT(14)
-+#define QUIRK_ROG_NKEY_RGB		BIT(15)
+ #define QUIRK_ROG_NKEY_LEGACY		BIT(15)
++#define QUIRK_ROG_NKEY_RGB		BIT(16)
  
  #define I2C_KEYBOARD_QUIRKS			(QUIRK_FIX_NOTEBOOK_REPORT | \
  						 QUIRK_NO_INIT_REPORTS | \
-@@ -103,9 +107,15 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
+@@ -104,9 +108,15 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
  
  struct asus_kbd_leds {
  	struct asus_hid_listener listener;
@@ -18359,7 +18407,7 @@ index c2c25825cb42..e19edc778ca4 100644
  	spinlock_t lock;
  	bool removed;
  };
-@@ -505,23 +515,67 @@ static void asus_schedule_work(struct asus_kbd_leds *led)
+@@ -506,23 +516,67 @@ static void asus_schedule_work(struct asus_kbd_leds *led)
  	spin_unlock_irqrestore(&led->lock, flags);
  }
  
@@ -18406,8 +18454,9 @@ index c2c25825cb42..e19edc778ca4 100644
  
 -	asus_schedule_work(led);
 +	do_asus_kbd_backlight_set(led, brightness);
-+}
-+
+ }
+ 
+-static void asus_kbd_backlight_work(struct work_struct *work)
 +static enum led_brightness asus_kbd_brightness_get(struct led_classdev *led_cdev)
 +{
 +	struct led_classdev_mc *mc_led;
@@ -18423,16 +18472,15 @@ index c2c25825cb42..e19edc778ca4 100644
 +	spin_unlock_irqrestore(&led->lock, flags);
 +
 +	return brightness;
- }
- 
--static void asus_kbd_backlight_work(struct work_struct *work)
++}
++
 +static void asus_kbd_backlight_work(struct asus_kbd_leds *led)
  {
 -	struct asus_kbd_leds *led = container_of(work, struct asus_kbd_leds, work);
  	u8 buf[] = { FEATURE_KBD_REPORT_ID, 0xba, 0xc5, 0xc4, 0x00 };
  	int ret;
  	unsigned long flags;
-@@ -626,12 +680,70 @@ static void validate_mcu_fw_version(struct hid_device *hdev, int idProduct)
+@@ -627,12 +681,71 @@ static void validate_mcu_fw_version(struct hid_device *hdev, int idProduct)
  	}
  }
  
@@ -18500,10 +18548,19 @@ index c2c25825cb42..e19edc778ca4 100644
  	struct usb_device *udev;
  	unsigned char kbd_func;
 +	struct asus_kbd_leds *leds;
++	bool rgb_init = true;
  	int ret;
  
  	ret = asus_kbd_init(hdev, FEATURE_KBD_REPORT_ID);
-@@ -666,20 +778,47 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
+@@ -647,6 +760,7 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
+ 		ret = asus_kbd_init(hdev, FEATURE_KBD_LED_REPORT_ID1);
+ 		if (ret < 0)
+ 			return ret;
++		rgb_init = false;
+ 	}
+ 
+ 	/* Get keyboard functions */
+@@ -677,20 +791,47 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
  	if (!drvdata->kbd_backlight)
  		return -ENOMEM;
  
@@ -18521,7 +18578,7 @@ index c2c25825cb42..e19edc778ca4 100644
 +	leds->rgb_colors[0] = 0;
 +	leds->rgb_colors[1] = 0;
 +	leds->rgb_colors[2] = 0;
-+	leds->rgb_init = true;
++	leds->rgb_init = rgb_init;
 +	leds->rgb_set = false;
 +	leds->mc_led.led_cdev.name = devm_kasprintf(&hdev->dev, GFP_KERNEL,
 +					"asus-%s:rgb:peripheral",
@@ -18560,8 +18617,8 @@ index c2c25825cb42..e19edc778ca4 100644
  }
  
  /*
-@@ -1381,7 +1520,7 @@ static const struct hid_device_id asus_devices[] = {
- 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
+@@ -1393,7 +1534,7 @@ static const struct hid_device_id asus_devices[] = {
+ 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
  	    USB_DEVICE_ID_ASUSTEK_ROG_Z13_LIGHTBAR),
 -	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
@@ -18569,7 +18626,7 @@ index c2c25825cb42..e19edc778ca4 100644
  	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
  	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_ALLY),
  	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_ALLY_XPAD},
-@@ -1410,7 +1549,7 @@ static const struct hid_device_id asus_devices[] = {
+@@ -1422,7 +1563,7 @@ static const struct hid_device_id asus_devices[] = {
  	 */
  	{ HID_DEVICE(BUS_USB, HID_GROUP_GENERIC,
  		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_ROG_Z13_FOLIO),
@@ -18579,7 +18636,7 @@ index c2c25825cb42..e19edc778ca4 100644
  		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_T101HA_KEYBOARD) },
  	{ }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18596,10 +18653,10 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index e19edc778ca4..3ce18d62067a 100644
+index 799cf43d2cea..2864f8238eed 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -1523,10 +1523,12 @@ static const struct hid_device_id asus_devices[] = {
+@@ -1537,10 +1537,12 @@ static const struct hid_device_id asus_devices[] = {
  	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_RGB },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
  	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_ALLY),
@@ -18615,86 +18672,7 @@ index e19edc778ca4..3ce18d62067a 100644
  	    USB_DEVICE_ID_ASUSTEK_ROG_CLAYMORE_II_KEYBOARD),
  	  QUIRK_ROG_CLAYMORE_II_KEYBOARD },
 -- 
-2.51.1
-
-
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Antheas Kapenekakis <lkml@antheas.dev>
-Date: Tue, 25 Mar 2025 19:46:00 +0100
-Subject: HID: asus: initialize LED endpoint early for old NKEY keyboards
-
-These keyboards have always had initialization in the kernel for 0x5d.
-At this point, it is hard to verify again and we risk regressions by
-removing this. Therefore, initialize with 0x5d, and skip RGB
-initialization if that is enabled.
-
-Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
----
- drivers/hid/hid-asus.c | 20 +++++++++++++++++---
- 1 file changed, 17 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 3ce18d62067a..2c0822b46400 100644
---- a/drivers/hid/hid-asus.c
-+++ b/drivers/hid/hid-asus.c
-@@ -95,6 +95,7 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
- #define QUIRK_ROG_ALLY_XPAD		BIT(13)
- #define QUIRK_SKIP_REPORT_FIXUP		BIT(14)
- #define QUIRK_ROG_NKEY_RGB		BIT(15)
-+#define QUIRK_ROG_NKEY_LEGACY		BIT(16)
- 
- #define I2C_KEYBOARD_QUIRKS			(QUIRK_FIX_NOTEBOOK_REPORT | \
- 						 QUIRK_NO_INIT_REPORTS | \
-@@ -744,12 +745,25 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
- 	struct usb_device *udev;
- 	unsigned char kbd_func;
- 	struct asus_kbd_leds *leds;
-+	bool rgb_init = true;
- 	int ret;
- 
- 	ret = asus_kbd_init(hdev, FEATURE_KBD_REPORT_ID);
- 	if (ret < 0)
- 		return ret;
- 
-+	if (drvdata->quirks & QUIRK_ROG_NKEY_LEGACY) {
-+		/*
-+		 * These keyboards might need 0x5d for shortcuts to work.
-+		 * As it has been more than 5 years, it is hard to verify.
-+		 */
-+		ret = asus_kbd_init(hdev, FEATURE_KBD_LED_REPORT_ID1);
-+		if (ret < 0)
-+			return ret;
-+
-+		rgb_init = false;
-+	}
-+
- 	/* Get keyboard functions */
- 	ret = asus_kbd_get_functions(hdev, &kbd_func, FEATURE_KBD_REPORT_ID);
- 	if (ret < 0)
-@@ -787,7 +801,7 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
- 	leds->rgb_colors[0] = 0;
- 	leds->rgb_colors[1] = 0;
- 	leds->rgb_colors[2] = 0;
--	leds->rgb_init = true;
-+	leds->rgb_init = rgb_init;
- 	leds->rgb_set = false;
- 	leds->mc_led.led_cdev.name = devm_kasprintf(&hdev->dev, GFP_KERNEL,
- 					"asus-%s:rgb:peripheral",
-@@ -1514,10 +1528,10 @@ static const struct hid_device_id asus_devices[] = {
- 	  QUIRK_USE_KBD_BACKLIGHT },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
- 	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD),
--	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
-+	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
- 	    USB_DEVICE_ID_ASUSTEK_ROG_NKEY_KEYBOARD2),
--	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
-+	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_LEGACY },
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUSTEK,
- 	    USB_DEVICE_ID_ASUSTEK_ROG_Z13_LIGHTBAR),
- 	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_RGB },
--- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18707,15 +18685,15 @@ both bluetooth and USB.
 
 Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
 ---
- drivers/hid/hid-asus.c | 4 ++++
- drivers/hid/hid-ids.h  | 3 +++
- 2 files changed, 7 insertions(+)
+ drivers/hid/hid-asus.c | 10 ++++++++++
+ drivers/hid/hid-ids.h  |  3 +++
+ 2 files changed, 13 insertions(+)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 2c0822b46400..b419d3062309 100644
+index 2864f8238eed..4f8c44c8a7dd 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -1103,6 +1103,7 @@ static int asus_input_mapping(struct hid_device *hdev,
+@@ -1102,6 +1102,7 @@ static int asus_input_mapping(struct hid_device *hdev,
  		case 0x8b: asus_map_key_clear(KEY_PROG1);	break; /* ProArt Creator Hub key */
  		case 0x6b: asus_map_key_clear(KEY_F21);		break; /* ASUS touchpad toggle */
  		case 0x38: asus_map_key_clear(KEY_PROG1);	break; /* ROG key */
@@ -18723,12 +18701,18 @@ index 2c0822b46400..b419d3062309 100644
  		case 0xba: asus_map_key_clear(KEY_PROG2);	break; /* Fn+C ASUS Splendid */
  		case 0x5c: asus_map_key_clear(KEY_PROG3);	break; /* Fn+Space Power4Gear */
  		case 0x99: asus_map_key_clear(KEY_PROG4);	break; /* Fn+F5 "fan" symbol */
-@@ -1566,6 +1567,9 @@ static const struct hid_device_id asus_devices[] = {
+@@ -1566,6 +1567,15 @@ static const struct hid_device_id asus_devices[] = {
  	{ HID_DEVICE(BUS_USB, HID_GROUP_GENERIC,
  		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_ROG_Z13_FOLIO),
  	  QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD | QUIRK_ROG_NKEY_RGB },
 +	{ HID_DEVICE(BUS_USB, HID_GROUP_GENERIC,
 +		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_ZENBOOK_DUO_KEYBOARD),
++		QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
++	{ HID_DEVICE(BUS_USB, HID_GROUP_GENERIC,
++		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_ZENBOOK_DUO_KEYBOARD_2),
++		QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
++	{ HID_DEVICE(BUS_BLUETOOTH, HID_GROUP_GENERIC,
++		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_ZENBOOK_DUO_KEYBOARD_2_BLUETOOTH),
 +		QUIRK_USE_KBD_BACKLIGHT | QUIRK_ROG_NKEY_KEYBOARD },
  	{ HID_DEVICE(BUS_USB, HID_GROUP_GENERIC,
  		USB_VENDOR_ID_ASUSTEK, USB_DEVICE_ID_ASUSTEK_T101HA_KEYBOARD) },
@@ -18748,7 +18732,7 @@ index 5721b8414bbd..304890c11fa0 100644
  #define USB_VENDOR_ID_ATEN		0x0557
  #define USB_DEVICE_ID_ATEN_UC100KM	0x2004
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18781,10 +18765,10 @@ index 6a62bc5b02fd..d9e1b2a69f11 100644
  
  static struct quirk_entry quirk_asus_z13 = {
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index f229a50bd69e..c8dcc26f4065 100644
+index a7482c97cc5b..c0a2a6028674 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
-@@ -1970,7 +1970,9 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+@@ -1969,7 +1969,9 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
  
  	scoped_guard(spinlock_irqsave, &asus_ref.lock) {
  		asus_ref.asus = asus;
@@ -18808,7 +18792,7 @@ index 5cd4392b964e..73710ae9a591 100644
  	enum asus_wmi_tablet_switch_mode tablet_switch_mode;
  	int wapf;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18834,7 +18818,7 @@ index 0a040364b512..f81bf8dc4f72 100644
  	"ROG CROSSHAIR X670E GENE",
  	"ROG CROSSHAIR X670E HERO",
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -18852,7 +18836,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  3 files changed, 40 insertions(+), 139 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index b419d3062309..1501c0564fa5 100644
+index 4f8c44c8a7dd..2f0b5e5e686a 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
 @@ -675,9 +675,6 @@ static void validate_mcu_fw_version(struct hid_device *hdev, int idProduct)
@@ -18865,14 +18849,14 @@ index b419d3062309..1501c0564fa5 100644
  	}
  }
  
-@@ -1593,5 +1590,4 @@ static struct hid_driver asus_driver = {
+@@ -1599,5 +1596,4 @@ static struct hid_driver asus_driver = {
  };
  module_hid_driver(asus_driver);
  
 -MODULE_IMPORT_NS("ASUS_WMI");
  MODULE_LICENSE("GPL");
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index c8dcc26f4065..6d5da5c97920 100644
+index c0a2a6028674..95e930e191b7 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
 @@ -143,20 +143,16 @@ module_param(fnlock_default, bool, 0444);
@@ -18974,7 +18958,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  static ssize_t mcu_powersave_show(struct device *dev,
  				   struct device_attribute *attr, char *buf)
  {
-@@ -4919,21 +4877,6 @@ static int asus_wmi_add(struct platform_device *pdev)
+@@ -4918,21 +4876,6 @@ static int asus_wmi_add(struct platform_device *pdev)
  	if (err)
  		goto fail_platform;
  
@@ -18996,7 +18980,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  	/* ensure defaults for tunables */
  	asus->ppt_pl2_sppt = 5;
  	asus->ppt_pl1_spl = 5;
-@@ -4947,6 +4890,8 @@ static int asus_wmi_add(struct platform_device *pdev)
+@@ -4946,6 +4889,8 @@ static int asus_wmi_add(struct platform_device *pdev)
  	asus->dgpu_disable_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_DGPU);
  	asus->kbd_rgb_state_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_TUF_RGB_STATE);
  	asus->oobe_state_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_OOBE);
@@ -19005,7 +18989,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  
  	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MINI_LED_MODE))
  		asus->mini_led_dev_id = ASUS_WMI_DEVID_MINI_LED_MODE;
-@@ -5133,6 +5078,34 @@ static int asus_hotk_resume(struct device *device)
+@@ -5132,6 +5077,34 @@ static int asus_hotk_resume(struct device *device)
  	return 0;
  }
  
@@ -19040,7 +19024,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  static int asus_hotk_restore(struct device *device)
  {
  	struct asus_wmi *asus = dev_get_drvdata(device);
-@@ -5180,51 +5153,11 @@ static int asus_hotk_restore(struct device *device)
+@@ -5179,51 +5152,11 @@ static int asus_hotk_restore(struct device *device)
  	return 0;
  }
  
@@ -19093,7 +19077,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  };
  
  /* Registration ***************************************************************/
-@@ -5251,13 +5184,7 @@ static int asus_wmi_probe(struct platform_device *pdev)
+@@ -5250,13 +5183,7 @@ static int asus_wmi_probe(struct platform_device *pdev)
  			return ret;
  	}
  
@@ -19108,7 +19092,7 @@ index c8dcc26f4065..6d5da5c97920 100644
  }
  
  static bool used;
-@@ -5291,9 +5218,6 @@ EXPORT_SYMBOL_GPL(asus_wmi_register_driver);
+@@ -5290,9 +5217,6 @@ EXPORT_SYMBOL_GPL(asus_wmi_register_driver);
  
  void asus_wmi_unregister_driver(struct asus_wmi_driver *driver)
  {
@@ -19162,7 +19146,7 @@ index 3f679598b629..bfb42318cbdf 100644
  					   u32 *retval)
  {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19178,10 +19162,10 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 1 insertion(+)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index 6d5da5c97920..9ad7087d6c19 100644
+index 95e930e191b7..d7b34d4caec4 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
-@@ -5158,6 +5158,7 @@ static const struct dev_pm_ops asus_pm_ops = {
+@@ -5157,6 +5157,7 @@ static const struct dev_pm_ops asus_pm_ops = {
  	.restore = asus_hotk_restore,
  	.resume = asus_hotk_resume,
  	.resume_early = asus_hotk_resume_early,
@@ -19190,7 +19174,7 @@ index 6d5da5c97920..9ad7087d6c19 100644
  
  /* Registration ***************************************************************/
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19206,7 +19190,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 5 insertions(+), 109 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 1501c0564fa5..14ae1c5006a0 100644
+index 2f0b5e5e686a..2cfca75d3928 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
 @@ -56,10 +56,6 @@ MODULE_DESCRIPTION("Asus HID Keyboard and TouchPad");
@@ -19226,11 +19210,11 @@ index 1501c0564fa5..14ae1c5006a0 100644
  #define QUIRK_ROG_CLAYMORE_II_KEYBOARD BIT(12)
 -#define QUIRK_ROG_ALLY_XPAD		BIT(13)
 -#define QUIRK_SKIP_REPORT_FIXUP		BIT(14)
--#define QUIRK_ROG_NKEY_RGB		BIT(15)
--#define QUIRK_ROG_NKEY_LEGACY		BIT(16)
+-#define QUIRK_ROG_NKEY_LEGACY		BIT(15)
+-#define QUIRK_ROG_NKEY_RGB		BIT(16)
 +#define QUIRK_SKIP_REPORT_FIXUP		BIT(13)
-+#define QUIRK_ROG_NKEY_RGB		BIT(14)
-+#define QUIRK_ROG_NKEY_LEGACY		BIT(15)
++#define QUIRK_ROG_NKEY_LEGACY		BIT(14)
++#define QUIRK_ROG_NKEY_RGB		BIT(15)
  
  #define I2C_KEYBOARD_QUIRKS			(QUIRK_FIX_NOTEBOOK_REPORT | \
  						 QUIRK_NO_INIT_REPORTS | \
@@ -19338,7 +19322,7 @@ index 1501c0564fa5..14ae1c5006a0 100644
  	unsigned char kbd_func;
  	struct asus_kbd_leds *leds;
  	bool rgb_init = true;
-@@ -772,13 +677,6 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
+@@ -771,13 +676,6 @@ static int asus_kbd_register_leds(struct hid_device *hdev)
  			return ret;
  	}
  
@@ -19368,7 +19352,7 @@ index 1501c0564fa5..14ae1c5006a0 100644
  	    USB_DEVICE_ID_ASUSTEK_ROG_CLAYMORE_II_KEYBOARD),
  	  QUIRK_ROG_CLAYMORE_II_KEYBOARD },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19384,7 +19368,7 @@ for the platform (should NOOP though).
  1 file changed, 6 deletions(-)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 14ae1c5006a0..8d9c4fbd1a96 100644
+index 2cfca75d3928..f04b6703825e 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
 @@ -1431,12 +1431,6 @@ static const struct hid_device_id asus_devices[] = {
@@ -19401,7 +19385,7 @@ index 14ae1c5006a0..8d9c4fbd1a96 100644
  	    USB_DEVICE_ID_ASUSTEK_ROG_CLAYMORE_II_KEYBOARD),
  	  QUIRK_ROG_CLAYMORE_II_KEYBOARD },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19482,7 +19466,7 @@ index 16d5ea77192f..1997c1aaaafd 100644
  	{ "CSC3551", "104318D3", generic_dsd_config },
  	{ "CSC3551", "10431A63", missing_speaker_id_gpio2 },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19534,7 +19518,7 @@ index d27abe54fcf9..ef6c3764a834 100644
  
  #endif /* FW_ATTR_CLASS_H */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19558,10 +19542,10 @@ Signed-off-by: Luke D. Jones <luke@ljones.dev>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index 9ad7087d6c19..53632585bc01 100644
+index d7b34d4caec4..78816e7d3c5b 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
-@@ -4918,7 +4918,7 @@ static int asus_wmi_add(struct platform_device *pdev)
+@@ -4917,7 +4917,7 @@ static int asus_wmi_add(struct platform_device *pdev)
  		goto fail_fan_boost_mode;
  
  	err = platform_profile_setup(asus);
@@ -19571,7 +19555,7 @@ index 9ad7087d6c19..53632585bc01 100644
  
  	err = asus_wmi_sysfs_init(asus->platform_device);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -19592,7 +19576,7 @@ Reviewed-by: Mario Limonciello <mario.limonciello@amd.com>
  2 files changed, 51 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index 53632585bc01..ab6fcd2ea8b2 100644
+index 78816e7d3c5b..83151d786139 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
 @@ -391,7 +391,7 @@ int asus_wmi_evaluate_method(u32 method_id, u32 arg0, u32 arg1, u32 *retval)
@@ -19685,7 +19669,7 @@ index bfb42318cbdf..eb0395edde4c 100644
  					   u32 *retval)
  {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -20502,7 +20486,7 @@ index 000000000000..b00d829c9da0
 +
 +#endif /* _ASUS_BIOSCFG_H_ */
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index ab6fcd2ea8b2..2bccb28d8e41 100644
+index 83151d786139..72c70073879d 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
 @@ -56,8 +56,6 @@ module_param(fnlock_default, bool, 0444);
@@ -20538,7 +20522,7 @@ index eb0395edde4c..88f107eb54ea 100644
  #define ASUS_WMI_METHODID_SPEC	        0x43455053 /* BIOS SPECification */
  #define ASUS_WMI_METHODID_SFBD		0x44424653 /* Set First Boot Device */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -20600,7 +20584,7 @@ index 88f107eb54ea..4408f8171c8e 100644
  #define ASUS_WMI_DEVID_CAMERA		0x00060013
  #define ASUS_WMI_DEVID_LID_FLIP		0x00060062
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -20879,7 +20863,7 @@ index b00d829c9da0..91ec6f4cb149 100644
 +
  #endif /* _ASUS_BIOSCFG_H_ */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21009,7 +20993,7 @@ index 4408f8171c8e..291a8314d0f5 100644
  #define ASUS_WMI_DEVID_GPU_MUX		0x00090016
  #define ASUS_WMI_DEVID_GPU_MUX_VIVO	0x00090026
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21175,7 +21159,7 @@ index 291a8314d0f5..25b048522b8e 100644
  /* gpu mux switch, 0 = dGPU, 1 = Optimus */
  #define ASUS_WMI_DEVID_GPU_MUX		0x00090016
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21524,7 +21508,7 @@ index 25b048522b8e..6d6ac0561ee2 100644
  #define ASUS_WMI_DEVID_DGPU_SET_TGP	0x00120098
  #define ASUS_WMI_DEVID_APU_MEM		0x000600C1
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21544,17 +21528,17 @@ Acked-by: Jiri Kosina <jkosina@suse.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/drivers/hid/hid-asus.c b/drivers/hid/hid-asus.c
-index 8d9c4fbd1a96..1daf7e186f27 100644
+index f04b6703825e..45c5ac672d05 100644
 --- a/drivers/hid/hid-asus.c
 +++ b/drivers/hid/hid-asus.c
-@@ -1480,4 +1480,5 @@ static struct hid_driver asus_driver = {
+@@ -1486,4 +1486,5 @@ static struct hid_driver asus_driver = {
  };
  module_hid_driver(asus_driver);
  
 +MODULE_IMPORT_NS("ASUS_WMI");
  MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21584,7 +21568,7 @@ index 3a218fb592ce..734a49b9fdcf 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "AYADEVICE"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21614,7 +21598,7 @@ index 734a49b9fdcf..aae1634f52ee 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "AYADEVICE"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21661,7 +21645,7 @@ index aae1634f52ee..a32017d18474 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21696,7 +21680,7 @@ index a32017d18474..3c86f9be5e83 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21727,7 +21711,7 @@ index 3c86f9be5e83..5dffb1bdc5e2 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21769,7 +21753,7 @@ index 5dffb1bdc5e2..fd159709d00e 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21813,7 +21797,7 @@ index 2f156bc08daa..09b7b8240d6f 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21847,7 +21831,7 @@ index fd159709d00e..b06ab3cd0fd5 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "OrangePi"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21887,7 +21871,7 @@ index b06ab3cd0fd5..3ec26fadec93 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ZOTAC"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21927,7 +21911,7 @@ index 3ec26fadec93..96f2c435e970 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ZOTAC"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -21960,7 +21944,7 @@ index 96f2c435e970..05b1c993c645 100644
  		 * GPD Pocket, note that the DMI data is less generic then
  		 * it seems, devices with a board-vendor of "AMI Corporation"
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -22034,7 +22018,7 @@ index 05b1c993c645..79d89b17b12a 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "Valve"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -22072,7 +22056,7 @@ index 79d89b17b12a..7590b804d805 100644
  		.matches = {
  			DMI_EXACT_MATCH(DMI_SYS_VENDOR, "AYANEO"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -22103,7 +22087,7 @@ index 7590b804d805..f508ffbd6d20 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "Valve"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -22136,7 +22120,7 @@ index f508ffbd6d20..ed1901de4a8e 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -22170,7 +22154,7 @@ index 252dcae039f8..a53b9bb7de4c 100644
  	{ }
  };
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42538,7 +42522,7 @@ index 000000000000..27baeb96ce7c
 +
 +#endif
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42627,7 +42611,7 @@ index 837a60deab9d..3d732400e449 100644
  
  	INIT_DELAYED_WORK(&aw87xxx->fw_load_work, aw87xxx_fw_load_work_routine);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42683,7 +42667,7 @@ index 8fb1a5c6ff6d..4910abdd24ec 100644
  	{.id = ALC283_FIXUP_INT_MIC, .name = "alc283-int-mic"},
  	{.id = ALC290_FIXUP_MONO_SPEAKERS_HSJACK, .name = "mono-speakers"},
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42789,7 +42773,7 @@ index 4910abdd24ec..7870d1cb570c 100644
  	SND_PCI_QUIRK(0x8086, 0x2080, "Intel NUC 8 Rugged", ALC256_FIXUP_INTEL_NUC8_RUGGED),
  	SND_PCI_QUIRK(0x8086, 0x2081, "Intel NUC 10", ALC256_FIXUP_INTEL_NUC10),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42817,7 +42801,7 @@ index c77839b03a96..2e8088b94a63 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -42979,7 +42963,7 @@ index 1a1924d71006..411775fae4ac 100644
 +   standby-states
     suspend-flows
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43049,7 +43033,7 @@ index 9c13e819db84..85cda200fb37 100644
  {
  	return state != PM_SUSPEND_TO_IDLE && suspend_ops->prepare ?
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43119,7 +43103,7 @@ index 85cda200fb37..4e9481f350f4 100644
  {
  	return s2idle_ops && s2idle_ops->display_on ? s2idle_ops->display_on() : 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43170,7 +43154,7 @@ index 4e9481f350f4..a811b39346e5 100644
  {
  	return s2idle_ops && s2idle_ops->sleep_exit ? s2idle_ops->sleep_exit() : 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43395,7 +43379,7 @@ index a811b39346e5..72f1c63900a9 100644
  	return error;
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43503,7 +43487,7 @@ index dd0b40b9bbe8..7391f87f3aa0 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43635,7 +43619,7 @@ index 7391f87f3aa0..c0ab4d4f01be 100644
  
  void __init acpi_s2idle_setup(void)
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43703,7 +43687,7 @@ index c0ab4d4f01be..99e5f0938e53 100644
  	}
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43825,7 +43809,7 @@ index 99e5f0938e53..b2c98f561e42 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -43904,7 +43888,7 @@ index b2c98f561e42..2d097d020e3b 100644
  	.display_on = acpi_s2idle_display_on,
  };
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44051,7 +44035,7 @@ index 2d097d020e3b..ba1a38d355a4 100644
  
  	/* Display on */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44193,7 +44177,7 @@ index ba1a38d355a4..343d960df04b 100644
  	.prepare_late = acpi_s2idle_prepare_late,
  	.check = acpi_s2idle_check,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44278,7 +44262,7 @@ index 343d960df04b..86adad4a7f25 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44302,7 +44286,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 54 deletions(-)
 
 diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
-index 2bccb28d8e41..0d1c07226c7b 100644
+index 72c70073879d..104f9f27bbcd 100644
 --- a/drivers/platform/x86/asus-wmi.c
 +++ b/drivers/platform/x86/asus-wmi.c
 @@ -139,29 +139,10 @@ module_param(fnlock_default, bool, 0444);
@@ -44345,7 +44329,7 @@ index 2bccb28d8e41..0d1c07226c7b 100644
  	enum fan_type fan_type;
  	enum fan_type gpu_fan_type;
  	enum fan_type mid_fan_type;
-@@ -4924,8 +4902,6 @@ static int asus_wmi_add(struct platform_device *pdev)
+@@ -4923,8 +4901,6 @@ static int asus_wmi_add(struct platform_device *pdev)
  	asus->dgpu_disable_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_DGPU);
  	asus->kbd_rgb_state_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_TUF_RGB_STATE);
  	asus->oobe_state_available = asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_OOBE);
@@ -44354,7 +44338,7 @@ index 2bccb28d8e41..0d1c07226c7b 100644
  
  	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MINI_LED_MODE))
  		asus->mini_led_dev_id = ASUS_WMI_DEVID_MINI_LED_MODE;
-@@ -5112,34 +5088,6 @@ static int asus_hotk_resume(struct device *device)
+@@ -5111,34 +5087,6 @@ static int asus_hotk_resume(struct device *device)
  	return 0;
  }
  
@@ -44389,7 +44373,7 @@ index 2bccb28d8e41..0d1c07226c7b 100644
  static int asus_hotk_restore(struct device *device)
  {
  	struct asus_wmi *asus = dev_get_drvdata(device);
-@@ -5191,8 +5139,6 @@ static const struct dev_pm_ops asus_pm_ops = {
+@@ -5190,8 +5138,6 @@ static const struct dev_pm_ops asus_pm_ops = {
  	.thaw = asus_hotk_thaw,
  	.restore = asus_hotk_restore,
  	.resume = asus_hotk_resume,
@@ -44399,7 +44383,7 @@ index 2bccb28d8e41..0d1c07226c7b 100644
  
  /* Registration ***************************************************************/
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44484,7 +44468,7 @@ index 728328c51b64..a5cb82f82c95 100644
  	hibernate_release();
   Unlock:
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44604,7 +44588,7 @@ index 3cf2d7e72567..d866259f64af 100644
  #ifdef CONFIG_PM_AUTOSLEEP
  	&autosleep_attr.attr,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44713,7 +44697,7 @@ index c8ee8e42b0f6..7671f3140145 100644
  	if (acpi_sci_irq_valid()) {
  		acpi_ec_set_gpe_wake_mask(ACPI_GPE_DISABLE);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44883,7 +44867,7 @@ index dc5e9878cb68..41218a9d6e35 100644
  
  	return 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -44958,7 +44942,7 @@ index 41218a9d6e35..f0d1b8e1a2fe 100644
  					   u32 attr, int channel)
  {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -45075,7 +45059,7 @@ index f0d1b8e1a2fe..5a9a10037387 100644
  	if (ret < 0)
  		return ret;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -45566,7 +45550,7 @@ index 5a9a10037387..b9f8ace23b8e 100644
  	return PTR_ERR_OR_ZERO(hdev);
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -45777,7 +45761,7 @@ index b9f8ace23b8e..6ad6c2064800 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -46250,7 +46234,7 @@ index 6ad6c2064800..14420e5ea2a8 100644
  
  	msi_wmi_platform_profile_setup(data);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -46469,7 +46453,7 @@ index 14420e5ea2a8..66fa939c4742 100644
  };
  module_wmi_driver(msi_wmi_platform_driver);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -46563,7 +46547,7 @@ index 66fa939c4742..871568a017b8 100644
  	return PTR_ERR_OR_ZERO(hdev);
  }
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -46597,7 +46581,7 @@ index 871568a017b8..d7cfdbb28e83 100644
  
  #define pr_format(fmt) KBUILD_MODNAME ": " fmt
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -46815,7 +46799,7 @@ index d7cfdbb28e83..896fb11af696 100644
  
  static const struct wmi_device_id msi_wmi_platform_id_table[] = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47623,7 +47607,7 @@ index 000000000000..e0b3b46e1bf1
 +MODULE_AUTHOR("Cryolitia PukNgae <cryolitia@uniontech.com>");
 +MODULE_DESCRIPTION("GPD Devices fan control driver");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47660,7 +47644,7 @@ index e0b3b46e1bf1..644dc3ca9df7 100644
  				goto OUT;
  			}
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47695,7 +47679,7 @@ index 644dc3ca9df7..eebe39ef9677 100644
  
  	region = devm_request_region(dev, res->start,
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47743,7 +47727,7 @@ index eebe39ef9677..321794807e8d 100644
  
  	return 0;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47760,7 +47744,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  1 file changed, 8 insertions(+)
 
 diff --git a/drivers/hwmon/gpd-fan.c b/drivers/hwmon/gpd-fan.c
-index 321794807e8d..d8a9e2cb4b61 100644
+index 321794807e8d..8ed31a841281 100644
 --- a/drivers/hwmon/gpd-fan.c
 +++ b/drivers/hwmon/gpd-fan.c
 @@ -146,6 +146,14 @@ static const struct dmi_system_id dmi_table[] = {
@@ -47773,13 +47757,13 @@ index 321794807e8d..d8a9e2cb4b61 100644
 +			DMI_MATCH(DMI_SYS_VENDOR, "GPD"),
 +			DMI_MATCH(DMI_PRODUCT_NAME, "G1618-05"),
 +		},
-+		.driver_data = &gpd_win4_drvdata,
++		.driver_data = &gpd_duo_drvdata,
 +	},
  	{
  		// GPD Win 4 with Ryzen 7840U
  		.matches = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47811,7 +47795,7 @@ index ae3ba4f38b2f..26d6fb9835a3 100644
  	}
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -47958,7 +47942,7 @@ index 72f1c63900a9..2f8a81abf2f8 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48013,7 +47997,7 @@ index c8459337fcb8..d9e4b3cb230d 100644
  	case PM_POST_HIBERNATION:
  		adev->in_s4 = false;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48043,7 +48027,7 @@ index d72e89c25e50..d2483ce93099 100644
  	{ 0x1a86, 0xe310, "Legion Go S", 0, XTYPE_XBOX360 },
  	{ 0x1bad, 0x0002, "Harmonix Rock Band Guitar", 0, XTYPE_XBOX360 },
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48203,7 +48187,7 @@ index 7d7cb0593a63..ef4dd65d15af 100644
  
  int input_open_device(struct input_handle *);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48230,7 +48214,7 @@ index 8369fd94fc1a..be8d00e0d171 100644
  	}
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48312,7 +48296,7 @@ index 197126d6e081..09abb62f7f0f 100644
  		rcu_read_unlock();
  		break;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48482,7 +48466,7 @@ index 000000000000..55ae9a5cbd47
 +MODULE_DESCRIPTION("Ayaneo Embedded Controller (EC) platform features");
 +MODULE_LICENSE("GPL");
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48688,7 +48672,7 @@ index 55ae9a5cbd47..ede8fa063ef4 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -48876,7 +48860,7 @@ index ede8fa063ef4..ec3583e94b99 100644
  }
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49208,7 +49192,7 @@ index ec3583e94b99..eb19307e5818 100644
  	.probe = ayaneo_ec_probe,
  };
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49512,7 +49496,7 @@ index 54377b282ff8..144a454103b9 100644
  	case oxp_mini_amd_a07:
  		ret = read_from_ec(OXP_SENSOR_PWM_REG, 1, val);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49543,7 +49527,7 @@ index 189748ae338c..dd62f1f38132 100644
  
  static const struct ayaneo_ec_quirk ayaneo3 = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49579,7 +49563,7 @@ index 7855bbf752b1..ad39393cddf9 100644
  		// TUXEDO InfinityBook Pro AMD Gen9
  		.matches = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49671,7 +49655,7 @@ index 121ee17b522b..24f09e457352 100644
  #define VPE_MAX_DPM_LEVEL			4
  #define FIXED1_8_BITS_PER_FRACTIONAL_PART	8
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49703,7 +49687,7 @@ index 598f812b7cb3..b38b33e26ea5 100644
  
  	return true;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49891,7 +49875,7 @@ index 15fa9b6865f4..82eeee4a58ab 100644
  signed long drm_timeout_abs_to_jiffies(int64_t timeout_nsec);
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -49951,7 +49935,7 @@ index 702726c20ccc..3d386a96e50e 100644
  
  	if (quirk->ident.panel_id && !drm_edid_match(edid, &quirk->ident))
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50100,7 +50084,7 @@ index 82eeee4a58ab..6a46f755daba 100644
  
  const struct drm_panel_backlight_quirk *
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50152,7 +50136,7 @@ index 2bdbd5583d32..69d38c248a0a 100644
  
  static bool drm_panel_min_backlight_quirk_matches(
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50186,7 +50170,7 @@ index 9548bd3c624b..14086e3e56ef 100644
  /* unit: mV */
  #define CYAN_SKILLFISH_VDDC_MIN			700
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50291,7 +50275,7 @@ index 3d2f8eedeef2..1cda0153cd52 100644
  #endif
  	/* Create (reset) the plane state */
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50318,7 +50302,7 @@ index 08f788d36f10..ec7ba3356b39 100644
  		return;
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50353,7 +50337,7 @@ index ed1901de4a8e..15820d1ecab3 100644
  		.matches = {
  		 DMI_MATCH(DMI_SYS_VENDOR, "RWC CO.,LTD"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50385,7 +50369,7 @@ index dd62f1f38132..52a129b74d58 100644
  };
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50420,7 +50404,7 @@ index 144a454103b9..adb8a1a9b658 100644
  		.matches = {
  			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50451,7 +50435,7 @@ index 15820d1ecab3..24741dfc594a 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50513,7 +50497,7 @@ index 4a7ac85c4db4..20de3173ecca 100644
  		}
  
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50545,7 +50529,7 @@ index adb8a1a9b658..924d698b7105 100644
  		.matches = {
  			DMI_MATCH(DMI_BOARD_VENDOR, "AOKZOE"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50576,7 +50560,7 @@ index 24741dfc594a..7deff55b076c 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50603,7 +50587,7 @@ index bd318fd02ccf..ae70fc71ab42 100644
  	/* Dump the IdleMask before we add to the STB */
  	amd_pmc_idlemask_read(pdev, pdev->dev, NULL);
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50631,7 +50615,7 @@ index d9e4b3cb230d..907ae2f5a981 100644
  		adev->pm.pp_feature &= ~PP_GFXOFF_MASK;
  	if (amdgpu_sriov_vf(adev) && adev->asic_type == CHIP_SIENNA_CICHLID)
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50832,7 +50816,7 @@ index f32474af90b3..478b9b846a13 100644
  		if (ret)
  			return ret;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50879,7 +50863,7 @@ index d63aaad7ef59..0fadcf5f288a 100644
  	{
  		.ident = "HP Laptop 15s-eq2xxx",
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50911,7 +50895,7 @@ index 924d698b7105..64a778ebb6dc 100644
  		.matches = {
  			DMI_MATCH(DMI_BOARD_VENDOR, "ONE-NETBOOK"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50942,7 +50926,7 @@ index 7deff55b076c..6e7dac6f8e70 100644
  		.matches = {
  		  DMI_EXACT_MATCH(DMI_SYS_VENDOR, "ONE-NETBOOK"),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -50979,7 +50963,7 @@ index 86adad4a7f25..dd2a8845f23c 100644
  	{
  		.matches = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -51018,7 +51002,7 @@ index f210a253da9f..924d081437da 100644
  		.driver_data = &acp6x_card,
  		.matches = {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -51035,7 +51019,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  drivers/Kconfig                           |   2 +
  drivers/Makefile                          |   2 +
  drivers/custom/.gitignore                 |   3 +
- drivers/custom/Kconfig                    | 121 +++++++++++
+ drivers/custom/Kconfig                    | 122 +++++++++++
  drivers/custom/Makefile                   |  44 ++++
  drivers/custom/ayaneo_platform            |   1 +
  drivers/custom/ayn_platform               |   1 +
@@ -51050,7 +51034,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  drivers/custom/hid-tmff2                  |   1 +
  drivers/custom/kvfm                       |   1 +
  drivers/custom/lg4ff                      |   1 +
- drivers/custom/modprobe.conf              |   1 +
+ drivers/custom/modprobe.conf              |   8 +
  drivers/custom/modules-load.conf          |   4 +
  drivers/custom/nct6687d                   |   1 +
  drivers/custom/nvidia-separate-drivers.py | 248 ++++++++++++++++++++++
@@ -51065,7 +51049,7 @@ Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
  tools/objtool/builtin-check.c             |   1 +
  tools/objtool/check.c                     |   3 +
  tools/objtool/include/objtool/builtin.h   |   1 +
- 34 files changed, 516 insertions(+), 2 deletions(-)
+ 34 files changed, 524 insertions(+), 2 deletions(-)
  create mode 100644 .gitmodules
  create mode 100644 drivers/custom/.gitignore
  create mode 100644 drivers/custom/Kconfig
@@ -51202,10 +51186,10 @@ index 000000000000..b9adbda1674e
 \ No newline at end of file
 diff --git a/drivers/custom/Kconfig b/drivers/custom/Kconfig
 new file mode 100644
-index 000000000000..778f6188e9a5
+index 000000000000..fef5c07dcb64
 --- /dev/null
 +++ b/drivers/custom/Kconfig
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,122 @@
 +config AYN
 +    tristate "AYN Platform Driver"
 +    help
@@ -51274,6 +51258,7 @@ index 000000000000..778f6188e9a5
 +
 +config WL
 +    tristate "Broadcom WL Driver"
++	depends on CFG80211
 +    help
 +        Broadcom WL driver for Linux. Link:
 +        https://github.com/bazzite-org/broadcom-wl
@@ -51402,11 +51387,11 @@ index 000000000000..2d764db2bd69
 +Subproject commit 2d764db2bd69f2922d7fad6cb162136e32f357a2
 diff --git a/drivers/custom/broadcom-wl b/drivers/custom/broadcom-wl
 new file mode 160000
-index 000000000000..2eb8d6d0bc06
+index 000000000000..758358cffe5a
 --- /dev/null
 +++ b/drivers/custom/broadcom-wl
 @@ -0,0 +1 @@
-+Subproject commit 2eb8d6d0bc064501177e7528834f80166987b538
++Subproject commit 758358cffe5ae3f9b7f25428de05feee238afdde
 diff --git a/drivers/custom/cdemu b/drivers/custom/cdemu
 new file mode 160000
 index 000000000000..d00300615639
@@ -51472,11 +51457,19 @@ index 000000000000..2092db19f7b4
 +Subproject commit 2092db19f7b40854e0427a1b2e39eda9f8d0c3cd
 diff --git a/drivers/custom/modprobe.conf b/drivers/custom/modprobe.conf
 new file mode 100644
-index 000000000000..de440a13a784
+index 000000000000..dec71c4e4c15
 --- /dev/null
 +++ b/drivers/custom/modprobe.conf
-@@ -0,0 +1 @@
+@@ -0,0 +1,8 @@
 +options v4l2loopback exclusive_caps=1 card_label="OBS Virtual Camera"
++
++### These modules must be blacklisted for use with broadcom-wl
++blacklist ssb
++blacklist bcma
++blacklist b43
++blacklist brcmsmac
++blacklist brcmfmac
+\ No newline at end of file
 diff --git a/drivers/custom/modules-load.conf b/drivers/custom/modules-load.conf
 new file mode 100644
 index 000000000000..4a6df9065371
@@ -51826,10 +51819,10 @@ index 80239843e9f0..ec97ba30fed5 100644
  	OPT_END(),
  };
 diff --git a/tools/objtool/check.c b/tools/objtool/check.c
-index d14f20ef1db1..c586cd225207 100644
+index d23fefcb15d3..a075d48dd73b 100644
 --- a/tools/objtool/check.c
 +++ b/tools/objtool/check.c
-@@ -4806,5 +4806,8 @@ int check(struct objtool_file *file)
+@@ -4807,5 +4807,8 @@ int check(struct objtool_file *file)
  		disas_warned_funcs(file);
  	}
  
@@ -51851,7 +51844,7 @@ index 6b08666fa69d..a128c357bf45 100644
  
  extern struct opts opts;
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -51915,7 +51908,7 @@ index 62f3e51020fd..fe3f53eb5955 100644
  #define AMD_CPU_ID_CB			0x14D8
  #define AMD_CPU_ID_PS			0x14E8
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -51958,47 +51951,104 @@ index 0fadcf5f288a..404e62ad293a 100644
  	{
  		.ident = "V14 G4 AMN",
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Alex Deucher <alexander.deucher@amd.com>
-Date: Thu, 23 Oct 2025 16:24:25 -0400
-Subject: drm/amdgpu: only send the SMU RLC notification on S3
+Date: Sat, 25 Oct 2025 23:29:36 -0500
+Subject: drm/amdgpu: Drop PMFW RLC notifier from amdgpu_device_suspend()
 
-For S0ix, the RLC is not powered down. Rework the Van Gogh logic to
-skip powering it down and skip part of post-init.
+For S3 on vangogh, PMFW needs to be notified before the
+driver powers down RLC.  This already happens in smu_disable_dpms()
+so drop the superfluous call in amdgpu_device_suspend().
 
-Fixes: 8c4e9105b2a8 ("drm/amdgpu: optimize RLC powerdown notification on Vangogh")
-Closes: https://gitlab.freedesktop.org/drm/amd/-/issues/4659
 Signed-off-by: Alex Deucher <alexander.deucher@amd.com>
-Tested-by: Antheas Kapenekakis <lkml@antheas.dev>
-Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+Co-developed-by: Mario Limonciello (AMD) <superm1@kernel.org>
+Signed-off-by: Mario Limonciello (AMD) <superm1@kernel.org>
 ---
- drivers/gpu/drm/amd/amdgpu/amdgpu_device.c       | 8 +++++---
- drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c        | 6 ++++++
- drivers/gpu/drm/amd/pm/swsmu/smu11/vangogh_ppt.c | 3 +++
- 3 files changed, 14 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/amd/amdgpu/amdgpu_device.c |  4 ----
+ drivers/gpu/drm/amd/pm/amdgpu_dpm.c        | 18 ------------------
+ drivers/gpu/drm/amd/pm/inc/amdgpu_dpm.h    |  2 --
+ 3 files changed, 24 deletions(-)
 
 diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
-index 907ae2f5a981..ea90b315b5bd 100644
+index 907ae2f5a981..3a6cdeb6806f 100644
 --- a/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
 +++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_device.c
-@@ -5186,9 +5186,11 @@ int amdgpu_device_suspend(struct drm_device *dev, bool notify_clients)
+@@ -5186,10 +5186,6 @@ int amdgpu_device_suspend(struct drm_device *dev, bool notify_clients)
  	if (amdgpu_sriov_vf(adev))
  		amdgpu_virt_release_full_gpu(adev, false);
  
 -	r = amdgpu_dpm_notify_rlc_state(adev, false);
 -	if (r)
 -		return r;
-+	if (!adev->in_s0ix) {
-+		r = amdgpu_dpm_notify_rlc_state(adev, false);
-+		if (r)
-+			return r;
-+	}
- 
+-
  	return 0;
  }
+ 
+diff --git a/drivers/gpu/drm/amd/pm/amdgpu_dpm.c b/drivers/gpu/drm/amd/pm/amdgpu_dpm.c
+index 71d986dd7a6e..65aaf0f2918c 100644
+--- a/drivers/gpu/drm/amd/pm/amdgpu_dpm.c
++++ b/drivers/gpu/drm/amd/pm/amdgpu_dpm.c
+@@ -195,24 +195,6 @@ int amdgpu_dpm_set_mp1_state(struct amdgpu_device *adev,
+ 	return ret;
+ }
+ 
+-int amdgpu_dpm_notify_rlc_state(struct amdgpu_device *adev, bool en)
+-{
+-	int ret = 0;
+-	const struct amd_pm_funcs *pp_funcs = adev->powerplay.pp_funcs;
+-
+-	if (pp_funcs && pp_funcs->notify_rlc_state) {
+-		mutex_lock(&adev->pm.mutex);
+-
+-		ret = pp_funcs->notify_rlc_state(
+-				adev->powerplay.pp_handle,
+-				en);
+-
+-		mutex_unlock(&adev->pm.mutex);
+-	}
+-
+-	return ret;
+-}
+-
+ int amdgpu_dpm_is_baco_supported(struct amdgpu_device *adev)
+ {
+ 	const struct amd_pm_funcs *pp_funcs = adev->powerplay.pp_funcs;
+diff --git a/drivers/gpu/drm/amd/pm/inc/amdgpu_dpm.h b/drivers/gpu/drm/amd/pm/inc/amdgpu_dpm.h
+index 768317ee1486..fe8585759e11 100644
+--- a/drivers/gpu/drm/amd/pm/inc/amdgpu_dpm.h
++++ b/drivers/gpu/drm/amd/pm/inc/amdgpu_dpm.h
+@@ -428,8 +428,6 @@ int amdgpu_dpm_mode1_reset(struct amdgpu_device *adev);
+ int amdgpu_dpm_set_mp1_state(struct amdgpu_device *adev,
+ 			     enum pp_mp1_state mp1_state);
+ 
+-int amdgpu_dpm_notify_rlc_state(struct amdgpu_device *adev, bool en);
+-
+ int amdgpu_dpm_set_gfx_power_up_by_imu(struct amdgpu_device *adev);
+ 
+ int amdgpu_dpm_baco_exit(struct amdgpu_device *adev);
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Deucher <alexander.deucher@amd.com>
+Date: Fri, 24 Oct 2025 13:08:11 -0400
+Subject: drm/amdgpu/smu: Handle S0ix for vangogh
+
+Fix the flows for S0ix.  There is no need to stop
+rlc or reintialize PMFW in S0ix.
+
+Closes: https://gitlab.freedesktop.org/drm/amd/-/issues/4659
+Signed-off-by: Alex Deucher <alexander.deucher@amd.com>
+Reviewed-by: Mario Limonciello <mario.limonciello@amd.com>> ---
+---
+ drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c        | 6 ++++++
+ drivers/gpu/drm/amd/pm/swsmu/smu11/vangogh_ppt.c | 3 +++
+ 2 files changed, 9 insertions(+)
+
 diff --git a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c b/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
 index 4eb99b74a04f..3758eee890dc 100644
 --- a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
@@ -52031,7 +52081,7 @@ index 2c9869feba61..0708d0f0938b 100644
  	if (smu_cmn_feature_is_enabled(smu, SMU_FEATURE_DPM_GFXCLK_BIT) &&
  			(adev->pg_flags & AMD_PG_SUPPORT_GFX_PG)) {
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -52162,7 +52212,7 @@ index b5b7a1e82b75..dfbddb5f6cba 100644
  		snprintf(tas_priv->coef_binaryname,
  			  sizeof(tas_priv->coef_binaryname),
 -- 
-2.51.1
+2.52.0
 
 
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
@@ -52194,5 +52244,630 @@ index 7870d1cb570c..1cc063bf6c0b 100644
  	SND_PCI_QUIRK(0x1043, 0x1427, "Asus Zenbook UX31E", ALC269VB_FIXUP_ASUS_ZENBOOK),
  	SND_PCI_QUIRK(0x1043, 0x1433, "ASUS GX650PY/PZ/PV/PU/PYV/PZV/PIV/PVV", ALC285_FIXUP_ASUS_I2C_HEADSET_MIC),
 -- 
-2.51.1
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Sun, 2 Nov 2025 16:58:58 +0100
+Subject: platform/x86: asus-wmi: Don't reset charge threshold on boot
+
+Currently, the driver resets the charge threshold to 100% on every boot.
+This is because the driver cannot read the current threshold from the
+EC. The EC is perfectly capable of storing it across reboots.
+
+This causes e.g., Powerdevil, to think the charge limit is 100% on boot
+and for users to have to set it every time. Just skip setting it on boot
+even if this causes userspace to drift.
+
+Fixes: 7973353e92ee ("platform/x86: asus-wmi: Refactor charge threshold to use the battery hooking API")
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ drivers/platform/x86/asus-wmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 104f9f27bbcd..0c401f54d0ad 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -1469,7 +1469,7 @@ static int asus_wmi_battery_add(struct power_supply *battery, struct acpi_batter
+ 	 * and we can't get the current threshold so let set it to 100% when
+ 	 * a battery is added.
+ 	 */
+-	asus_wmi_set_devstate(ASUS_WMI_DEVID_RSOC, 100, NULL);
++	// asus_wmi_set_devstate(ASUS_WMI_DEVID_RSOC, 100, NULL);
+ 	charge_end_threshold = 100;
+ 
+ 	return 0;
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Mon, 3 Nov 2025 16:25:17 +0100
+Subject: ALSA: hda/realtek: Add ASUS GA403W quirk
+
+The ASUS GA403W laptop uses the Realtek ALC287 codec with a CS35L41
+amplifier connected via I2C. Without this quirk, the amp is not
+controlled using the main speaker output volume, resulting in
+low sound output.
+
+Closes: https://github.com/ublue-os/bazzite/issues/3388
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ sound/hda/codecs/realtek/alc269.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/hda/codecs/realtek/alc269.c b/sound/hda/codecs/realtek/alc269.c
+index 1cc063bf6c0b..a3479f12dfa3 100644
+--- a/sound/hda/codecs/realtek/alc269.c
++++ b/sound/hda/codecs/realtek/alc269.c
+@@ -6730,6 +6730,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
+ 	SND_PCI_QUIRK(0x103c, 0x8e60, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e61, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e62, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
++	SND_PCI_QUIRK(0x1043, 0x1024, "ASUS GA403W", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x1043, 0x1032, "ASUS VivoBook X513EA", ALC256_FIXUP_ASUS_MIC_NO_PRESENCE),
+ 	SND_PCI_QUIRK(0x1043, 0x1034, "ASUS GU605C", ALC285_FIXUP_ASUS_GU605_SPI_SPEAKER2_TO_DAC1),
+ 	SND_PCI_QUIRK(0x1043, 0x103e, "ASUS X540SA", ALC256_FIXUP_ASUS_MIC),
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Armin Wolf <W_Armin@gmx.de>
+Date: Mon, 10 Nov 2025 12:12:52 +0100
+Subject: platform/x86: msi-wmi-platform: Only load on MSI devices
+
+It turns out that the GUID used by the msi-wmi-platform driver
+(ABBC0F60-8EA1-11D1-00A0-C90629100000) is not unique, but was instead
+copied from the WIndows Driver Samples. This means that this driver
+could load on devices from other manufacturers that also copied this
+GUID, potentially causing hardware errors.
+
+Prevent this by only loading on devices whitelisted via DMI. The DMI
+matches where taken from the msi-ec driver.
+
+Fixes: 9c0beb6b29e7 ("platform/x86: wmi: Add MSI WMI Platform driver")
+Signed-off-by: Armin Wolf <W_Armin@gmx.de>
+---
+ drivers/platform/x86/Kconfig            |  1 +
+ drivers/platform/x86/msi-wmi-platform.c | 40 ++++++++++++++++++++++++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
+index afd7e68395a2..0b92fa8e3663 100644
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -562,6 +562,7 @@ config MSI_WMI_PLATFORM
+ 	tristate "MSI WMI Platform features"
+ 	depends on ACPI_BATTERY
+ 	depends on ACPI_WMI
++	depends on DMI
+ 	depends on HWMON
+ 	select ACPI_PLATFORM_PROFILE
+ 	select FW_ATTR_CLASS
+diff --git a/drivers/platform/x86/msi-wmi-platform.c b/drivers/platform/x86/msi-wmi-platform.c
+index 896fb11af696..59a03b00791a 100644
+--- a/drivers/platform/x86/msi-wmi-platform.c
++++ b/drivers/platform/x86/msi-wmi-platform.c
+@@ -1551,7 +1551,45 @@ static struct wmi_driver msi_wmi_platform_driver = {
+ 	.remove = msi_wmi_platform_remove,
+ 	.no_singleton = true,
+ };
+-module_wmi_driver(msi_wmi_platform_driver);
++
++/*
++ * MSI reused the WMI GUID from the WMI-ACPI sample code provided by Microsoft,
++ * so other manufacturers might use it as well for their WMI-ACPI implementations.
++ */
++static const struct dmi_system_id msi_wmi_platform_whitelist[] __initconst = {
++	{
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "MICRO-STAR INT"),
++		},
++	},
++	{
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Micro-Star International"),
++		},
++	},
++	{ }
++};
++
++static int __init msi_wmi_platform_module_init(void)
++{
++	if (!dmi_check_system(msi_wmi_platform_whitelist)) {
++		if (!force)
++			return -ENODEV;
++
++		pr_warn("Ignoring DMI whitelist\n");
++	}
++
++	return wmi_driver_register(&msi_wmi_platform_driver);
++}
++
++static void __exit msi_wmi_platform_module_exit(void)
++{
++	wmi_driver_unregister(&msi_wmi_platform_driver);
++}
++
++module_init(msi_wmi_platform_module_init);
++module_exit(msi_wmi_platform_module_exit);
++
+ 
+ MODULE_AUTHOR("Armin Wolf <W_Armin@gmx.de>");
+ MODULE_DESCRIPTION("MSI WMI platform features");
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Armin Wolf <W_Armin@gmx.de>
+Date: Mon, 10 Nov 2025 12:12:53 +0100
+Subject: platform/x86: msi-wmi-platform: Fix typo in WMI GUID
+
+The WMI driver core only supports GUID strings containing only
+uppercase characters, however the GUID string used by the
+msi-wmi-platform driver contains a single lowercase character.
+This prevents the WMI driver core from matching said driver to
+its WMI device.
+
+Fix this by turning the lowercase character into a uppercase
+character. Also update the WMI driver development guide to warn
+about this.
+
+Fixes: 9c0beb6b29e7 ("platform/x86: wmi: Add MSI WMI Platform driver")
+Signed-off-by: Armin Wolf <W_Armin@gmx.de>
+---
+ Documentation/wmi/driver-development-guide.rst | 1 +
+ drivers/platform/x86/msi-wmi-platform.c        | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/wmi/driver-development-guide.rst b/Documentation/wmi/driver-development-guide.rst
+index 99ef21fc1c1e..5680303ae314 100644
+--- a/Documentation/wmi/driver-development-guide.rst
++++ b/Documentation/wmi/driver-development-guide.rst
+@@ -54,6 +54,7 @@ to matching WMI devices using a struct wmi_device_id table:
+ ::
+ 
+   static const struct wmi_device_id foo_id_table[] = {
++         /* Only use uppercase letters! */
+          { "936DA01F-9ABD-4D9D-80C7-02AF85C822A8", NULL },
+          { }
+   };
+diff --git a/drivers/platform/x86/msi-wmi-platform.c b/drivers/platform/x86/msi-wmi-platform.c
+index 59a03b00791a..2dbaa3c1f55c 100644
+--- a/drivers/platform/x86/msi-wmi-platform.c
++++ b/drivers/platform/x86/msi-wmi-platform.c
+@@ -40,7 +40,7 @@
+ 
+ #define DRIVER_NAME	"msi-wmi-platform"
+ 
+-#define MSI_PLATFORM_GUID	"ABBC0F6E-8EA1-11d1-00A0-C90629100000"
++#define MSI_PLATFORM_GUID	"ABBC0F6E-8EA1-11D1-00A0-C90629100000"
+ 
+ #define MSI_WMI_PLATFORM_INTERFACE_VERSION	2
+ 
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 12 Nov 2025 23:20:48 +0100
+Subject: Revert "Input: xpad - change buttons the D-Pad gets mapped as to
+ BTN_DPAD_*"
+
+This reverts commit a43a503df996739ae34f179f6b73b0ae91000c5c.
+---
+ drivers/input/joystick/xpad.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/input/joystick/xpad.c b/drivers/input/joystick/xpad.c
+index d2483ce93099..0b918611b2a7 100644
+--- a/drivers/input/joystick/xpad.c
++++ b/drivers/input/joystick/xpad.c
+@@ -444,8 +444,8 @@ static const signed short xpad_btn[] = {
+ 
+ /* used when dpad is mapped to buttons */
+ static const signed short xpad_btn_pad[] = {
+-	BTN_DPAD_LEFT, BTN_DPAD_RIGHT,	/* d-pad left, right */
+-	BTN_DPAD_UP, BTN_DPAD_DOWN,	/* d-pad up, down */
++	BTN_TRIGGER_HAPPY1, BTN_TRIGGER_HAPPY2,		/* d-pad left, right */
++	BTN_TRIGGER_HAPPY3, BTN_TRIGGER_HAPPY4,		/* d-pad up, down */
+ 	-1				/* terminating entry */
+ };
+ 
+@@ -843,10 +843,10 @@ static void xpad_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char *d
+ 	/* digital pad */
+ 	if (xpad->mapping & MAP_DPAD_TO_BUTTONS) {
+ 		/* dpad as buttons (left, right, up, down) */
+-		input_report_key(dev, BTN_DPAD_LEFT, data[2] & BIT(2));
+-		input_report_key(dev, BTN_DPAD_RIGHT, data[2] & BIT(3));
+-		input_report_key(dev, BTN_DPAD_UP, data[2] & BIT(0));
+-		input_report_key(dev, BTN_DPAD_DOWN, data[2] & BIT(1));
++		input_report_key(dev, BTN_TRIGGER_HAPPY1, data[2] & BIT(2));
++		input_report_key(dev, BTN_TRIGGER_HAPPY2, data[2] & BIT(3));
++		input_report_key(dev, BTN_TRIGGER_HAPPY3, data[2] & BIT(0));
++		input_report_key(dev, BTN_TRIGGER_HAPPY4, data[2] & BIT(1));
+ 	} else {
+ 		input_report_abs(dev, ABS_HAT0X,
+ 				 !!(data[2] & 0x08) - !!(data[2] & 0x04));
+@@ -894,10 +894,10 @@ static void xpad360_process_packet(struct usb_xpad *xpad, struct input_dev *dev,
+ 	/* digital pad */
+ 	if (xpad->mapping & MAP_DPAD_TO_BUTTONS) {
+ 		/* dpad as buttons (left, right, up, down) */
+-		input_report_key(dev, BTN_DPAD_LEFT, data[2] & BIT(2));
+-		input_report_key(dev, BTN_DPAD_RIGHT, data[2] & BIT(3));
+-		input_report_key(dev, BTN_DPAD_UP, data[2] & BIT(0));
+-		input_report_key(dev, BTN_DPAD_DOWN, data[2] & BIT(1));
++		input_report_key(dev, BTN_TRIGGER_HAPPY1, data[2] & BIT(2));
++		input_report_key(dev, BTN_TRIGGER_HAPPY2, data[2] & BIT(3));
++		input_report_key(dev, BTN_TRIGGER_HAPPY3, data[2] & BIT(0));
++		input_report_key(dev, BTN_TRIGGER_HAPPY4, data[2] & BIT(1));
+ 	}
+ 
+ 	/*
+@@ -1116,10 +1116,10 @@ static void xpadone_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char
+ 		/* digital pad */
+ 		if (xpad->mapping & MAP_DPAD_TO_BUTTONS) {
+ 			/* dpad as buttons (left, right, up, down) */
+-			input_report_key(dev, BTN_DPAD_LEFT, data[5] & BIT(2));
+-			input_report_key(dev, BTN_DPAD_RIGHT, data[5] & BIT(3));
+-			input_report_key(dev, BTN_DPAD_UP, data[5] & BIT(0));
+-			input_report_key(dev, BTN_DPAD_DOWN, data[5] & BIT(1));
++			input_report_key(dev, BTN_TRIGGER_HAPPY1, data[5] & BIT(2));
++			input_report_key(dev, BTN_TRIGGER_HAPPY2, data[5] & BIT(3));
++			input_report_key(dev, BTN_TRIGGER_HAPPY3, data[5] & BIT(0));
++			input_report_key(dev, BTN_TRIGGER_HAPPY4, data[5] & BIT(1));
+ 		} else {
+ 			input_report_abs(dev, ABS_HAT0X,
+ 					!!(data[5] & 0x08) - !!(data[5] & 0x04));
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 12 Nov 2025 23:20:52 +0100
+Subject: Revert "Input: xpad - use new BTN_GRIP* buttons"
+
+This reverts commit e7412ba919f625438c570d8b4fbf16c5f31b583d.
+---
+ drivers/input/joystick/xpad.c | 36 +++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/input/joystick/xpad.c b/drivers/input/joystick/xpad.c
+index 0b918611b2a7..5ec7684f93ed 100644
+--- a/drivers/input/joystick/xpad.c
++++ b/drivers/input/joystick/xpad.c
+@@ -481,8 +481,8 @@ static const signed short xpad_abs_triggers[] = {
+ 
+ /* used when the controller has extra paddle buttons */
+ static const signed short xpad_btn_paddles[] = {
+-	BTN_GRIPR, BTN_GRIPR2, /* paddle upper right, lower right */
+-	BTN_GRIPL, BTN_GRIPL2, /* paddle upper left, lower left */
++	BTN_TRIGGER_HAPPY5, BTN_TRIGGER_HAPPY6, /* paddle upper right, lower right */
++	BTN_TRIGGER_HAPPY7, BTN_TRIGGER_HAPPY8, /* paddle upper left, lower left */
+ 	-1						/* terminating entry */
+ };
+ 
+@@ -1078,10 +1078,10 @@ static void xpadone_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char
+ 				data[18] = 0;
+ 
+ 			/* Elite Series 2 split packet paddle bits */
+-			input_report_key(dev, BTN_GRIPR, data[18] & BIT(0));
+-			input_report_key(dev, BTN_GRIPR2, data[18] & BIT(1));
+-			input_report_key(dev, BTN_GRIPL, data[18] & BIT(2));
+-			input_report_key(dev, BTN_GRIPL2, data[18] & BIT(3));
++			input_report_key(dev, BTN_TRIGGER_HAPPY5, data[18] & BIT(0));
++			input_report_key(dev, BTN_TRIGGER_HAPPY6, data[18] & BIT(1));
++			input_report_key(dev, BTN_TRIGGER_HAPPY7, data[18] & BIT(2));
++			input_report_key(dev, BTN_TRIGGER_HAPPY8, data[18] & BIT(3));
+ 
+ 			do_sync = true;
+ 		}
+@@ -1178,10 +1178,10 @@ static void xpadone_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char
+ 					data[32] = 0;
+ 
+ 				/* OG Elite Series Controller paddle bits */
+-				input_report_key(dev, BTN_GRIPR, data[32] & BIT(1));
+-				input_report_key(dev, BTN_GRIPR2, data[32] & BIT(3));
+-				input_report_key(dev, BTN_GRIPL, data[32] & BIT(0));
+-				input_report_key(dev, BTN_GRIPL2, data[32] & BIT(2));
++				input_report_key(dev, BTN_TRIGGER_HAPPY5, data[32] & BIT(1));
++				input_report_key(dev, BTN_TRIGGER_HAPPY6, data[32] & BIT(3));
++				input_report_key(dev, BTN_TRIGGER_HAPPY7, data[32] & BIT(0));
++				input_report_key(dev, BTN_TRIGGER_HAPPY8, data[32] & BIT(2));
+ 			} else if (xpad->packet_type == PKT_XBE2_FW_OLD) {
+ 				/* Mute paddles if controller has a custom mapping applied.
+ 				 * Checked by comparing the current mapping
+@@ -1191,10 +1191,10 @@ static void xpadone_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char
+ 					data[18] = 0;
+ 
+ 				/* Elite Series 2 4.x firmware paddle bits */
+-				input_report_key(dev, BTN_GRIPR, data[18] & BIT(0));
+-				input_report_key(dev, BTN_GRIPR2, data[18] & BIT(1));
+-				input_report_key(dev, BTN_GRIPL, data[18] & BIT(2));
+-				input_report_key(dev, BTN_GRIPL2, data[18] & BIT(3));
++				input_report_key(dev, BTN_TRIGGER_HAPPY5, data[18] & BIT(0));
++				input_report_key(dev, BTN_TRIGGER_HAPPY6, data[18] & BIT(1));
++				input_report_key(dev, BTN_TRIGGER_HAPPY7, data[18] & BIT(2));
++				input_report_key(dev, BTN_TRIGGER_HAPPY8, data[18] & BIT(3));
+ 			} else if (xpad->packet_type == PKT_XBE2_FW_5_EARLY) {
+ 				/* Mute paddles if controller has a custom mapping applied.
+ 				 * Checked by comparing the current mapping
+@@ -1206,10 +1206,10 @@ static void xpadone_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned char
+ 				/* Elite Series 2 5.x firmware paddle bits
+ 				 * (before the packet was split)
+ 				 */
+-				input_report_key(dev, BTN_GRIPR, data[22] & BIT(0));
+-				input_report_key(dev, BTN_GRIPR2, data[22] & BIT(1));
+-				input_report_key(dev, BTN_GRIPL, data[22] & BIT(2));
+-				input_report_key(dev, BTN_GRIPL2, data[22] & BIT(3));
++				input_report_key(dev, BTN_TRIGGER_HAPPY5, data[22] & BIT(0));
++				input_report_key(dev, BTN_TRIGGER_HAPPY6, data[22] & BIT(1));
++				input_report_key(dev, BTN_TRIGGER_HAPPY7, data[22] & BIT(2));
++				input_report_key(dev, BTN_TRIGGER_HAPPY8, data[22] & BIT(3));
+ 			}
+ 		}
+ 
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Fri, 14 Nov 2025 14:57:18 +0100
+Subject: Revert "drm/amd/display: Clear DPP 3DLUT Cap"
+
+This reverts commit 39923050615cd04231ea664c4cc5dbc8560b8b42.
+---
+ drivers/gpu/drm/amd/display/dc/dc.h                          | 1 -
+ .../gpu/drm/amd/display/dc/resource/dcn32/dcn32_resource.c   | 3 +--
+ .../gpu/drm/amd/display/dc/resource/dcn321/dcn321_resource.c | 5 ++---
+ .../gpu/drm/amd/display/dc/resource/dcn35/dcn35_resource.c   | 3 +--
+ .../gpu/drm/amd/display/dc/resource/dcn351/dcn351_resource.c | 3 +--
+ .../gpu/drm/amd/display/dc/resource/dcn36/dcn36_resource.c   | 3 +--
+ .../gpu/drm/amd/display/dc/resource/dcn401/dcn401_resource.c | 1 -
+ 7 files changed, 6 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/display/dc/dc.h b/drivers/gpu/drm/amd/display/dc/dc.h
+index 8ae9d550afdf..f761f31aad51 100644
+--- a/drivers/gpu/drm/amd/display/dc/dc.h
++++ b/drivers/gpu/drm/amd/display/dc/dc.h
+@@ -251,7 +251,6 @@ struct mpc_color_caps {
+ 	struct rom_curve_caps ogam_rom_caps;
+ 	struct lut3d_caps mcm_3d_lut_caps;
+ 	struct lut3d_caps rmcm_3d_lut_caps;
+-	bool preblend;
+ };
+ 
+ /**
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn32/dcn32_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn32/dcn32_resource.c
+index 9917b366f00c..ff7c8e29a255 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn32/dcn32_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn32/dcn32_resource.c
+@@ -2251,7 +2251,7 @@ static bool dcn32_resource_construct(
+ 	dc->caps.color.dpp.gamma_corr = 1;
+ 	dc->caps.color.dpp.dgam_rom_for_yuv = 0;
+ 
+-	dc->caps.color.dpp.hw_3d_lut = 0;
++	dc->caps.color.dpp.hw_3d_lut = 1;
+ 	dc->caps.color.dpp.ogam_ram = 0;  // no OGAM in DPP since DCN1
+ 	// no OGAM ROM on DCN2 and later ASICs
+ 	dc->caps.color.dpp.ogam_rom_caps.srgb = 0;
+@@ -2270,7 +2270,6 @@ static bool dcn32_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 
+ 	/* Use pipe context based otg sync logic */
+ 	dc->config.use_pipe_ctx_sync_logic = true;
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn321/dcn321_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn321/dcn321_resource.c
+index 061c0907d802..aa3645c11dcb 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn321/dcn321_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn321/dcn321_resource.c
+@@ -1755,8 +1755,8 @@ static bool dcn321_resource_construct(
+ 	dc->caps.color.dpp.gamma_corr = 1;
+ 	dc->caps.color.dpp.dgam_rom_for_yuv = 0;
+ 
+-	dc->caps.color.dpp.hw_3d_lut = 0;
+-	dc->caps.color.dpp.ogam_ram = 0;
++	dc->caps.color.dpp.hw_3d_lut = 1;
++	dc->caps.color.dpp.ogam_ram = 1;
+ 	// no OGAM ROM on DCN2 and later ASICs
+ 	dc->caps.color.dpp.ogam_rom_caps.srgb = 0;
+ 	dc->caps.color.dpp.ogam_rom_caps.bt2020 = 0;
+@@ -1774,7 +1774,6 @@ static bool dcn321_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 
+ 	/* Use pipe context based otg sync logic */
+ 	dc->config.use_pipe_ctx_sync_logic = true;
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn35/dcn35_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn35/dcn35_resource.c
+index 32678b66c410..0e77d83cb4cc 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn35/dcn35_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn35/dcn35_resource.c
+@@ -1890,7 +1890,7 @@ static bool dcn35_resource_construct(
+ 	dc->caps.color.dpp.gamma_corr = 1;
+ 	dc->caps.color.dpp.dgam_rom_for_yuv = 0;
+ 
+-	dc->caps.color.dpp.hw_3d_lut = 0;
++	dc->caps.color.dpp.hw_3d_lut = 1;
+ 	dc->caps.color.dpp.ogam_ram = 0;  // no OGAM in DPP since DCN1
+ 	// no OGAM ROM on DCN301
+ 	dc->caps.color.dpp.ogam_rom_caps.srgb = 0;
+@@ -1909,7 +1909,6 @@ static bool dcn35_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 
+ 	dc->caps.num_of_host_routers = 2;
+ 	dc->caps.num_of_dpias_per_host_router = 2;
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn351/dcn351_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn351/dcn351_resource.c
+index 677cee27589c..cfde0d2daf47 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn351/dcn351_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn351/dcn351_resource.c
+@@ -1863,7 +1863,7 @@ static bool dcn351_resource_construct(
+ 	dc->caps.color.dpp.gamma_corr = 1;
+ 	dc->caps.color.dpp.dgam_rom_for_yuv = 0;
+ 
+-	dc->caps.color.dpp.hw_3d_lut = 0;
++	dc->caps.color.dpp.hw_3d_lut = 1;
+ 	dc->caps.color.dpp.ogam_ram = 0;  // no OGAM in DPP since DCN1
+ 	// no OGAM ROM on DCN301
+ 	dc->caps.color.dpp.ogam_rom_caps.srgb = 0;
+@@ -1882,7 +1882,6 @@ static bool dcn351_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 
+ 	dc->caps.num_of_host_routers = 2;
+ 	dc->caps.num_of_dpias_per_host_router = 2;
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn36/dcn36_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn36/dcn36_resource.c
+index d81540515e5c..270282b7ba63 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn36/dcn36_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn36/dcn36_resource.c
+@@ -1863,7 +1863,7 @@ static bool dcn36_resource_construct(
+ 	dc->caps.color.dpp.gamma_corr = 1;
+ 	dc->caps.color.dpp.dgam_rom_for_yuv = 0;
+ 
+-	dc->caps.color.dpp.hw_3d_lut = 0;
++	dc->caps.color.dpp.hw_3d_lut = 1;
+ 	dc->caps.color.dpp.ogam_ram = 0;  // no OGAM in DPP since DCN1
+ 	// no OGAM ROM on DCN301
+ 	dc->caps.color.dpp.ogam_rom_caps.srgb = 0;
+@@ -1882,7 +1882,6 @@ static bool dcn36_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 
+ 	dc->caps.num_of_host_routers = 2;
+ 	dc->caps.num_of_dpias_per_host_router = 2;
+diff --git a/drivers/gpu/drm/amd/display/dc/resource/dcn401/dcn401_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dcn401/dcn401_resource.c
+index b3988e38d0a6..21533bfc2672 100644
+--- a/drivers/gpu/drm/amd/display/dc/resource/dcn401/dcn401_resource.c
++++ b/drivers/gpu/drm/amd/display/dc/resource/dcn401/dcn401_resource.c
+@@ -1948,7 +1948,6 @@ static bool dcn401_resource_construct(
+ 	dc->caps.color.mpc.ogam_rom_caps.pq = 0;
+ 	dc->caps.color.mpc.ogam_rom_caps.hlg = 0;
+ 	dc->caps.color.mpc.ocsc = 1;
+-	dc->caps.color.mpc.preblend = true;
+ 	dc->config.use_spl = true;
+ 	dc->config.prefer_easf = true;
+ 
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Fri, 14 Nov 2025 14:59:04 +0100
+Subject: Revert "drm/amd/display: Use mpc.preblend flag to indicate preblend"
+
+This reverts commit 1c3217dd557d4f04eb4c2afcd7c76de6b4d66ccb.
+---
+ drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_color.c | 2 +-
+ drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_color.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_color.c
+index 5b338ebb7672..1234c774f4f3 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_color.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_color.c
+@@ -821,7 +821,7 @@ int amdgpu_dm_verify_lut3d_size(struct amdgpu_device *adev,
+ 	struct dm_plane_state *dm_plane_state = to_dm_plane_state(plane_state);
+ 	const struct drm_color_lut *shaper = NULL, *lut3d = NULL;
+ 	uint32_t exp_size, size, dim_size = MAX_COLOR_3DLUT_SIZE;
+-	bool has_3dlut = adev->dm.dc->caps.color.dpp.hw_3d_lut || adev->dm.dc->caps.color.mpc.preblend;
++	bool has_3dlut = adev->dm.dc->caps.color.dpp.hw_3d_lut;
+ 
+ 	/* shaper LUT is only available if 3D LUT color caps */
+ 	exp_size = has_3dlut ? MAX_COLOR_LUT_ENTRIES : 0;
+diff --git a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c
+index 1cda0153cd52..82241b31f7f3 100644
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_plane.c
+@@ -1633,7 +1633,7 @@ dm_atomic_plane_attach_color_mgmt_properties(struct amdgpu_display_manager *dm,
+ 		drm_object_attach_property(&plane->base,
+ 					   dm->adev->mode_info.plane_ctm_property, 0);
+ 
+-	if (dpp_color_caps.hw_3d_lut || dm->dc->caps.color.mpc.preblend) {
++	if (dpp_color_caps.hw_3d_lut) {
+ 		drm_object_attach_property(&plane->base,
+ 					   mode_info.plane_shaper_lut_property, 0);
+ 		drm_object_attach_property(&plane->base,
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Tue, 18 Nov 2025 19:39:30 +0100
+Subject: use upstream xonedo
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ .gitmodules           | 2 +-
+ drivers/custom/xonedo | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/.gitmodules b/.gitmodules
+index 495d57ed3c0c..9473dd0a8ce7 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -12,7 +12,7 @@
+ 	url = https://github.com/hhd-dev/bmi260
+ [submodule "drivers/custom/xonedo"]
+ 	path = drivers/custom/xonedo
+-	url = https://github.com/bazzite-org/xonedo
++	url = https://github.com/dlundqvist/xone
+ [submodule "drivers/custom/kvfm"]
+ 	path = drivers/custom/kvfm
+ 	url = https://github.com/gnif/LookingGlass
+diff --git a/drivers/custom/xonedo b/drivers/custom/xonedo
+index 2c06de29e95b..6d5a78a88e86 160000
+--- a/drivers/custom/xonedo
++++ b/drivers/custom/xonedo
+@@ -1 +1 @@
+-Subproject commit 2c06de29e95bbe9beebb81924f4b7324f0eb6591
++Subproject commit 6d5a78a88e8678e0a088d87ef59c7bebf9bc0ef5
+-- 
+2.52.0
+
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antheas Kapenekakis <lkml@antheas.dev>
+Date: Wed, 19 Nov 2025 00:38:05 +0100
+Subject: disable split lock detection by default
+
+Signed-off-by: Antheas Kapenekakis <lkml@antheas.dev>
+---
+ arch/x86/kernel/cpu/bus_lock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86/kernel/cpu/bus_lock.c b/arch/x86/kernel/cpu/bus_lock.c
+index 981f8b1f0792..75d42f6d650d 100644
+--- a/arch/x86/kernel/cpu/bus_lock.c
++++ b/arch/x86/kernel/cpu/bus_lock.c
+@@ -110,7 +110,7 @@ static bool split_lock_verify_msr(bool on)
+ 
+ static void __init sld_state_setup(void)
+ {
+-	enum split_lock_detect_state state = sld_warn;
++	enum split_lock_detect_state state = sld_off;
+ 	char arg[20];
+ 	int i, ret;
+ 
+-- 
+2.52.0
 
