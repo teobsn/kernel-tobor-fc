@@ -2076,6 +2076,9 @@ ApplyOptionalPatch clear_rebased-slack.patch
 ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.16+.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 
+ApplyOptionalPatch _temp-rust-fix-1.patch
+ApplyOptionalPatch _temp-rust-fix-2.patch
+
 ApplyOptionalPatch linux-kernel-test.patch
 
 %{log_msg "End of patch applications"}
