@@ -757,8 +757,8 @@ Provides: installonlypkg(kernel)
 # List the packages used during the kernel build
 #
 BuildRequires: kmod, bash, coreutils, tar, git-core, which
-BuildRequires: bzip2, xz, findutils, m4, perl-interpreter, perl-Carp, perl-devel, perl-generators, make, diffutils, gawk, %compression
-# Kernel EFI/Compression set by CONFIG_KERNEL_ZSTD
+BuildRequires: lz4, bzip2, xz, findutils, m4, perl-interpreter, perl-Carp, perl-devel, perl-generators, make, diffutils, gawk, %compression
+# Kernel EFI/Compression set by CONFIG_KERNEL_LZ4
 %ifarch x86_64 aarch64 riscv64
 BuildRequires: zstd
 %endif
