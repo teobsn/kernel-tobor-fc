@@ -179,7 +179,7 @@ Summary: The Linux kernel
 %define specrpmversion 6.17.7
 %define specversion 6.17.7
 %define patchversion 6.17
-%define pkgrelease 200
+%define pkgrelease 201
 %define kversion 6
 %define tarfile_release 6.17.7
 # This is needed to do merge window version magic
@@ -2020,7 +2020,6 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-#ApplyOptionalPatch bazzite-handheld.patch
 ApplyOptionalPatch bazzite-akmods.patch
 ApplyOptionalPatch cachy-0001-asus.patch
 ApplyOptionalPatch cachy-0001-bore.patch
@@ -2028,53 +2027,24 @@ ApplyOptionalPatch cachy-0001-rt-i915.patch
 ApplyOptionalPatch cachy-0002-bbr3.patch
 ApplyOptionalPatch cachy-0003-block.patch
 ApplyOptionalPatch cachy-0006-t2.patch
-#ApplyOptionalPatch clear-0001-mm-memcontrol-add-some-branch-hints-based-on-gcov-an.patch
-#ApplyOptionalPatch clear-0002-sched-core-add-some-branch-hints-based-on-gcov-analy.patch
-ApplyOptionalPatch clear-0050-Revert-ext4-do-not-create-EA-inode-under-buffer-lock.patch
-ApplyOptionalPatch clear-0101-i8042-decrease-debug-message-level-to-info.patch
-ApplyOptionalPatch clear-0102-increase-the-ext4-default-commit-age.patch
-ApplyOptionalPatch clear-0106-intel_idle-tweak-cpuidle-cstates.patch
-ApplyOptionalPatch clear-0108-smpboot-reuse-timer-calibration.patch
-ApplyOptionalPatch clear-0112-init-wait-for-partition-and-retry-scan.patch
-ApplyOptionalPatch clear-0114-add-boot-option-to-allow-unsigned-modules.patch
-ApplyOptionalPatch clear-0115-enable-stateless-firmware-loading.patch
-ApplyOptionalPatch clear-0116-migrate-some-systemd-defaults-to-the-kernel-defaults.patch
-ApplyOptionalPatch clear-0117-xattr-allow-setting-user.-attributes-on-symlinks-by-.patch
-#ApplyOptionalPatch clear-0120-do-accept-in-LIFO-order-for-cache-efficiency.patch
-ApplyOptionalPatch clear-0121-locking-rwsem-spin-faster.patch
-ApplyOptionalPatch clear-0122-ata-libahci-ignore-staggered-spin-up.patch
-ApplyOptionalPatch clear-0123-print-CPU-that-faults.patch
-ApplyOptionalPatch clear-0126-don-t-report-an-error-if-PowerClamp-run-on-other-CPU.patch
-ApplyOptionalPatch clear-0127-lib-raid6-add-patch.patch
-#ApplyOptionalPatch clear-0128-itmt_epb-use-epb-to-scale-itmt.patch
-ApplyOptionalPatch clear-0130-itmt2-ADL-fixes.patch
-ApplyOptionalPatch clear-0131-add-a-per-cpu-minimum-high-watermark-an-tune-batch-s.patch
-ApplyOptionalPatch clear-0133-novector.patch
-#ApplyOptionalPatch clear-0134-md-raid6-algorithms-scale-test-duration-for-speedier.patch
-#ApplyOptionalPatch clear-0135-initcall-only-print-non-zero-initcall-debug-to-speed.patch
-ApplyOptionalPatch clear-0136-crypto-kdf-make-the-module-init-call-a-late-init-cal.patch
-#ApplyOptionalPatch clear-0149-select-do_pollfd-add-unlikely-branch-hint-return-pat.patch
-#ApplyOptionalPatch clear-0150-select-core_sys_select-add-unlikely-branch-hint-on-r.patch
-ApplyOptionalPatch clear-0158-clocksource-only-perform-extended-clocksource-checks.patch
-ApplyOptionalPatch clear-0163-thermal-intel-powerclamp-check-MWAIT-first-use-pr_wa.patch
-#ApplyOptionalPatch clear-0164-KVM-VMX-make-vmx-init-a-late-init-call-to-get-to-ini.patch
-#ApplyOptionalPatch clear-0166-sched-fair-remove-upper-limit-on-cpu-number.patch
-ApplyOptionalPatch clear-0167-net-sock-increase-default-number-of-_SK_MEM_PACKETS-.patch
-#ApplyOptionalPatch clear-0173-cpuidle-psd-add-power-sleep-demotion-prevention-for-.patch
-#ApplyOptionalPatch clear-0174-memcg-increase-MEMCG_CHARGE_BATCH-to-128.patch
-ApplyOptionalPatch clear-0175-readdir-add-unlikely-hint-on-len-check.patch
-ApplyOptionalPatch clear-better_idle_balance.patch
-#ApplyOptionalPatch clear-cstatedemotion.patch
-#ApplyOptionalPatch clear-epp-retune.patch
-ApplyOptionalPatch clear-libsgrowdown.patch
-ApplyOptionalPatch clear-ratelimit-sched-yield.patch
-ApplyOptionalPatch clear_rebased-0104-pci-pme-wakeups.patch
-#ApplyOptionalPatch clear_rebased-0111-ipv4-tcp-allow-the-memory-tuning-for-tcp-to-go-a-lit.patch
-ApplyOptionalPatch clear_rebased-0161-ACPI-align-slab-buffers-for-improved-memory-performa.patch
-ApplyOptionalPatch clear_rebased-slack.patch
-#ApplyOptionalPatch clear-scale-net-alloc.patch
 ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.16+.patch
+ApplyOptionalPatch solus-0001-Bluetooth-Check-key-sizes-only-when-Secure-Simple-Pa.patch
+ApplyOptionalPatch solus-0001-drivers-firmware-skip-simpledrm-if-nvidia-drm.modese.patch
+#ApplyOptionalPatch solus-0001-drm-amdgpu-enable-SI-and-CIK-support-by-default.patch
+ApplyOptionalPatch solus-0003-ZEN-mm-Stop-kswapd-early-when-nothing-s-waiting-for-.patch
+ApplyOptionalPatch solus-0005-ZEN-INTERACTIVE-Enable-background-reclaim-of-hugepag.patch
+ApplyOptionalPatch solus-0006-ZEN-INTERACTIVE-mm-Disable-watermark-boosting-by-def.patch
+ApplyOptionalPatch solus-0007-ZEN-INTERACTIVE-mm-swap-Disable-swap-in-readahead.patch
+ApplyOptionalPatch solus-0008-ZEN-INTERACTIVE-mm-Disable-unevictable-compaction.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
+ApplyOptionalPatch xanmod-0001-XANMOD-x86-build-Add-more-CFLAGS-optimizations.patch
+ApplyOptionalPatch xanmod-0001-ZEN-input-evdev-Use-call_rcu-when-detaching-client.patch
+ApplyOptionalPatch xanmod-0002-XANMOD-x86-build-Add-LLVM-polyhedral-loop-optimizer-.patch
+ApplyOptionalPatch xanmod-0002-ZEN-dm-crypt-Disable-workqueues-for-crypto-ops.patch
+ApplyOptionalPatch xanmod-0003-XANMOD-kbuild-Add-SMS-based-software-pipelining-flag.patch
+ApplyOptionalPatch xanmod-clear-0001-sched-wait-Do-accept-in-LIFO-order-for-cache-efficie.patch
+ApplyOptionalPatch xanmod-clear-0002-firmware-Enable-stateless-firmware-loading.patch
+ApplyOptionalPatch xanmod-clear-0003-locking-rwsem-spin-faster.patch
 
 ApplyOptionalPatch _temp-rust-fix-1.patch
 ApplyOptionalPatch _temp-rust-fix-2.patch
