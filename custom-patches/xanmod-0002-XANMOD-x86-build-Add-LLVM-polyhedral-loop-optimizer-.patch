@@ -1,4 +1,4 @@
-From f900edfebc0b5ae1f3fa272413a38205cd352834 Mon Sep 17 00:00:00 2001
+From 795f60f36f2f151ba772f72c09317d3adc6fe1ee Mon Sep 17 00:00:00 2001
 From: Alexandre Frade <kernel@xanmod.org>
 Date: Sat, 19 Jul 2025 02:28:57 +0000
 Subject: [PATCH 02/20] XANMOD: x86/build: Add LLVM polyhedral loop optimizer
@@ -48,10 +48,10 @@ Signed-off-by: Alexandre Frade <kernel@xanmod.org>
  1 file changed, 6 insertions(+)
 
 diff --git a/arch/x86/Makefile b/arch/x86/Makefile
-index 615e11605778..e23632a061f4 100644
+index 0fa060ff6b5d..074f50db2833 100644
 --- a/arch/x86/Makefile
 +++ b/arch/x86/Makefile
-@@ -70,6 +70,12 @@ export BITS
+@@ -71,6 +71,12 @@ export BITS
  # More compiler optimizations
  ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
  KBUILD_CFLAGS += -O3 $(call cc-option,-fivopts)

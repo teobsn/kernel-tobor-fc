@@ -1,7 +1,7 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From a958950c2711ba2fe80e8bcb898bbafadd49b10d Mon Sep 17 00:00:00 2001
 From: Sultan Alsawaf <sultan@kerneltoast.com>
 Date: Sat, 28 Mar 2020 13:06:28 -0700
-Subject: [PATCH 6/9] ZEN: INTERACTIVE: mm: Disable watermark boosting by
+Subject: [PATCH 27/29] ZEN: INTERACTIVE: mm: Disable watermark boosting by
  default
 
 What watermark boosting does is preemptively fire up kswapd to free
@@ -28,19 +28,38 @@ option is there in case someone does.
 
 Signed-off-by: Sultan Alsawaf <sultan@kerneltoast.com>
 ---
- mm/page_alloc.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ init/Kconfig    | 1 +
+ mm/page_alloc.c | 4 ++++
+ 2 files changed, 5 insertions(+)
 
+diff --git a/init/Kconfig b/init/Kconfig
+index 4e037f68cd37..810f7807ada2 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -202,6 +202,7 @@ config ZEN_INTERACTIVE
+ 
+ 	    Background-reclaim hugepages...:   no   ->   yes
+ 	    Compact unevictable............:   yes  ->   no
++	    Watermark boost factor.........:   1.5  ->   0
+ 
+ 	  --- EEVDF CPU Scheduler --------------------------------
+ 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index cef3f6ccb6d6..8f263c744b1d 100644
+index 677f9bb0428b..9407f8a22b06 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -276,7 +276,7 @@ const char * const migratetype_names[MIGRATE_TYPES] = {
+@@ -276,7 +276,11 @@ const char * const migratetype_names[MIGRATE_TYPES] = {
  
  int min_free_kbytes = 1024;
  int user_min_free_kbytes = -1;
--static int watermark_boost_factor __read_mostly = 15000;
++#ifdef CONFIG_ZEN_INTERACTIVE
 +static int watermark_boost_factor __read_mostly;
++#else
+ static int watermark_boost_factor __read_mostly = 15000;
++#endif
  static int watermark_scale_factor = 10;
  int defrag_mode;
  
+-- 
+2.52.0
+

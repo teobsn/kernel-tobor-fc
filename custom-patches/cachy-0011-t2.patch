@@ -1,7 +1,7 @@
-From 384643b9b11ec160551aa8383a78513656e277e1 Mon Sep 17 00:00:00 2001
+From b35b55fccb43c256043c10798f202178cc364b04 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
-Date: Fri, 31 Oct 2025 12:29:37 +0100
-Subject: [PATCH 6/6] t2
+Date: Fri, 30 Jan 2026 13:51:43 +0100
+Subject: [PATCH 11/11] t2
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -19,7 +19,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/hid/hid-apple.c                       |   45 +-
  drivers/hid/hid-core.c                        |   11 +-
  drivers/hid/hid-ids.h                         |   10 +
- drivers/hid/hid-magicmouse.c                  |  765 ++++++++++-
+ drivers/hid/hid-magicmouse.c                  |  770 ++++++++++-
  drivers/hid/spi-hid/Kconfig                   |   26 +
  drivers/hid/spi-hid/Makefile                  |   10 +
  drivers/hid/spi-hid/spi-hid-apple-core.c      | 1194 ++++++++++++++++
@@ -49,7 +49,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  .../staging/apple-bce/audio/protocol_bce.h    |   72 +
  drivers/staging/apple-bce/mailbox.c           |  155 +++
  drivers/staging/apple-bce/mailbox.h           |   53 +
- drivers/staging/apple-bce/queue.c             |  390 ++++++
+ drivers/staging/apple-bce/queue.c             |  415 ++++++
  drivers/staging/apple-bce/queue.h             |  177 +++
  drivers/staging/apple-bce/queue_dma.c         |  220 +++
  drivers/staging/apple-bce/queue_dma.h         |   50 +
@@ -62,7 +62,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/staging/apple-bce/vhci/vhci.h         |   52 +
  include/linux/hid.h                           |    6 +-
  include/linux/soc/apple/dockchannel.h         |   26 +
- 57 files changed, 10645 insertions(+), 347 deletions(-)
+ 57 files changed, 10671 insertions(+), 351 deletions(-)
  create mode 100644 drivers/hid/dockchannel-hid/Kconfig
  create mode 100644 drivers/hid/dockchannel-hid/Makefile
  create mode 100644 drivers/hid/dockchannel-hid/dockchannel-hid.c
@@ -102,10 +102,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  create mode 100644 include/linux/soc/apple/dockchannel.h
 
 diff --git a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
-index 72ca35acd44a..fa6988ff3eb8 100644
+index d969b172b7b0..d302ea0e9628 100644
 --- a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
 +++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
-@@ -2321,6 +2321,9 @@ static int amdgpu_pci_probe(struct pci_dev *pdev,
+@@ -2357,6 +2357,9 @@ static int amdgpu_pci_probe(struct pci_dev *pdev,
  	int ret, retry = 0, i;
  	bool supports_atomic = false;
  
@@ -116,10 +116,10 @@ index 72ca35acd44a..fa6988ff3eb8 100644
  	    (pdev->class >> 8) == PCI_CLASS_DISPLAY_OTHER) {
  		if (drm_firmware_drivers_only() && amdgpu_modeset == -1)
 diff --git a/drivers/gpu/drm/i915/display/intel_ddi.c b/drivers/gpu/drm/i915/display/intel_ddi.c
-index 9ecbb4b99c37..872356315e9e 100644
+index c09aa759f4d4..cc372bb38e97 100644
 --- a/drivers/gpu/drm/i915/display/intel_ddi.c
 +++ b/drivers/gpu/drm/i915/display/intel_ddi.c
-@@ -4866,6 +4866,9 @@ static bool intel_ddi_a_force_4_lanes(struct intel_digital_port *dig_port)
+@@ -4868,6 +4868,9 @@ static bool intel_ddi_a_force_4_lanes(struct intel_digital_port *dig_port)
  	if (dig_port->ddi_a_4_lanes)
  		return false;
  
@@ -130,10 +130,10 @@ index 9ecbb4b99c37..872356315e9e 100644
  	 *                     supported configuration
  	 */
 diff --git a/drivers/gpu/drm/i915/display/intel_fbdev.c b/drivers/gpu/drm/i915/display/intel_fbdev.c
-index 7c4709d58aa3..a2444dff75fe 100644
+index 7daf72b69bae..2fadf3bbc4df 100644
 --- a/drivers/gpu/drm/i915/display/intel_fbdev.c
 +++ b/drivers/gpu/drm/i915/display/intel_fbdev.c
-@@ -224,10 +224,10 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
+@@ -253,10 +253,10 @@ int intel_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
  	ifbdev->fb = NULL;
  
  	if (fb &&
@@ -148,7 +148,7 @@ index 7c4709d58aa3..a2444dff75fe 100644
  			    fb->base.width, fb->base.height,
  			    sizes->fb_width, sizes->fb_height);
 diff --git a/drivers/gpu/drm/i915/display/intel_quirks.c b/drivers/gpu/drm/i915/display/intel_quirks.c
-index a32fae510ed2..662465733ddb 100644
+index d2e16b79d6be..85f26517771a 100644
 --- a/drivers/gpu/drm/i915/display/intel_quirks.c
 +++ b/drivers/gpu/drm/i915/display/intel_quirks.c
 @@ -66,6 +66,18 @@ static void quirk_increase_ddi_disabled_time(struct intel_display *display)
@@ -170,10 +170,10 @@ index a32fae510ed2..662465733ddb 100644
  static void quirk_no_pps_backlight_power_hook(struct intel_display *display)
  {
  	intel_set_quirk(display, QUIRK_NO_PPS_BACKLIGHT_POWER_HOOK);
-@@ -231,6 +243,9 @@ static struct intel_quirk intel_quirks[] = {
- 	{ 0x3184, 0x1019, 0xa94d, quirk_increase_ddi_disabled_time },
- 	/* HP Notebook - 14-r206nv */
- 	{ 0x0f31, 0x103c, 0x220f, quirk_invert_brightness },
+@@ -240,6 +252,9 @@ static struct intel_quirk intel_quirks[] = {
+ 
+ 	/* Dell XPS 13 7390 2-in-1 */
+ 	{ 0x8a12, 0x1028, 0x08b0, quirk_edp_limit_rate_hbr2 },
 +
 +	/* Apple MacBookPro15,1 */
 +	{ 0x3e9b, 0x106b, 0x0176, quirk_ddi_a_force_4_lanes },
@@ -181,13 +181,13 @@ index a32fae510ed2..662465733ddb 100644
  
  static const struct intel_dpcd_quirk intel_dpcd_quirks[] = {
 diff --git a/drivers/gpu/drm/i915/display/intel_quirks.h b/drivers/gpu/drm/i915/display/intel_quirks.h
-index cafdebda7535..a5296f82776e 100644
+index 06da0e286c67..71b89e52ebe7 100644
 --- a/drivers/gpu/drm/i915/display/intel_quirks.h
 +++ b/drivers/gpu/drm/i915/display/intel_quirks.h
-@@ -20,6 +20,7 @@ enum intel_quirk_id {
- 	QUIRK_LVDS_SSC_DISABLE,
+@@ -21,6 +21,7 @@ enum intel_quirk_id {
  	QUIRK_NO_PPS_BACKLIGHT_POWER_HOOK,
  	QUIRK_FW_SYNC_LEN,
+ 	QUIRK_EDP_LIMIT_RATE_HBR2,
 +	QUIRK_DDI_A_FORCE_4_LANES,
  };
  
@@ -211,10 +211,10 @@ index 68e45a26e85f..7580172daade 100644
  	}
  
 diff --git a/drivers/hid/Kconfig b/drivers/hid/Kconfig
-index 7f9f2d7b82d2..7e6c7591bd6f 100644
+index 81e8da502dd6..38adc1c91955 100644
 --- a/drivers/hid/Kconfig
 +++ b/drivers/hid/Kconfig
-@@ -129,7 +129,7 @@ config HID_APPLE
+@@ -140,7 +140,7 @@ config HID_APPLE
  	tristate "Apple {i,Power,Mac}Books"
  	depends on LEDS_CLASS
  	depends on NEW_LEDS
@@ -223,7 +223,7 @@ index 7f9f2d7b82d2..7e6c7591bd6f 100644
  	help
  	Support for some Apple devices which less or more break
  	HID specification.
-@@ -724,11 +724,13 @@ config LOGIWHEELS_FF
+@@ -735,11 +735,13 @@ config LOGIWHEELS_FF
  
  config HID_MAGICMOUSE
  	tristate "Apple Magic Mouse/Trackpad multi-touch support"
@@ -238,7 +238,7 @@ index 7f9f2d7b82d2..7e6c7591bd6f 100644
  
  config HID_MALTRON
  	tristate "Maltron L90 keyboard"
-@@ -1443,4 +1445,8 @@ endif # HID
+@@ -1454,4 +1456,8 @@ endif # HID
  
  source "drivers/hid/usbhid/Kconfig"
  
@@ -248,10 +248,10 @@ index 7f9f2d7b82d2..7e6c7591bd6f 100644
 +
  endif # HID_SUPPORT
 diff --git a/drivers/hid/Makefile b/drivers/hid/Makefile
-index 958f67193c85..f67db3d5d18f 100644
+index c975f2f1bd54..083677e71993 100644
 --- a/drivers/hid/Makefile
 +++ b/drivers/hid/Makefile
-@@ -176,3 +176,7 @@ obj-$(CONFIG_AMD_SFH_HID)       += amd-sfh-hid/
+@@ -177,3 +177,7 @@ obj-$(CONFIG_AMD_SFH_HID)       += amd-sfh-hid/
  obj-$(CONFIG_SURFACE_HID_CORE)  += surface-hid/
  
  obj-$(CONFIG_INTEL_THC_HID)     += intel-thc-hid/
@@ -1511,7 +1511,7 @@ index 000000000000..a712a724ded3
 +MODULE_AUTHOR("Hector Martin <marcan@marcan.st>");
 +MODULE_LICENSE("Dual MIT/GPL");
 diff --git a/drivers/hid/hid-apple.c b/drivers/hid/hid-apple.c
-index 61404d7a43ee..cdc008c6696c 100644
+index 57da4f86a9fa..a95ef2ddeafe 100644
 --- a/drivers/hid/hid-apple.c
 +++ b/drivers/hid/hid-apple.c
 @@ -30,7 +30,7 @@
@@ -1523,7 +1523,7 @@ index 61404d7a43ee..cdc008c6696c 100644
  #define APPLE_HAS_FN		BIT(2)
  /* BIT(3) reserved, was: APPLE_HIDDEV */
  #define APPLE_ISO_TILDE_QUIRK	BIT(4)
-@@ -517,6 +517,16 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
+@@ -518,6 +518,16 @@ static int hidinput_apple_event(struct hid_device *hid, struct input_dev *input,
  				table = macbookair_fn_keys;
  			else if (hid->product < 0x21d || hid->product >= 0x300)
  				table = powerbook_fn_keys;
@@ -1540,7 +1540,7 @@ index 61404d7a43ee..cdc008c6696c 100644
  			else
  				table = apple_fn_keys;
  		}
-@@ -937,6 +947,13 @@ static int apple_probe(struct hid_device *hdev,
+@@ -938,6 +948,13 @@ static int apple_probe(struct hid_device *hdev,
  	struct apple_sc *asc;
  	int ret;
  
@@ -1554,7 +1554,7 @@ index 61404d7a43ee..cdc008c6696c 100644
  	asc = devm_kzalloc(&hdev->dev, sizeof(*asc), GFP_KERNEL);
  	if (asc == NULL) {
  		hid_err(hdev, "can't alloc apple descriptor\n");
-@@ -1159,27 +1176,31 @@ static const struct hid_device_id apple_devices[] = {
+@@ -1160,27 +1177,31 @@ static const struct hid_device_id apple_devices[] = {
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRING9_JIS),
  		.driver_data = APPLE_HAS_FN | APPLE_RDESC_JIS },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K),
@@ -1595,7 +1595,7 @@ index 61404d7a43ee..cdc008c6696c 100644
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_ALU_WIRELESS_2009_ANSI),
  		.driver_data = APPLE_NUMLOCK_EMULATION | APPLE_HAS_FN },
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_ALU_WIRELESS_2009_ISO),
-@@ -1215,6 +1236,10 @@ static const struct hid_device_id apple_devices[] = {
+@@ -1216,6 +1237,10 @@ static const struct hid_device_id apple_devices[] = {
  		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK | APPLE_RDESC_BATTERY },
  	{ HID_BLUETOOTH_DEVICE(BT_VENDOR_ID_APPLE, USB_DEVICE_ID_APPLE_MAGIC_KEYBOARD_NUMPAD_2024),
  		.driver_data = APPLE_HAS_FN | APPLE_ISO_TILDE_QUIRK },
@@ -1607,7 +1607,7 @@ index 61404d7a43ee..cdc008c6696c 100644
  		.driver_data = APPLE_MAGIC_BACKLIGHT },
  
 diff --git a/drivers/hid/hid-core.c b/drivers/hid/hid-core.c
-index 5419a6c10907..de382dcb3991 100644
+index a5b3a8ca2fcb..b353fd819989 100644
 --- a/drivers/hid/hid-core.c
 +++ b/drivers/hid/hid-core.c
 @@ -468,7 +468,10 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
@@ -1622,7 +1622,7 @@ index 5419a6c10907..de382dcb3991 100644
  			hid_err(parser->device, "invalid report_size %d\n",
  					parser->global.report_size);
  			return -1;
-@@ -2307,6 +2310,12 @@ int hid_connect(struct hid_device *hdev, unsigned int connect_mask)
+@@ -2316,6 +2319,12 @@ int hid_connect(struct hid_device *hdev, unsigned int connect_mask)
  	case BUS_I2C:
  		bus = "I2C";
  		break;
@@ -1636,7 +1636,7 @@ index 5419a6c10907..de382dcb3991 100644
  		bus = "SOUNDWIRE";
  		break;
 diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
-index 4c0c0cbcd06b..e8f2fda0073a 100644
+index d76abcd2ea88..d3aa204bd34c 100644
 --- a/drivers/hid/hid-ids.h
 +++ b/drivers/hid/hid-ids.h
 @@ -93,6 +93,8 @@
@@ -1664,7 +1664,7 @@ index 4c0c0cbcd06b..e8f2fda0073a 100644
  #define USB_VENDOR_ID_ASETEK			0x2433
  #define USB_DEVICE_ID_ASETEK_INVICTA		0xf300
 diff --git a/drivers/hid/hid-magicmouse.c b/drivers/hid/hid-magicmouse.c
-index 7d4a25c6de0e..b40f411687d5 100644
+index 7d4a25c6de0e..4bf49d7cad0e 100644
 --- a/drivers/hid/hid-magicmouse.c
 +++ b/drivers/hid/hid-magicmouse.c
 @@ -60,8 +60,14 @@ MODULE_PARM_DESC(report_undeciphered, "Report undeciphered multi-touch state fie
@@ -2479,10 +2479,13 @@ index 7d4a25c6de0e..b40f411687d5 100644
  	msc->scroll_accel = SCROLL_ACCEL_DEFAULT;
  	msc->hdev = hdev;
  	INIT_DEFERRABLE_WORK(&msc->work, magicmouse_enable_mt_work);
-@@ -916,6 +1577,30 @@ static int magicmouse_probe(struct hid_device *hdev,
+@@ -916,11 +1577,32 @@ static int magicmouse_probe(struct hid_device *hdev,
  				TRACKPAD2_USB_REPORT_ID, 0);
  		}
  		break;
+-	default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
+-		report = hid_register_report(hdev, HID_INPUT_REPORT,
+-			TRACKPAD_REPORT_ID, 0);
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J140K:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J132:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J680:
@@ -2492,10 +2495,11 @@ index 7d4a25c6de0e..b40f411687d5 100644
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J223:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J230K:
 +	case USB_DEVICE_ID_APPLE_WELLSPRINGT2_J152F:
-+		report = hid_register_report(hdev, HID_INPUT_REPORT,
+ 		report = hid_register_report(hdev, HID_INPUT_REPORT,
+-			DOUBLE_REPORT_ID, 0);
 +			TRACKPAD2_USB_REPORT_ID, 0);
 +		break;
-+	case HID_ANY_ID:
++	default:
 +		switch (id->bus) {
 +		case BUS_HOST:
 +			report = hid_register_report(hdev, HID_INPUT_REPORT, MTP_REPORT_ID, 0);
@@ -2503,14 +2507,16 @@ index 7d4a25c6de0e..b40f411687d5 100644
 +		case BUS_SPI:
 +			report = hid_register_report(hdev, HID_INPUT_REPORT, SPI_REPORT_ID, 0);
 +			break;
-+		default:
-+			break;
++		default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
++			report = hid_register_report(hdev, HID_INPUT_REPORT,
++				TRACKPAD_REPORT_ID, 0);
++			report = hid_register_report(hdev, HID_INPUT_REPORT,
++				DOUBLE_REPORT_ID, 0);
 +		}
-+		break;
- 	default: /* USB_DEVICE_ID_APPLE_MAGICTRACKPAD */
- 		report = hid_register_report(hdev, HID_INPUT_REPORT,
- 			TRACKPAD_REPORT_ID, 0);
-@@ -930,22 +1615,14 @@ static int magicmouse_probe(struct hid_device *hdev,
+ 	}
+ 
+ 	if (!report) {
+@@ -930,22 +1612,14 @@ static int magicmouse_probe(struct hid_device *hdev,
  	}
  	report->size = 6;
  
@@ -2541,7 +2547,7 @@ index 7d4a25c6de0e..b40f411687d5 100644
  	}
  
  	return 0;
-@@ -1023,10 +1700,42 @@ static const struct hid_device_id magic_mice[] = {
+@@ -1023,10 +1697,42 @@ static const struct hid_device_id magic_mice[] = {
  		USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC), .driver_data = 0 },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_APPLE,
  		USB_DEVICE_ID_APPLE_MAGICTRACKPAD2_USBC), .driver_data = 0 },
@@ -2584,7 +2590,7 @@ index 7d4a25c6de0e..b40f411687d5 100644
  static struct hid_driver magicmouse_driver = {
  	.name = "magicmouse",
  	.id_table = magic_mice,
-@@ -1037,6 +1746,10 @@ static struct hid_driver magicmouse_driver = {
+@@ -1037,6 +1743,10 @@ static struct hid_driver magicmouse_driver = {
  	.event = magicmouse_event,
  	.input_mapping = magicmouse_input_mapping,
  	.input_configured = magicmouse_input_configured,
@@ -6030,7 +6036,7 @@ index fc6d6a9053ce..698f44794453 100644
  MODULE_LICENSE("GPL v2");
  MODULE_DEVICE_TABLE(dmi, applesmc_whitelist);
 diff --git a/drivers/pci/vgaarb.c b/drivers/pci/vgaarb.c
-index 78748e8d2dba..2b2b558cebe6 100644
+index baa242b14099..d89a00080046 100644
 --- a/drivers/pci/vgaarb.c
 +++ b/drivers/pci/vgaarb.c
 @@ -143,6 +143,7 @@ void vga_set_default_device(struct pci_dev *pdev)
@@ -6085,7 +6091,7 @@ index 1417e230edbd..e69785af8e1d 100644
  	 * Retina MacBook Pros cannot switch the panel's AUX separately
  	 * and need eDP pre-calibration. They are distinguishable from
 diff --git a/drivers/soc/apple/Kconfig b/drivers/soc/apple/Kconfig
-index 6388cbe1e56b..50f092732796 100644
+index ad6736889231..90d1a448f1f4 100644
 --- a/drivers/soc/apple/Kconfig
 +++ b/drivers/soc/apple/Kconfig
 @@ -4,6 +4,16 @@ if ARCH_APPLE || COMPILE_TEST
@@ -6105,7 +6111,7 @@ index 6388cbe1e56b..50f092732796 100644
  config APPLE_MAILBOX
  	tristate "Apple SoC mailboxes"
  	depends on PM
-@@ -30,6 +40,20 @@ config APPLE_RTKIT
+@@ -28,6 +38,20 @@ config APPLE_RTKIT
  
  	  Say 'y' here if you have an Apple SoC.
  
@@ -9563,12 +9569,13 @@ index 000000000000..f3323f95ba51
 +#endif //BCEDRIVER_MAILBOX_H
 diff --git a/drivers/staging/apple-bce/queue.c b/drivers/staging/apple-bce/queue.c
 new file mode 100644
-index 000000000000..bc9cd3bc6f0c
+index 000000000000..948286157e3a
 --- /dev/null
 +++ b/drivers/staging/apple-bce/queue.c
-@@ -0,0 +1,390 @@
+@@ -0,0 +1,415 @@
 +#include "queue.h"
 +#include "apple_bce.h"
++#include <linux/version.h>
 +
 +#define REG_DOORBELL_BASE 0x44000
 +
@@ -9888,7 +9895,11 @@ index 000000000000..bc9cd3bc6f0c
 +{
 +    struct bce_queue_cq *cq;
 +    struct bce_queue_memcfg cfg;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +    int qid = ida_simple_get(&dev->queue_ida, BCE_QUEUE_USER_MIN, BCE_QUEUE_USER_MAX, GFP_KERNEL);
++#else
++    int qid = ida_alloc_range(&dev->queue_ida, BCE_QUEUE_USER_MIN, BCE_QUEUE_USER_MAX - 1, GFP_KERNEL);
++#endif
 +    if (qid < 0)
 +        return NULL;
 +    cq = bce_alloc_cq(dev, qid, el_count);
@@ -9898,7 +9909,11 @@ index 000000000000..bc9cd3bc6f0c
 +    if (bce_cmd_register_queue(dev->cmd_cmdq, &cfg, NULL, false) != 0) {
 +        pr_err("apple-bce: CQ registration failed (%i)", qid);
 +        bce_free_cq(dev, cq);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +        ida_simple_remove(&dev->queue_ida, (uint) qid);
++#else
++        ida_free(&dev->queue_ida, (uint) qid);
++#endif
 +        return NULL;
 +    }
 +    dev->queues[qid] = (struct bce_queue *) cq;
@@ -9917,7 +9932,11 @@ index 000000000000..bc9cd3bc6f0c
 +        return NULL; /* name can not be null */
 +    if (direction != DMA_TO_DEVICE && direction != DMA_FROM_DEVICE)
 +        return NULL; /* unsupported direction */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +    qid = ida_simple_get(&dev->queue_ida, BCE_QUEUE_USER_MIN, BCE_QUEUE_USER_MAX, GFP_KERNEL);
++#else
++    qid = ida_alloc_range(&dev->queue_ida, BCE_QUEUE_USER_MIN, BCE_QUEUE_USER_MAX - 1, GFP_KERNEL);
++#endif
 +    if (qid < 0)
 +        return NULL;
 +    sq = bce_alloc_sq(dev, qid, sizeof(struct bce_qe_submission), el_count, compl, userdata);
@@ -9927,7 +9946,11 @@ index 000000000000..bc9cd3bc6f0c
 +    if (bce_cmd_register_queue(dev->cmd_cmdq, &cfg, name, direction != DMA_FROM_DEVICE) != 0) {
 +        pr_err("apple-bce: SQ registration failed (%i)", qid);
 +        bce_free_sq(dev, sq);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +        ida_simple_remove(&dev->queue_ida, (uint) qid);
++#else
++        ida_free(&dev->queue_ida, (uint) qid);
++#endif
 +        return NULL;
 +    }
 +    spin_lock(&dev->queues_lock);
@@ -9943,7 +9966,11 @@ index 000000000000..bc9cd3bc6f0c
 +    spin_lock(&dev->queues_lock);
 +    dev->queues[cq->qid] = NULL;
 +    spin_unlock(&dev->queues_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +    ida_simple_remove(&dev->queue_ida, (uint) cq->qid);
++#else
++    ida_free(&dev->queue_ida, (uint) cq->qid);
++#endif
 +    bce_free_cq(dev, cq);
 +}
 +
@@ -9954,7 +9981,11 @@ index 000000000000..bc9cd3bc6f0c
 +    spin_lock(&dev->queues_lock);
 +    dev->queues[sq->qid] = NULL;
 +    spin_unlock(&dev->queues_lock);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,18,0)
 +    ida_simple_remove(&dev->queue_ida, (uint) sq->qid);
++#else
++    ida_free(&dev->queue_ida, (uint) sq->qid);
++#endif
 +    bce_free_sq(dev, sq);
 +}
 \ No newline at end of file
@@ -12578,10 +12609,10 @@ index 000000000000..6c2e22622f4c
 +
 +#endif //BCE_VHCI_H
 diff --git a/include/linux/hid.h b/include/linux/hid.h
-index c32425b5d011..f55d1e59a63b 100644
+index a4ddb94e3ee5..8c6d3124c20c 100644
 --- a/include/linux/hid.h
 +++ b/include/linux/hid.h
-@@ -596,7 +596,9 @@ struct hid_input {
+@@ -625,7 +625,9 @@ struct hid_input {
  enum hid_type {
  	HID_TYPE_OTHER = 0,
  	HID_TYPE_USBMOUSE,
@@ -12592,7 +12623,7 @@ index c32425b5d011..f55d1e59a63b 100644
  };
  
  enum hid_battery_status {
-@@ -757,6 +759,8 @@ struct hid_descriptor {
+@@ -786,6 +788,8 @@ struct hid_descriptor {
  	.bus = BUS_BLUETOOTH, .vendor = (ven), .product = (prod)
  #define HID_I2C_DEVICE(ven, prod)				\
  	.bus = BUS_I2C, .vendor = (ven), .product = (prod)
@@ -12634,5 +12665,5 @@ index 000000000000..0b7093935ddf
 +#endif
 +#endif
 -- 
-2.51.2
+2.52.0
 

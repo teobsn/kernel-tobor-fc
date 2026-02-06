@@ -1,4 +1,4 @@
-From e627a5c10e2d73b60dbc4e7a463a6efc27fd4656 Mon Sep 17 00:00:00 2001
+From 37ebf309d4f637acdd63ea73a141b7ee622ea09f Mon Sep 17 00:00:00 2001
 From: Alexandre Frade <kernel@xanmod.org>
 Date: Fri, 20 Jun 2025 01:14:28 +0000
 Subject: [PATCH 03/20] XANMOD: kbuild: Add SMS-based software pipelining flags
@@ -13,7 +13,7 @@ Signed-off-by: Alexandre Frade <kernel@xanmod.org>
  1 file changed, 4 insertions(+)
 
 diff --git a/Makefile b/Makefile
-index 82bb9cdf73a3..7053fcffd76b 100644
+index a082a1d7c7d9..5fc0aa4636a1 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -868,9 +868,13 @@ KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks

@@ -1,4 +1,4 @@
-From b5ee70b13b568ab45c94dd8fe49f18cac3d3f9e9 Mon Sep 17 00:00:00 2001
+From 31712a2cdbc9ef1eb5ebf98e3bf4699047c54d5a Mon Sep 17 00:00:00 2001
 From: Kenny Levinsen <kl@kl.wtf>
 Date: Sun, 27 Dec 2020 14:43:13 +0000
 Subject: [PATCH 1/2] ZEN: input/evdev: Use call_rcu when detaching client
