@@ -9,7 +9,7 @@ CONFIG_NVME_KEYRING=y
 CONFIG_NVME_AUTH=y
 
 ## amdgpu built-in experiment
-CONFIG_DRM_AMDGPU=m
+#CONFIG_DRM_AMDGPU=m
 
 CONFIG_MZEN3=y
 # CONFIG_X86_NATIVE_CPU is not set
