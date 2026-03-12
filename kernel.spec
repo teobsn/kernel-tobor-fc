@@ -187,18 +187,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 6.19.6
-%define specversion 6.19.6
+%define specrpmversion 6.19.7
+%define specversion 6.19.7
 %define patchversion 6.19
 %define pkgrelease 200
 %define kversion 6
-%define tarfile_release 6.19.6
+%define tarfile_release 6.19.7
 # This is needed to do merge window version magic
 %define patchlevel 19
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 6.19.6
+%define kabiversion 6.19.7
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -3377,8 +3377,11 @@ fi
 %ifarch aarch64
 %global perf_build_extra_opts CORESIGHT=1
 %endif
+%ifarch s390x
+%global perf_build_extra_ldflags -Wl,-z,notext
+%endif
 %global perf_make \
-  %{__make} %{?make_opts} EXTRA_CFLAGS="${RPM_OPT_FLAGS}" EXTRA_CXXFLAGS="${RPM_OPT_FLAGS}" LDFLAGS="%{__global_ldflags} -Wl,-E" %{?cross_opts} -C tools/perf V=1 NO_PERF_READ_VDSO32=1 NO_PERF_READ_VDSOX32=1 WERROR=0 NO_LIBUNWIND=1 HAVE_CPLUS_DEMANGLE=1 NO_GTK2=1 NO_STRLCPY=1 NO_BIONIC=1 LIBTRACEEVENT_DYNAMIC=1 %{?perf_build_extra_opts} prefix=%{_prefix} PYTHON=%{__python3}
+  %{__make} %{?make_opts} EXTRA_CFLAGS="${RPM_OPT_FLAGS}" EXTRA_CXXFLAGS="${RPM_OPT_FLAGS}" LDFLAGS="%{__global_ldflags} -Wl,-E %{?perf_build_extra_ldflags}" %{?cross_opts} -C tools/perf V=1 NO_PERF_READ_VDSO32=1 NO_PERF_READ_VDSOX32=1 WERROR=0 NO_LIBUNWIND=1 HAVE_CPLUS_DEMANGLE=1 NO_GTK2=1 NO_STRLCPY=1 NO_BIONIC=1 LIBTRACEEVENT_DYNAMIC=1 %{?perf_build_extra_opts} prefix=%{_prefix} PYTHON=%{__python3}
 %if %{with_perf}
 %{log_msg "Build perf"}
 # perf
@@ -4854,8 +4857,29 @@ fi\
 #
 #
 %changelog
-* Wed Mar 04 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.6-200]
+* Thu Mar 12 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.7-0]
+- Add some BugsFixed by 6.19.7 (Justin M. Forbes)
+- drm/i915/psr: Compute psr_entry_setup_frames into intel_crtc_state (Jouni Högander)
+- drm/i915/psr: Disable PSR on update_m_n and update_lrr (Jouni Högander)
+- Turn on GPIB for Fedora (Justin M. Forbes)
+- drm/i915/psr: Fix for Panel Replay X granularity DPCD register handling (Jouni Högander)
+- drm/dp: Add definition for Panel Replay full-line granularity (Jouni Högander)
+- drm/i915/display: Allow async flip when Selective Fetch is enabled (Jouni Högander)
+- drm/i915/psr: Perform full frame update on async flip (Jouni Högander)
+- drm/i915/psr: Set plane id bit in crtc_state->async_flip_planes for PSR (Jouni Högander)
+- drm/i915/psr: Move sink_sync_latency to intel_connector (Jouni Högander)
+- drm/i915/psr: Move sink PSR and Panel Replay booleans to intel_connector (Jouni Högander)
+- drm/i915/psr: Move Panel Replay DSC sink support data to intel_connector (Jouni Högander)
+- drm/i915/psr: Clear pr_dpcd as well on disconnect (Jouni Högander)
+- drm/i915/psr: Move pr_dpcd and psr_dpcd to intel_connector (Jouni Högander)
+- drm/i915/psr: Compute Panel Replay/Adaptive Sync coexistence behavior (Jouni Högander)
+- drm/i915/psr: Use SU granularity information available in intel_connector (Jouni Högander)
+- drm/i915/psr: Add panel granularity information into intel_connector (Jouni Högander)
+- Work around binutils update in s390x perf (Justin M. Forbes)
+- iommu: Fix mapping check for 0x0 to avoid re-mapping it (Antheas Kapenekakis)
+- Revert the UKI dtbloader for F42 (Justin M. Forbes)
 - Turn on release_targets for F43/F42 (Justin M. Forbes)
+- Linux v6.19.7
 
 * Wed Mar 04 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.6-0]
 - net: macb: Fix tx/rx malfunction after phy link down and up (Kevin Hao)

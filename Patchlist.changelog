@@ -1,3 +1,51 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/180930ed9274fe54b614d47d428a7066872cbfbc
+ 180930ed9274fe54b614d47d428a7066872cbfbc drm/i915/psr: Compute psr_entry_setup_frames into intel_crtc_state
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/8bd7222346771c0c2d1370e1241844da12e64f04
+ 8bd7222346771c0c2d1370e1241844da12e64f04 drm/i915/psr: Disable PSR on update_m_n and update_lrr
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/b65eebb41f006cfa73428450c8ca3d3b13a2dc00
+ b65eebb41f006cfa73428450c8ca3d3b13a2dc00 drm/i915/psr: Fix for Panel Replay X granularity DPCD register handling
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/de2a12e6e66f83f16be9aae9047521dbedccf367
+ de2a12e6e66f83f16be9aae9047521dbedccf367 drm/dp: Add definition for Panel Replay full-line granularity
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/b2811c6f72c7698d253de0a510e4ed4c560e4eac
+ b2811c6f72c7698d253de0a510e4ed4c560e4eac drm/i915/display: Allow async flip when Selective Fetch is enabled
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/68317f9eed3e078deba4c477e440f994339efaf0
+ 68317f9eed3e078deba4c477e440f994339efaf0 drm/i915/psr: Perform full frame update on async flip
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/016d23c5b94014ee369bcf98cd45634186bad241
+ 016d23c5b94014ee369bcf98cd45634186bad241 drm/i915/psr: Set plane id bit in crtc_state->async_flip_planes for PSR
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/1b8dff6a6f9a0c0e72d3daa24d2ec303e7cd388d
+ 1b8dff6a6f9a0c0e72d3daa24d2ec303e7cd388d drm/i915/psr: Move sink_sync_latency to intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5e0436964801e08c9766f4157ee0c194d81b8e34
+ 5e0436964801e08c9766f4157ee0c194d81b8e34 drm/i915/psr: Move sink PSR and Panel Replay booleans to intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/062c5ae887d2840faad6b1f1e667c2e20bcd6b34
+ 062c5ae887d2840faad6b1f1e667c2e20bcd6b34 drm/i915/psr: Move Panel Replay DSC sink support data to intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/8c762b324298183f5a0ce6347e83e94e91353aec
+ 8c762b324298183f5a0ce6347e83e94e91353aec drm/i915/psr: Clear pr_dpcd as well on disconnect
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/cb1e5f63019fa6dbd8089b54bb1b0394ccaa5963
+ cb1e5f63019fa6dbd8089b54bb1b0394ccaa5963 drm/i915/psr: Move pr_dpcd and psr_dpcd to intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/41f8283c9818f1619978d886469c7945ad6c1439
+ 41f8283c9818f1619978d886469c7945ad6c1439 drm/i915/psr: Compute Panel Replay/Adaptive Sync coexistence behavior
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/49b90d24a3977900cec844e9dcc505eeee3e9125
+ 49b90d24a3977900cec844e9dcc505eeee3e9125 drm/i915/psr: Use SU granularity information available in intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/56be8088ce2890370f06ae0a2377803684e548db
+ 56be8088ce2890370f06ae0a2377803684e548db drm/i915/psr: Add panel granularity information into intel_connector
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/4c1ef504e039f646fdc6039019c6e909523c8698
+ 4c1ef504e039f646fdc6039019c6e909523c8698 iommu: Fix mapping check for 0x0 to avoid re-mapping it
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/338f45a28efdfb7b01659662434fe7e4a21db681
  338f45a28efdfb7b01659662434fe7e4a21db681 net: macb: Fix tx/rx malfunction after phy link down and up
 
