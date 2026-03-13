@@ -1,3 +1,9 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/05547c32f32ea1fb28868b3d8d7d4cac252c80ca
+ 05547c32f32ea1fb28868b3d8d7d4cac252c80ca Fix mute LED on HP OmniBook 7 Laptop 16
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5200272702861f18813bf7d5cee88159b9f0b225
+ 5200272702861f18813bf7d5cee88159b9f0b225 ASoC: SDCA: Add ASoC jack hookup in class driver
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/180930ed9274fe54b614d47d428a7066872cbfbc
  180930ed9274fe54b614d47d428a7066872cbfbc drm/i915/psr: Compute psr_entry_setup_frames into intel_crtc_state
 

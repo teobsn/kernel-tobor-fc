@@ -187,18 +187,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 6.19.7
-%define specversion 6.19.7
+%define specrpmversion 6.19.8
+%define specversion 6.19.8
 %define patchversion 6.19
 %define pkgrelease 200
 %define kversion 6
-%define tarfile_release 6.19.7
+%define tarfile_release 6.19.8
 # This is needed to do merge window version magic
 %define patchlevel 19
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 6.19.7
+%define kabiversion 6.19.8
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4857,6 +4857,13 @@ fi\
 #
 #
 %changelog
+* Fri Mar 13 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.8-0]
+- Fix mute LED on HP OmniBook 7 Laptop 16 (Justin M. Forbes)
+- Add Lenovo bug to BugsFixed for 6.19.8 (Justin M. Forbes)
+- Turn on Uniwill x86 platform driver (Justin M. Forbes)
+- ASoC: SDCA: Add ASoC jack hookup in class driver (Charles Keepax)
+- Linux v6.19.8
+
 * Thu Mar 12 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.7-0]
 - Add some BugsFixed by 6.19.7 (Justin M. Forbes)
 - drm/i915/psr: Compute psr_entry_setup_frames into intel_crtc_state (Jouni Högander)

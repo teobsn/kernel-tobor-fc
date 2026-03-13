@@ -49,12 +49,14 @@
  security/integrity/platform_certs/load_uefi.c      |   6 +-
  security/lockdown/Kconfig                          |  13 +
  security/lockdown/lockdown.c                       |  11 +
+ sound/hda/codecs/realtek/alc269.c                  |   2 +-
+ sound/soc/sdca/sdca_class_function.c               |  13 +
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 --
- 53 files changed, 823 insertions(+), 414 deletions(-)
+ 55 files changed, 837 insertions(+), 415 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index eb431129c7ab..c5dcc804f7af 100644
+index 372d19dae59b..21a6ec6fbebd 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -355,6 +355,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -2596,6 +2598,57 @@ index 8d46886d2cca..14a9cdff942b 100644
  static struct security_hook_list lockdown_hooks[] __ro_after_init = {
  	LSM_HOOK_INIT(locked_down, lockdown_is_locked_down),
  };
+diff --git a/sound/hda/codecs/realtek/alc269.c b/sound/hda/codecs/realtek/alc269.c
+index f5719e630d28..2f35acccee5d 100644
+--- a/sound/hda/codecs/realtek/alc269.c
++++ b/sound/hda/codecs/realtek/alc269.c
+@@ -7104,7 +7104,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
+ 	SND_PCI_QUIRK(0x103c, 0x8e37, "HP 16 Piston OmniBook X", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e3a, "HP Agusta", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e3b, "HP Agusta", ALC287_FIXUP_CS35L41_I2C_2),
+-	SND_PCI_QUIRK(0x103c, 0x8e60, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
++	SND_PCI_QUIRK(0x103c, 0x8e60, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2_HP_GPIO_LED),
+ 	SND_PCI_QUIRK(0x103c, 0x8e61, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e62, "HP Trekker ", ALC287_FIXUP_CS35L41_I2C_2),
+ 	SND_PCI_QUIRK(0x103c, 0x8e8a, "HP NexusX", ALC245_FIXUP_HP_TAS2781_I2C_MUTE_LED),
+diff --git a/sound/soc/sdca/sdca_class_function.c b/sound/soc/sdca/sdca_class_function.c
+index 0028482a1e75..416948cfb5cb 100644
+--- a/sound/soc/sdca/sdca_class_function.c
++++ b/sound/soc/sdca/sdca_class_function.c
+@@ -19,6 +19,7 @@
+ #include <sound/sdca_fdl.h>
+ #include <sound/sdca_function.h>
+ #include <sound/sdca_interrupts.h>
++#include <sound/sdca_jack.h>
+ #include <sound/sdca_regmap.h>
+ #include <sound/sdw.h>
+ #include <sound/soc-component.h>
+@@ -195,6 +196,15 @@ static int class_function_component_probe(struct snd_soc_component *component)
+ 	return sdca_irq_populate(drv->function, component, core->irq_info);
+ }
+ 
++static int class_function_set_jack(struct snd_soc_component *component,
++				   struct snd_soc_jack *jack, void *d)
++{
++	struct class_function_drv *drv = snd_soc_component_get_drvdata(component);
++	struct sdca_class_drv *core = drv->core;
++
++	return sdca_jack_set_jack(core->irq_info, jack);
++}
++
+ static const struct snd_soc_component_driver class_function_component_drv = {
+ 	.probe			= class_function_component_probe,
+ 	.endianness		= 1,
+@@ -351,6 +361,9 @@ static int class_function_probe(struct auxiliary_device *auxdev,
+ 		return dev_err_probe(dev, PTR_ERR(drv->regmap),
+ 				     "failed to create regmap");
+ 
++	if (desc->type == SDCA_FUNCTION_TYPE_UAJ)
++		cmp_drv->set_jack = class_function_set_jack;
++
+ 	ret = sdca_asoc_populate_component(dev, drv->function, cmp_drv,
+ 					   &dais, &num_dais,
+ 					   &class_function_sdw_ops);
 diff --git a/tools/testing/selftests/bpf/Makefile b/tools/testing/selftests/bpf/Makefile
 index 4aa60e83ff19..eaceb09e4029 100644
 --- a/tools/testing/selftests/bpf/Makefile
