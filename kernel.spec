@@ -190,7 +190,7 @@ Summary: The Linux kernel
 %define specrpmversion 6.19.8
 %define specversion 6.19.8
 %define patchversion 6.19
-%define pkgrelease 200
+%define pkgrelease 201
 %define kversion 6
 %define tarfile_release 6.19.8
 # This is needed to do merge window version magic
