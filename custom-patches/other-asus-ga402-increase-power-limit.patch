@@ -1,0 +1,30 @@
+From 8b37aa244da7b1001ffd80fa055be983f14cc2cf Mon Sep 17 00:00:00 2001
+From: Teodor B <teobsn@gmail.com>
+Date: Mon, 16 Mar 2026 03:23:22 +0200
+Subject: [PATCH] Update ASUS GA402R power limits
+
+---
+ drivers/platform/x86/asus-armoury.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/platform/x86/asus-armoury.h b/drivers/platform/x86/asus-armoury.h
+index 6e9703bd5..24abe390f 100644
+--- a/drivers/platform/x86/asus-armoury.h
++++ b/drivers/platform/x86/asus-armoury.h
+@@ -847,10 +847,10 @@ static const struct dmi_system_id power_limits[] = {
+ 		},
+ 		.driver_data = &(struct power_data) {
+ 			.ac_data = &(struct power_limits) {
+-				.ppt_apu_sppt_min = 15,
+-				.ppt_apu_sppt_max = 80,
+-				.ppt_platform_sppt_min = 30,
+-				.ppt_platform_sppt_max = 115,
++				.ppt_apu_sppt_min = 10,
++				.ppt_apu_sppt_max = 100,
++				.ppt_platform_sppt_min = 20,
++				.ppt_platform_sppt_max = 150,
+ 			},
+ 			.dc_data = &(struct power_limits) {
+ 				.ppt_apu_sppt_min = 25,
+-- 
+2.53.0

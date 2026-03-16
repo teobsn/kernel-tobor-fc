@@ -1,7 +1,7 @@
-From e19a878af114fcb7176fbb54e312616afa1f0502 Mon Sep 17 00:00:00 2001
+From 400d1b55e73fa5bd2651e263649e77afaa6bb879 Mon Sep 17 00:00:00 2001
 From: Alexandre Frade <kernel@xanmod.org>
 Date: Mon, 28 Aug 2023 05:00:29 +0000
-Subject: [PATCH 01/20] XANMOD: x86/build: Add more CFLAGS optimizations
+Subject: [PATCH 01/18] XANMOD: x86/build: Add more CFLAGS optimizations
 
 Signed-off-by: Alexandre Frade <kernel@xanmod.org>
 ---
@@ -9,10 +9,10 @@ Signed-off-by: Alexandre Frade <kernel@xanmod.org>
  1 file changed, 6 insertions(+)
 
 diff --git a/arch/x86/Makefile b/arch/x86/Makefile
-index 1a27efcf3c20..0fa060ff6b5d 100644
+index 1d403a3612ea..55ce5625441e 100644
 --- a/arch/x86/Makefile
 +++ b/arch/x86/Makefile
-@@ -68,6 +68,12 @@ export REALMODE_CFLAGS
+@@ -70,6 +70,12 @@ export REALMODE_CFLAGS
  # e.g.: obj-y += foo_$(BITS).o
  export BITS
  
