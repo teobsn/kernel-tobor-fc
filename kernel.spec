@@ -184,18 +184,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 6.19.8
-%define specversion 6.19.8
+%define specrpmversion 6.19.9
+%define specversion 6.19.9
 %define patchversion 6.19
 %define pkgrelease 201
 %define kversion 6
-%define tarfile_release 6.19.8
+%define tarfile_release 6.19.9
 # This is needed to do merge window version magic
 %define patchlevel 19
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 6.19.8
+%define kabiversion 6.19.9
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4856,6 +4856,24 @@ fi\
 #
 #
 %changelog
+* Thu Mar 19 2026 Augusto Caringi <acaringi@redhat.com> [6.19.9-0]
+- arm64: dts: broadcom: bcm2712-rpi: Move the firmware node down 1 level (Rob Herring (Arm))
+- arm64: dts: broadcom: bcm2712-d-rpi-5-b: update uart10 interrupt (Gregor Herburger)
+- arm64: dts: broadcom: bcm2712-d-rpi-5-b: add fixes for pinctrl/pinctrl_aon (Gregor Herburger)
+- arm64: dts: broadcom: bcm2712-rpi-5-b: add pinctrl properties for csi i2cs (Gregor Herburger)
+- arm64: dts: broadcom: bcm2712: add camera backend node pispbe (Gregor Herburger)
+- arm64: dts: broadcom: rp1: add csi nodes (Gregor Herburger)
+- arm64: dts: broadcom: rp1: add i2c controller (Gregor Herburger)
+- mfd: bcm2835-pm: Add BCM2712 PM device support (Phil Elwell)
+- mfd: bcm2835-pm: Introduce SoC-specific type identifier (Phil Elwell)
+- arm64: dts: broadcom: bcm2712: Add V3D device node (Maíra Canal)
+- pmdomain: bcm: bcm2835-power: Fix broken reset status read (Maíra Canal)
+- arm64: dts: imx93-11x11-frdm: enable additional devices (Francesco Valla)
+- arm64: dts: imx93-11x11-frdm: Add MQS audio support (Daniel Baluta)
+- arm64: dts: freescale: add support for NXP i.MX93 FRDM (Fabian Pflug)
+- Revert "Fix mute LED on HP OmniBook 7 Laptop 16" (Justin M. Forbes)
+- Linux v6.19.9
+
 * Fri Mar 13 2026 Justin M. Forbes <jforbes@fedoraproject.org> [6.19.8-0]
 - Fix mute LED on HP OmniBook 7 Laptop 16 (Justin M. Forbes)
 - Add Lenovo bug to BugsFixed for 6.19.8 (Justin M. Forbes)

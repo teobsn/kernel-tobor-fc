@@ -1,3 +1,48 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/de68e5eaab5d0edabaccba2bf2782daea6c9ba83
+ de68e5eaab5d0edabaccba2bf2782daea6c9ba83 arm64: dts: broadcom: bcm2712-rpi: Move the firmware node down 1 level
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/b13e25cbff03f1ffaeff53ac726a001afc2acd28
+ b13e25cbff03f1ffaeff53ac726a001afc2acd28 arm64: dts: broadcom: bcm2712-d-rpi-5-b: update uart10 interrupt
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/b7b12b3cdc224bb9fa7af0d9b8461ccd94128694
+ b7b12b3cdc224bb9fa7af0d9b8461ccd94128694 arm64: dts: broadcom: bcm2712-d-rpi-5-b: add fixes for pinctrl/pinctrl_aon
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e776024b4e71c560c5fa9f86f9711f84107c1085
+ e776024b4e71c560c5fa9f86f9711f84107c1085 arm64: dts: broadcom: bcm2712-rpi-5-b: add pinctrl properties for csi i2cs
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/dbbcdfc23ebb457be906cf86f57933114cb9df9a
+ dbbcdfc23ebb457be906cf86f57933114cb9df9a arm64: dts: broadcom: bcm2712: add camera backend node pispbe
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/4ec3a96c4ae6fce03b2eda34beea81e2aeadc334
+ 4ec3a96c4ae6fce03b2eda34beea81e2aeadc334 arm64: dts: broadcom: rp1: add csi nodes
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/4a898ca72547f9a2b74c2b619d6c9c1fd6a5e2c9
+ 4a898ca72547f9a2b74c2b619d6c9c1fd6a5e2c9 arm64: dts: broadcom: rp1: add i2c controller
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e003418b2456eafbc1993c5a88b24d85984b2692
+ e003418b2456eafbc1993c5a88b24d85984b2692 mfd: bcm2835-pm: Add BCM2712 PM device support
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/ec226769ae325543ae789b3fb5c0d20a6ba26844
+ ec226769ae325543ae789b3fb5c0d20a6ba26844 mfd: bcm2835-pm: Introduce SoC-specific type identifier
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/519850a88b679bb38ba2ab7bd2e9bc680849f8b7
+ 519850a88b679bb38ba2ab7bd2e9bc680849f8b7 arm64: dts: broadcom: bcm2712: Add V3D device node
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/73496aa2733c0317f1da90295dc6bb044b904ecd
+ 73496aa2733c0317f1da90295dc6bb044b904ecd pmdomain: bcm: bcm2835-power: Fix broken reset status read
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/801150828dbd38167eb1c8cc9bb9228c77013377
+ 801150828dbd38167eb1c8cc9bb9228c77013377 arm64: dts: imx93-11x11-frdm: enable additional devices
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/97b7115db451722d13d0d92546fe80bfa5a9bd72
+ 97b7115db451722d13d0d92546fe80bfa5a9bd72 arm64: dts: imx93-11x11-frdm: Add MQS audio support
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e1572f238963ed0440e1d0ab87a52e8de4b5bf14
+ e1572f238963ed0440e1d0ab87a52e8de4b5bf14 arm64: dts: freescale: add support for NXP i.MX93 FRDM
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e714b8ef3cdb6636a5138078915b9169611f1651
+ e714b8ef3cdb6636a5138078915b9169611f1651 Revert "Fix mute LED on HP OmniBook 7 Laptop 16"
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/05547c32f32ea1fb28868b3d8d7d4cac252c80ca
  05547c32f32ea1fb28868b3d8d7d4cac252c80ca Fix mute LED on HP OmniBook 7 Laptop 16
 
