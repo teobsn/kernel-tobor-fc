@@ -3,9 +3,6 @@
 # environment changes that affect %%install need to go
 # here before the %%install macro is pre-built.
 
-# Enable source fetch
-%define _disable_source_fetch 0
-
 # Disable frame pointers
 %undefine _include_frame_pointers
 
