@@ -3,6 +3,9 @@
 # environment changes that affect %%install need to go
 # here before the %%install macro is pre-built.
 
+# Enable source fetch
+%define _disable_source_fetch 0
+
 # Disable frame pointers
 %undefine _include_frame_pointers
 
@@ -187,7 +190,7 @@ Summary: The Linux kernel
 %define specrpmversion 6.19.11
 %define specversion 6.19.11
 %define patchversion 6.19
-%define pkgrelease 201
+%define pkgrelease 200
 %define kversion 6
 %define tarfile_release 6.19.11
 # This is needed to do merge window version magic
