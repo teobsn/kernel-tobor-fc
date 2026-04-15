@@ -2180,6 +2180,7 @@ ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 
 ApplyOptionalPatch cachy-0001-amd-isp4.patch
 ApplyOptionalPatch cachy-0001-bore.patch
+ApplyOptionalPatch cachy-0001-cgroup-vram.patch
 ApplyOptionalPatch cachy-0002-bbr3.patch
 #ApplyOptionalPatch cachy-0003-cachy.patch
 #ApplyOptionalPatch cachy-0004-fixes.patch
