@@ -2188,7 +2188,7 @@ ApplyOptionalPatch cachy-0005-hdmi.patch
 #ApplyOptionalPatch cachy-0006-t2.patch
 ApplyOptionalPatch cachy-0007-vesa-dsc-bpp.patch
 ApplyOptionalPatch cachy-0008-vmscape.patch
-ApplyOptionalPatch cachy-nap-governor.patch
+#ApplyOptionalPatch cachy-nap-governor.patch
 ApplyOptionalPatch cachy-poc-selector.patch
 ApplyOptionalPatch cachy-reflex-governor.patch
 ApplyOptionalPatch other-asus-ga402-increase-power-limit.patch
