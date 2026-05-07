@@ -66,6 +66,12 @@
  include/linux/rmi.h                                |    1 +
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
+ net/ipv4/esp4.c                                    |    3 +-
+ net/ipv4/ip_output.c                               |    2 +
+ net/ipv6/esp6.c                                    |    3 +-
+ net/ipv6/ip6_output.c                              |    2 +
+ net/rxrpc/call_event.c                             |    2 +-
+ net/rxrpc/conn_event.c                             |    2 +-
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
@@ -74,7 +80,7 @@
  sound/soc/sof/compress.c                           |    3 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 76 files changed, 5408 insertions(+), 546 deletions(-)
+ 82 files changed, 5418 insertions(+), 550 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7493,6 +7499,86 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  }
  
  int module_sig_check(struct load_info *info, int flags)
+diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
+index 6dfc0bcdef65..6a5febbdbee4 100644
+--- a/net/ipv4/esp4.c
++++ b/net/ipv4/esp4.c
+@@ -873,7 +873,8 @@ static int esp_input(struct xfrm_state *x, struct sk_buff *skb)
+ 			nfrags = 1;
+ 
+ 			goto skip_cow;
+-		} else if (!skb_has_frag_list(skb)) {
++		} else if (!skb_has_frag_list(skb) &&
++			   !skb_has_shared_frag(skb)) {
+ 			nfrags = skb_shinfo(skb)->nr_frags;
+ 			nfrags++;
+ 
+diff --git a/net/ipv4/ip_output.c b/net/ipv4/ip_output.c
+index e4790cc7b5c2..5bcd73cbdb41 100644
+--- a/net/ipv4/ip_output.c
++++ b/net/ipv4/ip_output.c
+@@ -1233,6 +1233,8 @@ static int __ip_append_data(struct sock *sk,
+ 			if (err < 0)
+ 				goto error;
+ 			copy = err;
++			if (!(flags & MSG_NO_SHARED_FRAGS))
++				skb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;
+ 			wmem_alloc_delta += copy;
+ 		} else if (!zc) {
+ 			int i = skb_shinfo(skb)->nr_frags;
+diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
+index 9f75313734f8..9c06c5a1419d 100644
+--- a/net/ipv6/esp6.c
++++ b/net/ipv6/esp6.c
+@@ -915,7 +915,8 @@ static int esp6_input(struct xfrm_state *x, struct sk_buff *skb)
+ 			nfrags = 1;
+ 
+ 			goto skip_cow;
+-		} else if (!skb_has_frag_list(skb)) {
++		} else if (!skb_has_frag_list(skb) &&
++			   !skb_has_shared_frag(skb)) {
+ 			nfrags = skb_shinfo(skb)->nr_frags;
+ 			nfrags++;
+ 
+diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
+index 8e2a6b28cea7..3f14e363c96e 100644
+--- a/net/ipv6/ip6_output.c
++++ b/net/ipv6/ip6_output.c
+@@ -1765,6 +1765,8 @@ static int __ip6_append_data(struct sock *sk,
+ 			if (err < 0)
+ 				goto error;
+ 			copy = err;
++			if (!(flags & MSG_NO_SHARED_FRAGS))
++				skb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;
+ 			wmem_alloc_delta += copy;
+ 		} else if (!zc) {
+ 			int i = skb_shinfo(skb)->nr_frags;
+diff --git a/net/rxrpc/call_event.c b/net/rxrpc/call_event.c
+index fdd683261226..6c924ef55208 100644
+--- a/net/rxrpc/call_event.c
++++ b/net/rxrpc/call_event.c
+@@ -334,7 +334,7 @@ bool rxrpc_input_call_event(struct rxrpc_call *call)
+ 
+ 			if (sp->hdr.type == RXRPC_PACKET_TYPE_DATA &&
+ 			    sp->hdr.securityIndex != 0 &&
+-			    skb_cloned(skb)) {
++			    (skb_cloned(skb) || skb->data_len)) {
+ 				/* Unshare the packet so that it can be
+ 				 * modified by in-place decryption.
+ 				 */
+diff --git a/net/rxrpc/conn_event.c b/net/rxrpc/conn_event.c
+index a2130d25aaa9..eab7c5f2517a 100644
+--- a/net/rxrpc/conn_event.c
++++ b/net/rxrpc/conn_event.c
+@@ -245,7 +245,7 @@ static int rxrpc_verify_response(struct rxrpc_connection *conn,
+ {
+ 	int ret;
+ 
+-	if (skb_cloned(skb)) {
++	if (skb_cloned(skb) || skb->data_len) {
+ 		/* Copy the packet if shared so that we can do in-place
+ 		 * decryption.
+ 		 */
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0718e39cedda..10e94a1b8b6e 100644
 --- a/scripts/Makefile.lib

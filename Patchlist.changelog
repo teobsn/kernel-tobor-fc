@@ -1,3 +1,9 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/eeaa13aa75f77515556db57762d369b57878725c
+ eeaa13aa75f77515556db57762d369b57878725c xfrm: esp: avoid in-place decrypt on shared skb frags
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/ee4bed290fa3c8817aca92da2011e4904a7680ed
+ ee4bed290fa3c8817aca92da2011e4904a7680ed rxrpc: Also unshare DATA/RESPONSE packets when paged frags are present
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/7ef39c4f44821b39eafbf92b6b8c3307f09c244e
  7ef39c4f44821b39eafbf92b6b8c3307f09c244e wifi: mt76: mt7925: fix incorrect TLV length in CLC command
 

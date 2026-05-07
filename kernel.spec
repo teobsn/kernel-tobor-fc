@@ -4871,6 +4871,10 @@ fi\
 #
 #
 %changelog
+* Thu May 07 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.4-100]
+- xfrm: esp: avoid in-place decrypt on shared skb frags (Kuan-Ting Chen)
+- rxrpc: Also unshare DATA/RESPONSE packets when paged frags are present (Hyunwoo Kim)
+
 * Thu May 07 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.4-0]
 - wifi: mt76: mt7925: fix incorrect TLV length in CLC command (Quan Zhou)
 - ASoC: SOF: Don't allow pointer operations on unconfigured streams (Mark Brown)
