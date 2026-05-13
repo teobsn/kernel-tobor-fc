@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.4
-%define specversion 7.0.4
+%define specrpmversion 7.0.6
+%define specversion 7.0.6
 %define patchversion 7.0
 %define pkgrelease 101
 %define kversion 7
-%define tarfile_release 7.0.4
+%define tarfile_release 7.0.6
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 100%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.4
+%define kabiversion 7.0.6
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4871,9 +4871,16 @@ fi\
 #
 #
 %changelog
-* Thu May 07 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.4-100]
+* Wed May 13 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.6-0]
+- net: skbuff: propagate shared-frag marker through pskb_copy() (Hyunwoo Kim)
+- net: skbuff: preserve shared-frag marker during coalescing (William Bowling)
+- Add BugsFixed for 7.0.7 (Justin M. Forbes)
+- ovl: fix verity lazy-load guard broken by fsverity_active() semantic change (Colin Walters)
+- Revert rxrpc dirtyfrag fix in favor of version which landed upstream (Justin M. Forbes)
+- Re-enable Intel MEI for Fedora x86 (Justin M. Forbes)
 - xfrm: esp: avoid in-place decrypt on shared skb frags (Kuan-Ting Chen)
 - rxrpc: Also unshare DATA/RESPONSE packets when paged frags are present (Hyunwoo Kim)
+- Linux v7.0.6
 
 * Thu May 07 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.4-0]
 - wifi: mt76: mt7925: fix incorrect TLV length in CLC command (Quan Zhou)

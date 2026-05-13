@@ -60,18 +60,14 @@
  drivers/net/wireless/mediatek/mt76/mt7925/mcu.c    |    2 +-
  drivers/pci/quirks.c                               |   24 +
  drivers/usb/core/hub.c                             |    7 +
+ fs/overlayfs/util.c                                |    2 +-
  include/linux/efi.h                                |   22 +-
  include/linux/lsm_hook_defs.h                      |    1 +
  include/linux/mfd/bcm2835-pm.h                     |    7 +
  include/linux/rmi.h                                |    1 +
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
- net/ipv4/esp4.c                                    |    3 +-
- net/ipv4/ip_output.c                               |    2 +
- net/ipv6/esp6.c                                    |    3 +-
- net/ipv6/ip6_output.c                              |    2 +
- net/rxrpc/call_event.c                             |    2 +-
- net/rxrpc/conn_event.c                             |    2 +-
+ net/core/skbuff.c                                  |    3 +
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
@@ -80,7 +76,7 @@
  sound/soc/sof/compress.c                           |    3 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 82 files changed, 5418 insertions(+), 550 deletions(-)
+ 78 files changed, 5412 insertions(+), 547 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -212,7 +208,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index 316c0c4ebe5c..bb3bdfc00aa7 100644
+index dbc380a9339e..e92abc1711d5 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -7343,6 +7339,19 @@ index 24960ba9caa9..32597cdb72ef 100644
  	/* Lock the device, then check to see if we were
  	 * disconnected while waiting for the lock to succeed. */
  	usb_lock_device(hdev);
+diff --git a/fs/overlayfs/util.c b/fs/overlayfs/util.c
+index 2ea769f311c3..339cb0a3942b 100644
+--- a/fs/overlayfs/util.c
++++ b/fs/overlayfs/util.c
+@@ -1379,7 +1379,7 @@ int ovl_ensure_verity_loaded(const struct path *datapath)
+ 	struct inode *inode = d_inode(datapath->dentry);
+ 	struct file *filp;
+ 
+-	if (!fsverity_active(inode) && IS_VERITY(inode)) {
++	if (IS_VERITY(inode) && fsverity_get_info(inode) == NULL) {
+ 		/*
+ 		 * If this inode was not yet opened, the verity info hasn't been
+ 		 * loaded yet, so we need to do that here to force it into memory.
 diff --git a/include/linux/efi.h b/include/linux/efi.h
 index 664898d09ff5..34f476d02181 100644
 --- a/include/linux/efi.h
@@ -7499,86 +7508,27 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  }
  
  int module_sig_check(struct load_info *info, int flags)
-diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
-index 6dfc0bcdef65..6a5febbdbee4 100644
---- a/net/ipv4/esp4.c
-+++ b/net/ipv4/esp4.c
-@@ -873,7 +873,8 @@ static int esp_input(struct xfrm_state *x, struct sk_buff *skb)
- 			nfrags = 1;
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index 43ee86dcf2ea..48b321ec2b3c 100644
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -2258,6 +2258,7 @@ struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,
+ 			skb_frag_ref(skb, i);
+ 		}
+ 		skb_shinfo(n)->nr_frags = i;
++		skb_shinfo(n)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
+ 	}
  
- 			goto skip_cow;
--		} else if (!skb_has_frag_list(skb)) {
-+		} else if (!skb_has_frag_list(skb) &&
-+			   !skb_has_shared_frag(skb)) {
- 			nfrags = skb_shinfo(skb)->nr_frags;
- 			nfrags++;
+ 	if (skb_has_frag_list(skb)) {
+@@ -6226,6 +6227,8 @@ bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
+ 	       from_shinfo->frags,
+ 	       from_shinfo->nr_frags * sizeof(skb_frag_t));
+ 	to_shinfo->nr_frags += from_shinfo->nr_frags;
++	if (from_shinfo->nr_frags)
++		to_shinfo->flags |= from_shinfo->flags & SKBFL_SHARED_FRAG;
  
-diff --git a/net/ipv4/ip_output.c b/net/ipv4/ip_output.c
-index e4790cc7b5c2..5bcd73cbdb41 100644
---- a/net/ipv4/ip_output.c
-+++ b/net/ipv4/ip_output.c
-@@ -1233,6 +1233,8 @@ static int __ip_append_data(struct sock *sk,
- 			if (err < 0)
- 				goto error;
- 			copy = err;
-+			if (!(flags & MSG_NO_SHARED_FRAGS))
-+				skb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;
- 			wmem_alloc_delta += copy;
- 		} else if (!zc) {
- 			int i = skb_shinfo(skb)->nr_frags;
-diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
-index 9f75313734f8..9c06c5a1419d 100644
---- a/net/ipv6/esp6.c
-+++ b/net/ipv6/esp6.c
-@@ -915,7 +915,8 @@ static int esp6_input(struct xfrm_state *x, struct sk_buff *skb)
- 			nfrags = 1;
- 
- 			goto skip_cow;
--		} else if (!skb_has_frag_list(skb)) {
-+		} else if (!skb_has_frag_list(skb) &&
-+			   !skb_has_shared_frag(skb)) {
- 			nfrags = skb_shinfo(skb)->nr_frags;
- 			nfrags++;
- 
-diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
-index 8e2a6b28cea7..3f14e363c96e 100644
---- a/net/ipv6/ip6_output.c
-+++ b/net/ipv6/ip6_output.c
-@@ -1765,6 +1765,8 @@ static int __ip6_append_data(struct sock *sk,
- 			if (err < 0)
- 				goto error;
- 			copy = err;
-+			if (!(flags & MSG_NO_SHARED_FRAGS))
-+				skb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;
- 			wmem_alloc_delta += copy;
- 		} else if (!zc) {
- 			int i = skb_shinfo(skb)->nr_frags;
-diff --git a/net/rxrpc/call_event.c b/net/rxrpc/call_event.c
-index fdd683261226..6c924ef55208 100644
---- a/net/rxrpc/call_event.c
-+++ b/net/rxrpc/call_event.c
-@@ -334,7 +334,7 @@ bool rxrpc_input_call_event(struct rxrpc_call *call)
- 
- 			if (sp->hdr.type == RXRPC_PACKET_TYPE_DATA &&
- 			    sp->hdr.securityIndex != 0 &&
--			    skb_cloned(skb)) {
-+			    (skb_cloned(skb) || skb->data_len)) {
- 				/* Unshare the packet so that it can be
- 				 * modified by in-place decryption.
- 				 */
-diff --git a/net/rxrpc/conn_event.c b/net/rxrpc/conn_event.c
-index a2130d25aaa9..eab7c5f2517a 100644
---- a/net/rxrpc/conn_event.c
-+++ b/net/rxrpc/conn_event.c
-@@ -245,7 +245,7 @@ static int rxrpc_verify_response(struct rxrpc_connection *conn,
- {
- 	int ret;
- 
--	if (skb_cloned(skb)) {
-+	if (skb_cloned(skb) || skb->data_len) {
- 		/* Copy the packet if shared so that we can do in-place
- 		 * decryption.
- 		 */
+ 	if (!skb_cloned(from))
+ 		from_shinfo->nr_frags = 0;
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0718e39cedda..10e94a1b8b6e 100644
 --- a/scripts/Makefile.lib

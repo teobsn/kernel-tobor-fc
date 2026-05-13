@@ -1,3 +1,15 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/0093dd5c7d132be534f197598494eb792ddf886f
+ 0093dd5c7d132be534f197598494eb792ddf886f net: skbuff: propagate shared-frag marker through pskb_copy()
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/b4e41de49514fbc5a741441d3988a024dd68a859
+ b4e41de49514fbc5a741441d3988a024dd68a859 net: skbuff: preserve shared-frag marker during coalescing
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/3d6c6ad31de8618af59b488f641577411c9f4513
+ 3d6c6ad31de8618af59b488f641577411c9f4513 ovl: fix verity lazy-load guard broken by fsverity_active() semantic change
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/bc3c698504d2fac0a45904d184caddfc512f8fef
+ bc3c698504d2fac0a45904d184caddfc512f8fef Revert rxrpc dirtyfrag fix in favor of version which landed upstream
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/eeaa13aa75f77515556db57762d369b57878725c
  eeaa13aa75f77515556db57762d369b57878725c xfrm: esp: avoid in-place decrypt on shared skb frags
 
