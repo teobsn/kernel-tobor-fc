@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/8774aeeee61b9ff93ec4d12e871938c41c57612b
+ 8774aeeee61b9ff93ec4d12e871938c41c57612b net: skbuff: propagate shared-frag marker through frag-transfer helpers
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/011b9df202c4a23f4a4a161fcea2eb7fd9cba16e
+ 011b9df202c4a23f4a4a161fcea2eb7fd9cba16e Revert old fragnesia fixes in favor of more complete solution
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/70c31e352fac0fe42584cd3290b269a6bc00b25b
+ 70c31e352fac0fe42584cd3290b269a6bc00b25b Revert old fragnesia fixes in favor of more complete solution
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/0093dd5c7d132be534f197598494eb792ddf886f
  0093dd5c7d132be534f197598494eb792ddf886f net: skbuff: propagate shared-frag marker through pskb_copy()
 

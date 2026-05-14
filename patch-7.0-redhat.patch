@@ -57,26 +57,24 @@
  drivers/mfd/bcm2835-pm.c                           |    9 +-
  drivers/net/ethernet/cadence/macb.h                |   35 +
  drivers/net/ethernet/cadence/macb_main.c           |  736 ++++++++------
- drivers/net/wireless/mediatek/mt76/mt7925/mcu.c    |    2 +-
  drivers/pci/quirks.c                               |   24 +
  drivers/usb/core/hub.c                             |    7 +
- fs/overlayfs/util.c                                |    2 +-
  include/linux/efi.h                                |   22 +-
  include/linux/lsm_hook_defs.h                      |    1 +
  include/linux/mfd/bcm2835-pm.h                     |    7 +
  include/linux/rmi.h                                |    1 +
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
- net/core/skbuff.c                                  |    3 +
+ net/core/gro.c                                     |    4 +
+ net/core/skbuff.c                                  |    5 +
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
  security/lockdown/Kconfig                          |   13 +
  security/lockdown/lockdown.c                       |   11 +
- sound/soc/sof/compress.c                           |    3 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 78 files changed, 5412 insertions(+), 547 deletions(-)
+ 76 files changed, 5413 insertions(+), 545 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -208,7 +206,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index dbc380a9339e..e92abc1711d5 100644
+index a854e46c1171..d27fe4972921 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -229,7 +227,7 @@ index dbc380a9339e..e92abc1711d5 100644
  ifdef mixed-build
  # ===========================================================================
  # We're called with mixed targets (*config and build targets).
-@@ -1362,6 +1373,8 @@ uapi-asm-generic:
+@@ -1364,6 +1375,8 @@ uapi-asm-generic:
  # Generate some files
  # ---------------------------------------------------------------------------
  
@@ -238,7 +236,7 @@ index dbc380a9339e..e92abc1711d5 100644
  # KERNELRELEASE can change from a few different places, meaning version.h
  # needs to be updated, so this check is forced on all builds
  
-@@ -2027,6 +2040,23 @@ endif
+@@ -2029,6 +2042,23 @@ endif
  
  ifdef CONFIG_MODULES
  
@@ -927,7 +925,7 @@ index d1595156c86a..9485212f1a6d 100644
  	return ctx.rc;
  }
 diff --git a/drivers/acpi/scan.c b/drivers/acpi/scan.c
-index e8cdbdb46fdb..71366d15a7db 100644
+index 530547cda8b2..dc046780c74d 100644
 --- a/drivers/acpi/scan.c
 +++ b/drivers/acpi/scan.c
 @@ -1792,6 +1792,15 @@ static bool acpi_device_enumeration_by_parent(struct acpi_device *device)
@@ -7266,26 +7264,6 @@ index 99e7d5cf3786..a12aa21244e8 100644
  		disable_irq_wake(bp->queues[0].irq);
  
  		/* Now make sure we disable phy before moving
-diff --git a/drivers/net/wireless/mediatek/mt76/mt7925/mcu.c b/drivers/net/wireless/mediatek/mt76/mt7925/mcu.c
-index cf0fdea45cf7..7ad581942999 100644
---- a/drivers/net/wireless/mediatek/mt76/mt7925/mcu.c
-+++ b/drivers/net/wireless/mediatek/mt76/mt7925/mcu.c
-@@ -3375,7 +3375,6 @@ __mt7925_mcu_set_clc(struct mt792x_dev *dev, u8 *alpha2,
- 		u8 rsvd[64];
- 	} __packed req = {
- 		.tag = cpu_to_le16(0x3),
--		.len = cpu_to_le16(sizeof(req) - 4),
- 
- 		.idx = idx,
- 		.env = env_cap,
-@@ -3404,6 +3403,7 @@ __mt7925_mcu_set_clc(struct mt792x_dev *dev, u8 *alpha2,
- 		memcpy(req.type, rule->type, 2);
- 
- 		req.size = cpu_to_le16(seg->len);
-+		req.len = cpu_to_le16(sizeof(req) + seg->len - 4);
- 		dev->phy.clc_chan_conf = clc->ver == 1 ? 0xff : rule->flag;
- 		skb = __mt76_mcu_msg_alloc(&dev->mt76, &req,
- 					   le16_to_cpu(req.size) + sizeof(req),
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
 index 48946cca4be7..a1f5fe8e583f 100644
 --- a/drivers/pci/quirks.c
@@ -7339,19 +7317,6 @@ index 24960ba9caa9..32597cdb72ef 100644
  	/* Lock the device, then check to see if we were
  	 * disconnected while waiting for the lock to succeed. */
  	usb_lock_device(hdev);
-diff --git a/fs/overlayfs/util.c b/fs/overlayfs/util.c
-index 2ea769f311c3..339cb0a3942b 100644
---- a/fs/overlayfs/util.c
-+++ b/fs/overlayfs/util.c
-@@ -1379,7 +1379,7 @@ int ovl_ensure_verity_loaded(const struct path *datapath)
- 	struct inode *inode = d_inode(datapath->dentry);
- 	struct file *filp;
- 
--	if (!fsverity_active(inode) && IS_VERITY(inode)) {
-+	if (IS_VERITY(inode) && fsverity_get_info(inode) == NULL) {
- 		/*
- 		 * If this inode was not yet opened, the verity info hasn't been
- 		 * loaded yet, so we need to do that here to force it into memory.
 diff --git a/include/linux/efi.h b/include/linux/efi.h
 index 664898d09ff5..34f476d02181 100644
 --- a/include/linux/efi.h
@@ -7508,8 +7473,34 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  }
  
  int module_sig_check(struct load_info *info, int flags)
+diff --git a/net/core/gro.c b/net/core/gro.c
+index 31d21de5b15a..9f8960789b2c 100644
+--- a/net/core/gro.c
++++ b/net/core/gro.c
+@@ -213,10 +213,12 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
+ 	p->data_len += len;
+ 	p->truesize += delta_truesize;
+ 	p->len += len;
++	skb_shinfo(p)->flags |= skbinfo->flags & SKBFL_SHARED_FRAG;
+ 	if (lp != p) {
+ 		lp->data_len += len;
+ 		lp->truesize += delta_truesize;
+ 		lp->len += len;
++		skb_shinfo(lp)->flags |= skbinfo->flags & SKBFL_SHARED_FRAG;
+ 	}
+ 	NAPI_GRO_CB(skb)->same_flow = 1;
+ 	return 0;
+@@ -244,6 +246,8 @@ int skb_gro_receive_list(struct sk_buff *p, struct sk_buff *skb)
+ 	p->truesize += skb->truesize;
+ 	p->len += skb->len;
+ 
++	skb_shinfo(p)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
++
+ 	NAPI_GRO_CB(skb)->same_flow = 1;
+ 
+ 	return 0;
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 43ee86dcf2ea..48b321ec2b3c 100644
+index 43ee86dcf2ea..4cfb4886e1b2 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -2258,6 +2258,7 @@ struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,
@@ -7520,7 +7511,16 @@ index 43ee86dcf2ea..48b321ec2b3c 100644
  	}
  
  	if (skb_has_frag_list(skb)) {
-@@ -6226,6 +6227,8 @@ bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
+@@ -4373,6 +4374,8 @@ int skb_shift(struct sk_buff *tgt, struct sk_buff *skb, int shiftlen)
+ 	tgt->ip_summed = CHECKSUM_PARTIAL;
+ 	skb->ip_summed = CHECKSUM_PARTIAL;
+ 
++	skb_shinfo(tgt)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
++
+ 	skb_len_add(skb, -shiftlen);
+ 	skb_len_add(tgt, shiftlen);
+ 
+@@ -6226,6 +6229,8 @@ bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
  	       from_shinfo->frags,
  	       from_shinfo->nr_frags * sizeof(skb_frag_t));
  	to_shinfo->nr_frags += from_shinfo->nr_frags;
@@ -7627,20 +7627,6 @@ index 8d46886d2cca..14a9cdff942b 100644
  static struct security_hook_list lockdown_hooks[] __ro_after_init = {
  	LSM_HOOK_INIT(locked_down, lockdown_is_locked_down),
  };
-diff --git a/sound/soc/sof/compress.c b/sound/soc/sof/compress.c
-index 96570121aae0..90f056eae1c3 100644
---- a/sound/soc/sof/compress.c
-+++ b/sound/soc/sof/compress.c
-@@ -379,6 +379,9 @@ static int sof_compr_pointer(struct snd_soc_component *component,
- 	if (!spcm)
- 		return -EINVAL;
- 
-+	if (!sstream->channels || !sstream->sample_container_bytes)
-+		return -EBUSY;
-+
- 	tstamp->sampling_rate = sstream->sampling_rate;
- 	tstamp->copied_total = sstream->copied_total;
- 	tstamp->pcm_io_frames = div_u64(spcm->stream[cstream->direction].posn.dai_posn,
 diff --git a/tools/testing/selftests/bpf/Makefile b/tools/testing/selftests/bpf/Makefile
 index 65485967c968..e44f47e01027 100644
 --- a/tools/testing/selftests/bpf/Makefile
