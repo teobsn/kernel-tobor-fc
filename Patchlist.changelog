@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/51971df76b7baf9582e997694cf52b31842a6682
+ 51971df76b7baf9582e997694cf52b31842a6682 net: skbuff: propagate shared-frag marker through frag-transfer helpers
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/7bfe00fc9bf6fd1386c2602499a73d0d88a21d37
+ 7bfe00fc9bf6fd1386c2602499a73d0d88a21d37 Revert v3 of the fragnesia fixes as v4 covers an additional case
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/f52ec337a3f4e4d40707197a07dc0eda386be1f2
+ f52ec337a3f4e4d40707197a07dc0eda386be1f2 Bluetooth: btmtk: accept too short WMT FUNC_CTRL events
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/8774aeeee61b9ff93ec4d12e871938c41c57612b
  8774aeeee61b9ff93ec4d12e871938c41c57612b net: skbuff: propagate shared-frag marker through frag-transfer helpers
 

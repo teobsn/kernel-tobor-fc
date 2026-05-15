@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.7
-%define specversion 7.0.7
+%define specrpmversion 7.0.8
+%define specversion 7.0.8
 %define patchversion 7.0
 %define pkgrelease 101
 %define kversion 7
-%define tarfile_release 7.0.7
+%define tarfile_release 7.0.8
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 100%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.7
+%define kabiversion 7.0.8
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4871,6 +4871,12 @@ fi\
 #
 #
 %changelog
+* Fri May 15 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.8-0]
+- net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)
+- Revert v3 of the fragnesia fixes as v4 covers an additional case (Justin M. Forbes)
+- Bluetooth: btmtk: accept too short WMT FUNC_CTRL events (Pauli Virtanen)
+- Linux v7.0.8
+
 * Thu May 14 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.7-0]
 - net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)
 - Revert old fragnesia fixes in favor of more complete solution (Justin M. Forbes)
