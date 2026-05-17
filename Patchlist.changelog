@@ -1,3 +1,6 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/dceba3c610dce15a451f18d00744f48630616ca0
+ dceba3c610dce15a451f18d00744f48630616ca0 drm/i915/dp_tunnel: Don't update tunnel state during system resume
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/51971df76b7baf9582e997694cf52b31842a6682
  51971df76b7baf9582e997694cf52b31842a6682 net: skbuff: propagate shared-frag marker through frag-transfer helpers
 

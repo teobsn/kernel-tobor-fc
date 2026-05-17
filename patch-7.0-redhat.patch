@@ -7,7 +7,6 @@
  arch/arm/boot/dts/broadcom/bcm2835-common.dtsi     |    7 +-
  arch/arm/boot/dts/broadcom/bcm2835-rpi.dtsi        |   16 +-
  arch/arm64/Kconfig                                 |    2 +-
- arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts |   14 +
  .../boot/dts/broadcom/bcm2712-rpi-5-b-base.dtsi    |   55 +-
  arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts   |   24 +
  arch/arm64/boot/dts/broadcom/bcm2712.dtsi          |   29 +-
@@ -32,7 +31,7 @@
  drivers/firmware/efi/libstub/fdt.c                 |    5 +
  drivers/firmware/efi/libstub/secureboot.c          |   14 +-
  drivers/firmware/efi/secureboot.c                  |   38 +
- drivers/gpu/drm/v3d/v3d_submit.c                   |    5 +
+ drivers/gpu/drm/i915/display/intel_dp_tunnel.c     |   11 +-
  drivers/hid/hid-rmi.c                              |   66 --
  drivers/hwtracing/coresight/coresight-etm4x-core.c |   19 +
  drivers/input/rmi4/rmi_driver.c                    |  124 ++-
@@ -76,7 +75,7 @@
  security/lockdown/lockdown.c                       |   11 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 78 files changed, 5414 insertions(+), 547 deletions(-)
+ 77 files changed, 5401 insertions(+), 552 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -208,7 +207,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index a0565b83ae40..af6f72ebe8f2 100644
+index 9da9c1f3b238..934965d11a75 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -346,28 +345,6 @@ index 9ea19b74b6c3..6d2800a2a061 100644
  	help
  	  For systems with 52-bit userspace VAs enabled, the kernel will attempt
  	  to maintain compatibility with older software by providing 48-bit VAs
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts b/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
-index 7de24d60bcd1..127be0fc27c2 100644
---- a/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
-+++ b/arch/arm64/boot/dts/broadcom/bcm2712-d-rpi-5-b.dts
-@@ -35,3 +35,17 @@ &gio_aon {
- 		"PMIC_SCL", // AON_SGPIO_04
- 		"PMIC_SDA"; // AON_SGPIO_05
- };
-+
-+&pinctrl {
-+	compatible = "brcm,bcm2712d0-pinctrl";
-+	reg = <0x7d504100 0x20>;
-+};
-+
-+&pinctrl_aon {
-+	compatible = "brcm,bcm2712d0-aon-pinctrl";
-+	reg = <0x7d510700 0x1c>;
-+};
-+
-+&uart10 {
-+	interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
-+};
 diff --git a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b-base.dtsi b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b-base.dtsi
 index 04738bf281eb..b7a6bc34ae1a 100644
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b-base.dtsi
@@ -1304,22 +1281,39 @@ index 000000000000..de0a3714a5d4
 +		}
 +	}
 +}
-diff --git a/drivers/gpu/drm/v3d/v3d_submit.c b/drivers/gpu/drm/v3d/v3d_submit.c
-index 18f2bf1fe89f..fc74351efad5 100644
---- a/drivers/gpu/drm/v3d/v3d_submit.c
-+++ b/drivers/gpu/drm/v3d/v3d_submit.c
-@@ -393,6 +393,11 @@ v3d_get_multisync_submit_deps(struct drm_file *file_priv,
- 	if (multisync.pad)
- 		return -EINVAL;
+diff --git a/drivers/gpu/drm/i915/display/intel_dp_tunnel.c b/drivers/gpu/drm/i915/display/intel_dp_tunnel.c
+index 55b423fd6b6f..7894ae25e2a7 100644
+--- a/drivers/gpu/drm/i915/display/intel_dp_tunnel.c
++++ b/drivers/gpu/drm/i915/display/intel_dp_tunnel.c
+@@ -150,11 +150,9 @@ static int allocate_initial_tunnel_bw_for_pipes(struct intel_dp *intel_dp, u8 pi
+ 			    drm_dp_tunnel_name(intel_dp->tunnel),
+ 			    encoder->base.base.id, encoder->base.name,
+ 			    ERR_PTR(err));
+-
+-		return err;
+ 	}
  
-+	if (!multisync.in_sync_count && !multisync.out_sync_count) {
-+		drm_dbg(&v3d->drm, "Empty multisync extension\n");
-+		return -EINVAL;
+-	return update_tunnel_state(intel_dp);
++	return err;
+ }
+ 
+ static int allocate_initial_tunnel_bw(struct intel_dp *intel_dp,
+@@ -200,10 +198,13 @@ static int detect_new_tunnel(struct intel_dp *intel_dp, struct drm_modeset_acqui
+ 	}
+ 
+ 	ret = allocate_initial_tunnel_bw(intel_dp, ctx);
+-	if (ret < 0)
++	if (ret < 0) {
+ 		intel_dp_tunnel_destroy(intel_dp);
+ 
+-	return ret;
++		return ret;
 +	}
 +
- 	ret = v3d_get_multisync_post_deps(file_priv, se, multisync.out_sync_count,
- 					  multisync.out_syncs);
- 	if (ret)
++	return update_tunnel_state(intel_dp);
+ }
+ 
+ /**
 diff --git a/drivers/hid/hid-rmi.c b/drivers/hid/hid-rmi.c
 index d4af17fdba46..154f0403cbf4 100644
 --- a/drivers/hid/hid-rmi.c

@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.8
-%define specversion 7.0.8
+%define specrpmversion 7.0.9
+%define specversion 7.0.9
 %define patchversion 7.0
 %define pkgrelease 101
 %define kversion 7
-%define tarfile_release 7.0.8
+%define tarfile_release 7.0.9
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 100%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.8
+%define kabiversion 7.0.9
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4871,6 +4871,13 @@ fi\
 #
 #
 %changelog
+* Sun May 17 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-0]
+- Turn on XFS_ONLINE_REPAIR for Fedora (Justin M. Forbes)
+- Enable SND_DESIGNWARE for Fedora x86 (Justin M. Forbes)
+- Enable HID_SENSOR_PROX for Fedora x86 (Justin M. Forbes)
+- drm/i915/dp_tunnel: Don't update tunnel state during system resume (Imre Deak)
+- Linux v7.0.9
+
 * Fri May 15 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.8-0]
 - net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)
 - Revert v3 of the fragnesia fixes as v4 covers an additional case (Justin M. Forbes)
