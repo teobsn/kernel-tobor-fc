@@ -4871,7 +4871,7 @@ fi\
 #
 #
 %changelog
-* Mon May 18 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-2]
+* Mon May 18 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-0]
 - net/sched: fix pedit partial COW leading to page cache corruption (Rajat Gupta)
 - net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)
 - Revert fragnesia for so I can replace it with the newer one (Justin M. Forbes)
