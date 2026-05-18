@@ -66,9 +66,9 @@
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    4 +
- net/core/skbuff.c                                  |    3 +
+ net/core/skbuff.c                                  |    9 +-
  net/ipv4/tcp_output.c                              |    1 +
- net/sched/act_pedit.c                              |   36 +-
+ net/sched/act_pedit.c                              |   67 +-
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
@@ -76,7 +76,7 @@
  security/lockdown/lockdown.c                       |   11 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 78 files changed, 5427 insertions(+), 562 deletions(-)
+ 78 files changed, 5459 insertions(+), 567 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7512,7 +7512,7 @@ index 31d21de5b15a..9f8960789b2c 100644
  
  	return 0;
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 43ee86dcf2ea..758b5225b874 100644
+index 43ee86dcf2ea..7fe42c558736 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -2258,6 +2258,7 @@ struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,
@@ -7532,6 +7532,26 @@ index 43ee86dcf2ea..758b5225b874 100644
  	skb_len_add(skb, -shiftlen);
  	skb_len_add(tgt, shiftlen);
  
+@@ -4983,7 +4986,8 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
+ 		skb_copy_from_linear_data_offset(head_skb, offset,
+ 						 skb_put(nskb, hsize), hsize);
+ 
+-		skb_shinfo(nskb)->flags |= skb_shinfo(head_skb)->flags &
++		skb_shinfo(nskb)->flags |= (skb_shinfo(head_skb)->flags |
++					    skb_shinfo(frag_skb)->flags) &
+ 					   SKBFL_SHARED_FRAG;
+ 
+ 		if (skb_zerocopy_clone(nskb, frag_skb, GFP_ATOMIC))
+@@ -5000,6 +5004,9 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
+ 				nfrags = skb_shinfo(list_skb)->nr_frags;
+ 				frag = skb_shinfo(list_skb)->frags;
+ 				frag_skb = list_skb;
++
++				skb_shinfo(nskb)->flags |= skb_shinfo(frag_skb)->flags & SKBFL_SHARED_FRAG;
++
+ 				if (!skb_headlen(list_skb)) {
+ 					BUG_ON(!nfrags);
+ 				} else {
 diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
 index 326b58ff1118..691fc76c5508 100644
 --- a/net/ipv4/tcp_output.c
@@ -7545,10 +7565,36 @@ index 326b58ff1118..691fc76c5508 100644
  			    skb_frag_page(fragfrom) == skb_frag_page(lastfrag) &&
  			    skb_frag_off(fragfrom) == skb_frag_off(lastfrag) +
 diff --git a/net/sched/act_pedit.c b/net/sched/act_pedit.c
-index bc20f08a2789..58a8eae6d43e 100644
+index bc20f08a2789..e25b98d28808 100644
 --- a/net/sched/act_pedit.c
 +++ b/net/sched/act_pedit.c
-@@ -398,11 +398,12 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+@@ -16,6 +16,7 @@
+ #include <linux/ip.h>
+ #include <linux/ipv6.h>
+ #include <linux/slab.h>
++#include <linux/overflow.h>
+ #include <net/ipv6.h>
+ #include <net/netlink.h>
+ #include <net/pkt_sched.h>
+@@ -323,8 +324,10 @@ static bool offset_valid(struct sk_buff *skb, int offset)
+ 	if (offset > 0 && offset > skb->len)
+ 		return false;
+ 
+-	if  (offset < 0 && -offset > skb_headroom(skb))
+-		return false;
++	if (offset < 0) {
++		if (offset == INT_MIN || -offset > skb_headroom(skb))
++			return false;
++	}
+ 
+ 	return true;
+ }
+@@ -393,17 +396,19 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+ 	struct tcf_pedit_key_ex *tkey_ex;
+ 	struct tcf_pedit_parms *parms;
+ 	struct tc_pedit_key *tkey;
+-	u32 max_offset;
+ 	int i;
  
  	parms = rcu_dereference_bh(p->parms);
  
@@ -7557,40 +7603,50 @@ index bc20f08a2789..58a8eae6d43e 100644
 -		      skb_network_offset(skb)) +
 -		     parms->tcfp_off_max_hint;
 -	if (skb_ensure_writable(skb, min(skb->len, max_offset)))
-+	max_offset = min_t(u32, skb->len,
-+			   (skb_transport_header_was_set(skb) ?
-+			    skb_transport_offset(skb) :
-+			    skb_network_offset(skb)) +
-+			   parms->tcfp_off_max_hint);
-+	if (skb_ensure_writable(skb, max_offset))
- 		goto done;
+-		goto done;
++	/* If the skb has shared frags the user is likely using zero-copy
++	 * (e.g. sendfile).  Those page frags may point to page-cache pages;
++	 * writing into them would silently corrupt the page cache.
++	 * Linearize so pedit operates on a private copy.
++	 * TL;DR if you want to use ZC, don't use pedit */
++	if (skb_has_shared_frag(skb)) {
++		if (__skb_linearize(skb))
++			goto bad;
++	}
  
  	tcf_lastuse_update(&p->tcf_tm);
-@@ -414,8 +415,9 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+ 	tcf_action_update_bstats(&p->common, skb);
+@@ -414,8 +419,9 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
  	for (i = parms->tcfp_nkeys; i > 0; i--, tkey++) {
  		int offset = tkey->off;
  		int hoffset = 0;
-+		int write_offset;
++		int write_offset, write_len;
  		u32 *ptr, hdata;
 -		u32 val;
 +		u32 val, write_end;
  		int rc;
  
  		if (tkey_ex) {
-@@ -451,12 +453,26 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+@@ -451,12 +457,45 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
  			}
  		}
  
 -		if (!offset_valid(skb, hoffset + offset)) {
 -			pr_info_ratelimited("tc action pedit offset %d out of bounds\n", hoffset + offset);
 +		write_offset = hoffset + offset;
-+		if (!offset_valid(skb, write_offset)) {
-+			pr_info_ratelimited("tc action pedit offset %d out of bounds\n",
-+					    write_offset);
++		if (unlikely(check_add_overflow(hoffset, offset,
++						&write_offset))) {
++			pr_info_ratelimited("tc action pedit offset overflow\n");
  			goto bad;
  		}
  
 -		ptr = skb_header_pointer(skb, hoffset + offset,
++		if (!offset_valid(skb, write_offset)) {
++			pr_info_ratelimited("tc action pedit offset %d out of bounds\n",
++					    write_offset);
++			goto bad;
++		}
++
 +		/* Earlier edits can change later header-relative offsets, so
 +		 * grow the writable window from the final per-key store.
 +		 */
@@ -7603,11 +7659,24 @@ index bc20f08a2789..58a8eae6d43e 100644
 +			}
 +		}
 +
++		if (write_offset < 0) {
++			if (skb_cow(skb, -write_offset))
++				goto bad;
++		} else {
++			if (unlikely(check_add_overflow(write_offset,
++							(int)sizeof(hdata),
++							&write_len)))
++				goto bad;
++			if (skb_ensure_writable(skb, min_t(int, skb->len,
++							   write_len)))
++				goto bad;
++		}
++
 +		ptr = skb_header_pointer(skb, write_offset,
  					 sizeof(hdata), &hdata);
  		if (!ptr)
  			goto bad;
-@@ -475,7 +491,7 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+@@ -475,7 +514,7 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
  
  		*ptr = ((*ptr & tkey->mask) ^ val);
  		if (ptr == &hdata)

@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.9
 %define specversion 7.0.9
 %define patchversion 7.0
-%define pkgrelease 201
+%define pkgrelease 202
 %define kversion 7
 %define tarfile_release 7.0.9
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 201%{?buildid}%{?dist}
+%define specrelease 202%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.9
 
@@ -4871,7 +4871,10 @@ fi\
 #
 #
 %changelog
-* Sun May 17 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-201]
+* Mon May 18 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-2]
+- net/sched: fix pedit partial COW leading to page cache corruption (Rajat Gupta)
+- net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)
+- Revert fragnesia for so I can replace it with the newer one (Justin M. Forbes)
 - net/sched: act_pedit: extend the writable skb range per key (Zhang Cen)
 
 * Sun May 17 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-0]

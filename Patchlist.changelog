@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/8148c63373b124fd1bf8d820d65687e99a00d31d
+ 8148c63373b124fd1bf8d820d65687e99a00d31d net/sched: fix pedit partial COW leading to page cache corruption
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/2f2bc67b669031ce73d83507b5d23ef5aac7ff4c
+ 2f2bc67b669031ce73d83507b5d23ef5aac7ff4c net: skbuff: propagate shared-frag marker through frag-transfer helpers
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/0e7c5384fd0fbc9d998593f6db29ec0f6fd45aca
+ 0e7c5384fd0fbc9d998593f6db29ec0f6fd45aca Revert fragnesia for so I can replace it with the newer one
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/ffdf20681f8d39c780e340491059ed02daf855bd
  ffdf20681f8d39c780e340491059ed02daf855bd net/sched: act_pedit: extend the writable skb range per key
 
