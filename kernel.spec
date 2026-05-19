@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.9
 %define specversion 7.0.9
 %define patchversion 7.0
-%define pkgrelease 202
+%define pkgrelease 203
 %define kversion 7
 %define tarfile_release 7.0.9
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 202%{?buildid}%{?dist}
+%define specrelease 203%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.9
 
@@ -4871,6 +4871,9 @@ fi\
 #
 #
 %changelog
+* Tue May 19 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-3]
+- net: gro: don't copy frags between mixed zcopy skbs (Sabrina Dubroca)
+
 * Mon May 18 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-0]
 - net/sched: fix pedit partial COW leading to page cache corruption (Rajat Gupta)
 - net: skbuff: propagate shared-frag marker through frag-transfer helpers (Hyunwoo Kim)

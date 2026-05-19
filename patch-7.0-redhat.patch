@@ -65,7 +65,7 @@
  include/linux/rmi.h                                |    1 +
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
- net/core/gro.c                                     |    4 +
+ net/core/gro.c                                     |    7 +
  net/core/skbuff.c                                  |    9 +-
  net/ipv4/tcp_output.c                              |    1 +
  net/sched/act_pedit.c                              |   72 +-
@@ -76,7 +76,7 @@
  security/lockdown/lockdown.c                       |   11 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 78 files changed, 5465 insertions(+), 566 deletions(-)
+ 78 files changed, 5468 insertions(+), 566 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7486,10 +7486,20 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  
  int module_sig_check(struct load_info *info, int flags)
 diff --git a/net/core/gro.c b/net/core/gro.c
-index 31d21de5b15a..9f8960789b2c 100644
+index 31d21de5b15a..c7b8eab61e02 100644
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
-@@ -213,10 +213,12 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
+@@ -123,6 +123,9 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
+ 	lp = NAPI_GRO_CB(p)->last;
+ 	pinfo = skb_shinfo(lp);
+ 
++	if (skb_zcopy(skb) || skb_zcopy(lp))
++		return -ETOOMANYREFS;
++
+ 	if (headlen <= offset) {
+ 		skb_frag_t *frag;
+ 		skb_frag_t *frag2;
+@@ -213,10 +216,12 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
  	p->data_len += len;
  	p->truesize += delta_truesize;
  	p->len += len;
@@ -7502,7 +7512,7 @@ index 31d21de5b15a..9f8960789b2c 100644
  	}
  	NAPI_GRO_CB(skb)->same_flow = 1;
  	return 0;
-@@ -244,6 +246,8 @@ int skb_gro_receive_list(struct sk_buff *p, struct sk_buff *skb)
+@@ -244,6 +249,8 @@ int skb_gro_receive_list(struct sk_buff *p, struct sk_buff *skb)
  	p->truesize += skb->truesize;
  	p->len += skb->len;
  
