@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.9
 %define specversion 7.0.9
 %define patchversion 7.0
-%define pkgrelease 203
+%define pkgrelease 204
 %define kversion 7
 %define tarfile_release 7.0.9
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 203%{?buildid}%{?dist}
+%define specrelease 204%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.9
 
@@ -4871,6 +4871,11 @@ fi\
 #
 #
 %changelog
+* Tue May 19 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-4]
+- rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer (David Howells)
+- rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg (David Howells)
+- crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks (David Howells)
+
 * Tue May 19 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-3]
 - net: gro: don't copy frags between mixed zcopy skbs (Sabrina Dubroca)
 

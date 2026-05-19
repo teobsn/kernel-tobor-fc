@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/9e9264cdf81ef84b11b2d0411744a8e3c2ca31f2
+ 9e9264cdf81ef84b11b2d0411744a8e3c2ca31f2 rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/83a16fe8bd1bf21c0431394d24dcd25fb7e084c4
+ 83a16fe8bd1bf21c0431394d24dcd25fb7e084c4 rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/6de6ce80c64131967af4bbb4edc04c1fab23713c
+ 6de6ce80c64131967af4bbb4edc04c1fab23713c crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/649b9ca38bcee431bb562ad4710aadf21345914c
  649b9ca38bcee431bb562ad4710aadf21345914c net: gro: don't copy frags between mixed zcopy skbs
 
