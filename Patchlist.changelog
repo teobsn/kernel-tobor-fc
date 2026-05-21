@@ -1,3 +1,6 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/2dd4102a953ba3020914a47e6984d2f462deebc4
+ 2dd4102a953ba3020914a47e6984d2f462deebc4 net: skbuff: preserve shared-frag marker during coalescing
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/2c1c0335d00d83e2487cced3cb0c36544079b03e
  2c1c0335d00d83e2487cced3cb0c36544079b03e xfrm: esp: restore combined single-frag length gate
 

@@ -71,7 +71,7 @@
  include/trace/events/rxrpc.h                       |    1 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    7 +
- net/core/skbuff.c                                  |    9 +-
+ net/core/skbuff.c                                  |   11 +-
  net/ipv4/esp4.c                                    |    5 +-
  net/ipv4/tcp_output.c                              |    1 +
  net/ipv6/esp6.c                                    |    5 +-
@@ -97,7 +97,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 99 files changed, 5890 insertions(+), 893 deletions(-)
+ 99 files changed, 5892 insertions(+), 893 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7734,7 +7734,7 @@ index 31d21de5b15a..c7b8eab61e02 100644
  
  	return 0;
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 43ee86dcf2ea..7fe42c558736 100644
+index 43ee86dcf2ea..d0ad034c911f 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -2258,6 +2258,7 @@ struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,
@@ -7774,6 +7774,15 @@ index 43ee86dcf2ea..7fe42c558736 100644
  				if (!skb_headlen(list_skb)) {
  					BUG_ON(!nfrags);
  				} else {
+@@ -6226,6 +6233,8 @@ bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
+ 	       from_shinfo->frags,
+ 	       from_shinfo->nr_frags * sizeof(skb_frag_t));
+ 	to_shinfo->nr_frags += from_shinfo->nr_frags;
++	if (from_shinfo->nr_frags)
++		to_shinfo->flags |= from_shinfo->flags & SKBFL_SHARED_FRAG;
+ 
+ 	if (!skb_cloned(from))
+ 		from_shinfo->nr_frags = 0;
 diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
 index 6a5febbdbee4..2d7daca8516c 100644
 --- a/net/ipv4/esp4.c
