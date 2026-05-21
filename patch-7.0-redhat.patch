@@ -59,6 +59,7 @@
  drivers/mfd/bcm2835-pm.c                           |    9 +-
  drivers/net/ethernet/cadence/macb.h                |   35 +
  drivers/net/ethernet/cadence/macb_main.c           |  736 ++++++++------
+ drivers/nfc/nxp-nci/i2c.c                          |   21 +-
  drivers/pci/quirks.c                               |   24 +
  drivers/usb/core/hub.c                             |    7 +
  include/crypto/krb5.h                              |    9 +-
@@ -71,13 +72,15 @@
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    7 +
  net/core/skbuff.c                                  |    9 +-
+ net/ipv4/esp4.c                                    |    5 +-
  net/ipv4/tcp_output.c                              |    1 +
+ net/ipv6/esp6.c                                    |    5 +-
  net/rxrpc/ar-internal.h                            |   14 +-
  net/rxrpc/call_event.c                             |   22 +-
  net/rxrpc/call_object.c                            |    2 +
  net/rxrpc/conn_event.c                             |   32 +-
  net/rxrpc/insecure.c                               |    8 +-
- net/rxrpc/recvmsg.c                                |   76 +-
+ net/rxrpc/recvmsg.c                                |   68 +-
  net/rxrpc/rxgk.c                                   |  160 ++-
  net/rxrpc/rxgk_app.c                               |   46 +-
  net/rxrpc/rxgk_common.h                            |   66 +-
@@ -88,9 +91,13 @@
  security/integrity/platform_certs/load_uefi.c      |    6 +-
  security/lockdown/Kconfig                          |   13 +
  security/lockdown/lockdown.c                       |   11 +
+ sound/soc/amd/acp/acp-sdw-legacy-mach.c            |   22 +-
+ sound/soc/amd/ps/ps-pdm-dma.c                      |    1 +
+ sound/soc/codecs/rt722-sdca.c                      |   77 +-
+ sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 92 files changed, 5784 insertions(+), 872 deletions(-)
+ 99 files changed, 5890 insertions(+), 893 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7401,6 +7408,54 @@ index 99e7d5cf3786..a12aa21244e8 100644
  		disable_irq_wake(bp->queues[0].irq);
  
  		/* Now make sure we disable phy before moving
+diff --git a/drivers/nfc/nxp-nci/i2c.c b/drivers/nfc/nxp-nci/i2c.c
+index b3d34433bd14..a6c08175d9dd 100644
+--- a/drivers/nfc/nxp-nci/i2c.c
++++ b/drivers/nfc/nxp-nci/i2c.c
+@@ -16,6 +16,7 @@
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ #include <linux/module.h>
+ #include <linux/nfc.h>
+ #include <linux/gpio/consumer.h>
+@@ -267,6 +268,7 @@ static int nxp_nci_i2c_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
+ 	struct nxp_nci_i2c_phy *phy;
++	unsigned long irqflags;
+ 	int r;
+ 
+ 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
+@@ -303,9 +305,26 @@ static int nxp_nci_i2c_probe(struct i2c_client *client)
+ 	if (r < 0)
+ 		return r;
+ 
++	/*
++	 * ACPI platforms may report incorrect IRQ trigger types
++	 * (e.g. level-high), which can lead to interrupt storms.
++	 *
++	 * Use the historically stable rising-edge trigger for ACPI devices.
++	 *
++	 * On non-ACPI systems (e.g. Device Tree), prefer the firmware-
++	 * provided trigger type, falling back to rising-edge if not set.
++	 */
++	if (ACPI_COMPANION(dev)) {
++		irqflags = IRQF_TRIGGER_RISING;
++	} else {
++		irqflags = irq_get_trigger_type(client->irq);
++		if (!irqflags)
++			irqflags = IRQF_TRIGGER_RISING;
++	}
++
+ 	r = request_threaded_irq(client->irq, NULL,
+ 				 nxp_nci_i2c_irq_thread_fn,
+-				 IRQF_ONESHOT,
++				 irqflags | IRQF_ONESHOT,
+ 				 NXP_NCI_I2C_DRIVER_NAME, phy);
+ 	if (r < 0)
+ 		nfc_err(&client->dev, "Unable to register IRQ handler\n");
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
 index 48946cca4be7..a1f5fe8e583f 100644
 --- a/drivers/pci/quirks.c
@@ -7719,6 +7774,29 @@ index 43ee86dcf2ea..7fe42c558736 100644
  				if (!skb_headlen(list_skb)) {
  					BUG_ON(!nfrags);
  				} else {
+diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
+index 6a5febbdbee4..2d7daca8516c 100644
+--- a/net/ipv4/esp4.c
++++ b/net/ipv4/esp4.c
+@@ -410,6 +410,7 @@ int esp_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info *
+ 	struct page *page;
+ 	struct sk_buff *trailer;
+ 	int tailen = esp->tailen;
++	unsigned int allocsize;
+ 
+ 	/* this is non-NULL only with TCP/UDP Encapsulation */
+ 	if (x->encap) {
+@@ -419,8 +420,8 @@ int esp_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info *
+ 			return err;
+ 	}
+ 
+-	if (ALIGN(tailen, L1_CACHE_BYTES) > PAGE_SIZE ||
+-	    ALIGN(skb->data_len, L1_CACHE_BYTES) > PAGE_SIZE)
++	allocsize = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);
++	if (allocsize > PAGE_SIZE)
+ 		goto cow;
+ 
+ 	if (!skb_cloned(skb)) {
 diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
 index 326b58ff1118..691fc76c5508 100644
 --- a/net/ipv4/tcp_output.c
@@ -7731,6 +7809,29 @@ index 326b58ff1118..691fc76c5508 100644
  			if (lastfrag &&
  			    skb_frag_page(fragfrom) == skb_frag_page(lastfrag) &&
  			    skb_frag_off(fragfrom) == skb_frag_off(lastfrag) +
+diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
+index 9c06c5a1419d..0fad1dc558b8 100644
+--- a/net/ipv6/esp6.c
++++ b/net/ipv6/esp6.c
+@@ -440,6 +440,7 @@ int esp6_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info
+ 	struct page *page;
+ 	struct sk_buff *trailer;
+ 	int tailen = esp->tailen;
++	unsigned int allocsize;
+ 
+ 	if (x->encap) {
+ 		int err = esp6_output_encap(x, skb, esp);
+@@ -448,8 +449,8 @@ int esp6_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info
+ 			return err;
+ 	}
+ 
+-	if (ALIGN(tailen, L1_CACHE_BYTES) > PAGE_SIZE ||
+-	    ALIGN(skb->data_len, L1_CACHE_BYTES) > PAGE_SIZE)
++	allocsize = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);
++	if (allocsize > PAGE_SIZE)
+ 		goto cow;
+ 
+ 	if (!skb_cloned(skb)) {
 diff --git a/net/rxrpc/ar-internal.h b/net/rxrpc/ar-internal.h
 index 27c2aa2dd023..98f2165159d7 100644
 --- a/net/rxrpc/ar-internal.h
@@ -7903,10 +8004,10 @@ index 0a260df45d25..0b39046bdc61 100644
  }
  
 diff --git a/net/rxrpc/recvmsg.c b/net/rxrpc/recvmsg.c
-index e1f7513a46db..0802f12cbbfc 100644
+index e1f7513a46db..c940600117a4 100644
 --- a/net/rxrpc/recvmsg.c
 +++ b/net/rxrpc/recvmsg.c
-@@ -147,15 +147,55 @@ static void rxrpc_rotate_rx_window(struct rxrpc_call *call)
+@@ -147,15 +147,52 @@ static void rxrpc_rotate_rx_window(struct rxrpc_call *call)
  }
  
  /*
@@ -7916,9 +8017,9 @@ index e1f7513a46db..0802f12cbbfc 100644
 + * has the advantage of aligning the buffer correctly for the crypto routines.
 + *
 + * We keep track of the sequence number of the packet currently decrypted into
-+ * the buffer in ->rx_dec_seq.  Unfortunately, this means that a MSG_PEEK of
-+ * more than one byte may cause a later packet to be decrypted into the buffer,
-+ * requiring the original to be re-decrypted when recvmsg() is called again.
++ * the buffer in ->rx_dec_seq.  If MSG_PEEK is used and steps onto a new
++ * packet, subsequent recvmsg() calls will have to go back and re-decrypt the
++ * current packet.
   */
  static int rxrpc_verify_data(struct rxrpc_call *call, struct sk_buff *skb)
  {
@@ -7926,15 +8027,13 @@ index e1f7513a46db..0802f12cbbfc 100644
 +	int ret;
  
 -	if (sp->flags & RXRPC_RX_VERIFIED)
-+	if (call->rx_dec_seq == sp->hdr.seq && call->rx_dec_buffer)
- 		return 0;
+-		return 0;
 -	return call->security->verify_packet(call, skb);
-+
 +	if (sp->len > call->rx_dec_bsize) {
 +		/* Make sure we can hold a 1412-byte jumbo subpacket and make
 +		 * sure that the buffer size is aligned to a crypto blocksize.
 +		 */
-+		size_t size = max(round_up(sp->len, 32), 2048);
++		size_t size = clamp(round_up(sp->len, 32), 2048, 65535);
 +		void *buffer = krealloc(call->rx_dec_buffer, size, GFP_NOFS);
 +
 +		if (!buffer)
@@ -7965,12 +8064,13 @@ index e1f7513a46db..0802f12cbbfc 100644
  }
  
  /*
-@@ -283,16 +323,19 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
+@@ -283,16 +320,21 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
  		if (msg)
  			sock_recv_timestamp(msg, sock->sk, skb);
  
 -		if (rx_pkt_offset == 0) {
-+		if (rx_pkt_offset == USHRT_MAX) {
++		if (call->rx_dec_seq != sp->hdr.seq ||
++		    !call->rx_dec_buffer) {
  			ret2 = rxrpc_verify_data(call, skb);
  			trace_rxrpc_recvdata(call, rxrpc_recvmsg_next, seq,
 -					     sp->offset, sp->len, ret2);
@@ -7982,14 +8082,15 @@ index e1f7513a46db..0802f12cbbfc 100644
  			}
 -			rx_pkt_offset = sp->offset;
 -			rx_pkt_len = sp->len;
-+			sp = rxrpc_skb(skb);
-+			seq = sp->hdr.seq;
++		}
++
++		if (rx_pkt_offset == USHRT_MAX) {
 +			rx_pkt_offset = call->rx_dec_offset;
 +			rx_pkt_len = call->rx_dec_len;
  		} else {
  			trace_rxrpc_recvdata(call, rxrpc_recvmsg_cont, seq,
  					     rx_pkt_offset, rx_pkt_len, 0);
-@@ -304,10 +347,10 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
+@@ -304,10 +346,10 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
  		if (copy > remain)
  			copy = remain;
  		if (copy > 0) {
@@ -8004,7 +8105,7 @@ index e1f7513a46db..0802f12cbbfc 100644
  				goto out;
  			}
  
-@@ -328,13 +371,18 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
+@@ -328,7 +370,7 @@ static int rxrpc_recvmsg_data(struct socket *sock, struct rxrpc_call *call,
  		/* The whole packet has been transferred. */
  		if (sp->hdr.flags & RXRPC_LAST_PACKET)
  			ret = 1;
@@ -8012,20 +8113,7 @@ index e1f7513a46db..0802f12cbbfc 100644
 +		rx_pkt_offset = USHRT_MAX;
  		rx_pkt_len = 0;
  
-+		/* Terminate the receive here for MSG_PEEK otherwise we'd have
-+		 * to replace the contents of ->rx_dec_buffer.
-+		 */
-+		if (unlikely(flags & MSG_PEEK))
-+			break;
-+
  		skb = skb_peek_next(skb, &call->recvmsg_queue);
- 
--		if (!(flags & MSG_PEEK))
--			rxrpc_rotate_rx_window(call);
-+		rxrpc_rotate_rx_window(call);
- 
- 		if (!rx->app_ops &&
- 		    !skb_queue_empty_lockless(&rx->recvmsg_oobq)) {
 diff --git a/net/rxrpc/rxgk.c b/net/rxrpc/rxgk.c
 index 0d5e654da918..a1ee102abae1 100644
 --- a/net/rxrpc/rxgk.c
@@ -8553,7 +8641,7 @@ index 1e257d7ab8ec..3deed5863f5a 100644
  		break;
  	case -EBADMSG: /* Checksum mismatch */
 diff --git a/net/rxrpc/rxkad.c b/net/rxrpc/rxkad.c
-index cba7935977f0..e970bf3ae78a 100644
+index cba7935977f0..6fbd883401ac 100644
 --- a/net/rxrpc/rxkad.c
 +++ b/net/rxrpc/rxkad.c
 @@ -430,27 +430,25 @@ static int rxkad_verify_packet_1(struct rxrpc_call *call, struct sk_buff *skb,
@@ -8793,7 +8881,7 @@ index cba7935977f0..e970bf3ae78a 100644
 -	if (skb_copy_bits(skb, sizeof(struct rxrpc_wire_header) + sizeof(*response),
 -			  ticket, ticket_len) < 0) {
 +	ticket = buffer;
-+	if (ticket_len >= len) {
++	if (ticket_len > len) {
  		ret = rxrpc_abort_conn(conn, skb, RXKADPACKETSHORT, -EPROTO,
  				       rxkad_abort_resp_short_tkt);
  		goto error;
@@ -9026,6 +9114,191 @@ index 8d46886d2cca..14a9cdff942b 100644
  static struct security_hook_list lockdown_hooks[] __ro_after_init = {
  	LSM_HOOK_INIT(locked_down, lockdown_is_locked_down),
  };
+diff --git a/sound/soc/amd/acp/acp-sdw-legacy-mach.c b/sound/soc/amd/acp/acp-sdw-legacy-mach.c
+index cd7b1acc7216..097e191cedde 100644
+--- a/sound/soc/amd/acp/acp-sdw-legacy-mach.c
++++ b/sound/soc/amd/acp/acp-sdw-legacy-mach.c
+@@ -95,6 +95,22 @@ static const struct dmi_system_id soc_sdw_quirk_table[] = {
+ 		},
+ 		.driver_data = (void *)(ASOC_SDW_CODEC_SPKR),
+ 	},
++	{
++		.callback = soc_sdw_quirk_cb,
++		.matches = { /* Lenovo P16s G5 AMD */
++			DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_SKU, "21XG"),
++		},
++		.driver_data = (void *)(ASOC_SDW_ACP_DMIC),
++	},
++	{
++		.callback = soc_sdw_quirk_cb,
++		.matches = { /* Lenovo P16s G5 AMD */
++			DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_SKU, "21XH"),
++		},
++		.driver_data = (void *)(ASOC_SDW_ACP_DMIC),
++	},
+ 	{
+ 		.callback = soc_sdw_quirk_cb,
+ 		.matches = {
+@@ -551,11 +567,11 @@ static int mc_probe(struct platform_device *pdev)
+ 					  " cfg-amp:%d", amp_num);
+ 	if (!card->components)
+ 		return -ENOMEM;
+-	if (mach->mach_params.dmic_num) {
++	if (soc_sdw_quirk & ASOC_SDW_ACP_DMIC) {
+ 		card->components = devm_kasprintf(card->dev, GFP_KERNEL,
+-						  "%s mic:dmic cfg-mics:%d",
++						  "%s mic:acp-dmic cfg-mics:%d",
+ 						  card->components,
+-						  mach->mach_params.dmic_num);
++						  1);
+ 		if (!card->components)
+ 			return -ENOMEM;
+ 	}
+diff --git a/sound/soc/amd/ps/ps-pdm-dma.c b/sound/soc/amd/ps/ps-pdm-dma.c
+index 7c529fc6ba99..b7741ef2ba21 100644
+--- a/sound/soc/amd/ps/ps-pdm-dma.c
++++ b/sound/soc/amd/ps/ps-pdm-dma.c
+@@ -352,6 +352,7 @@ static const struct snd_soc_component_driver acp63_pdm_component = {
+ 	.hw_params	= acp63_pdm_dma_hw_params,
+ 	.pointer	= acp63_pdm_dma_pointer,
+ 	.pcm_construct	= acp63_pdm_dma_new,
++	.use_dai_pcm_id = true,
+ };
+ 
+ static int acp63_pdm_audio_probe(struct platform_device *pdev)
+diff --git a/sound/soc/codecs/rt722-sdca.c b/sound/soc/codecs/rt722-sdca.c
+index 79b8b7e70a33..23d2f63d68ef 100644
+--- a/sound/soc/codecs/rt722-sdca.c
++++ b/sound/soc/codecs/rt722-sdca.c
+@@ -517,6 +517,61 @@ static int rt722_sdca_fu1e_capture_put(struct snd_kcontrol *kcontrol,
+ 	return changed;
+ }
+ 
++static int rt722_sdca_set_fu06_playback_ctl(struct rt722_sdca_priv *rt722)
++{
++	int err;
++	unsigned int ch_l, ch_r;
++
++	ch_l = (rt722->fu06_dapm_mute || rt722->fu06_mixer_l_mute) ? 0x01 : 0x00;
++	ch_r = (rt722->fu06_dapm_mute || rt722->fu06_mixer_r_mute) ? 0x01 : 0x00;
++
++	err = regmap_write(rt722->regmap,
++			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
++			RT722_SDCA_CTL_FU_MUTE, CH_L), ch_l);
++	if (err < 0)
++		return err;
++
++	err = regmap_write(rt722->regmap,
++			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
++			RT722_SDCA_CTL_FU_MUTE, CH_R), ch_r);
++	if (err < 0)
++		return err;
++
++	return 0;
++}
++
++static int rt722_sdca_fu06_playback_get(struct snd_kcontrol *kcontrol,
++			struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct rt722_sdca_priv *rt722 = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.integer.value[0] = !rt722->fu06_mixer_l_mute;
++	ucontrol->value.integer.value[1] = !rt722->fu06_mixer_r_mute;
++	return 0;
++}
++
++static int rt722_sdca_fu06_playback_put(struct snd_kcontrol *kcontrol,
++			struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct rt722_sdca_priv *rt722 = snd_soc_component_get_drvdata(component);
++	int err, changed = 0;
++
++	if (rt722->fu06_mixer_l_mute != !ucontrol->value.integer.value[0] ||
++		rt722->fu06_mixer_r_mute != !ucontrol->value.integer.value[1])
++		changed = 1;
++
++	rt722->fu06_mixer_l_mute = !ucontrol->value.integer.value[0];
++	rt722->fu06_mixer_r_mute = !ucontrol->value.integer.value[1];
++
++	err = rt722_sdca_set_fu06_playback_ctl(rt722);
++	if (err < 0)
++		return err;
++
++	return changed;
++}
++
+ static int rt722_sdca_set_fu0f_capture_ctl(struct rt722_sdca_priv *rt722)
+ {
+ 	int err;
+@@ -718,6 +773,8 @@ static const struct snd_kcontrol_new rt722_sdca_controls[] = {
+ 			RT722_SDCA_CTL_FU_CH_GAIN, CH_R), 8, 3, 0,
+ 		rt722_sdca_set_gain_get, rt722_sdca_set_gain_put, boost_vol_tlv),
+ 	/* AMP playback settings */
++	SOC_DOUBLE_EXT("FU06 Playback Switch", SND_SOC_NOPM, 0, 1, 1, 0,
++		rt722_sdca_fu06_playback_get, rt722_sdca_fu06_playback_put),
+ 	SOC_DOUBLE_R_EXT_TLV("FU06 Playback Volume",
+ 		SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
+ 			RT722_SDCA_CTL_FU_VOLUME, CH_L),
+@@ -807,27 +864,17 @@ static int rt722_sdca_fu21_event(struct snd_soc_dapm_widget *w,
+ 	struct snd_soc_component *component =
+ 		snd_soc_dapm_to_component(w->dapm);
+ 	struct rt722_sdca_priv *rt722 = snd_soc_component_get_drvdata(component);
+-	unsigned char unmute = 0x0, mute = 0x1;
+ 
+ 	switch (event) {
+ 	case SND_SOC_DAPM_POST_PMU:
+-		regmap_write(rt722->regmap,
+-			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
+-				RT722_SDCA_CTL_FU_MUTE, CH_L), unmute);
+-		regmap_write(rt722->regmap,
+-			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
+-				RT722_SDCA_CTL_FU_MUTE, CH_R), unmute);
++		rt722->fu06_dapm_mute = false;
+ 		break;
+ 	case SND_SOC_DAPM_PRE_PMD:
+-		regmap_write(rt722->regmap,
+-			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
+-				RT722_SDCA_CTL_FU_MUTE, CH_L), mute);
+-		regmap_write(rt722->regmap,
+-			SDW_SDCA_CTL(FUNC_NUM_AMP, RT722_SDCA_ENT_USER_FU06,
+-				RT722_SDCA_CTL_FU_MUTE, CH_R), mute);
++		rt722->fu06_dapm_mute = true;
+ 		break;
+ 	}
+-	return 0;
++
++	return rt722_sdca_set_fu06_playback_ctl(rt722);
+ }
+ 
+ static int rt722_sdca_fu113_event(struct snd_soc_dapm_widget *w,
+@@ -1324,6 +1371,8 @@ int rt722_sdca_init(struct device *dev, struct regmap *regmap, struct sdw_slave
+ 	rt722->first_hw_init = false;
+ 	rt722->fu1e_dapm_mute = true;
+ 	rt722->fu0f_dapm_mute = true;
++	rt722->fu06_dapm_mute = true;
++	rt722->fu06_mixer_l_mute = rt722->fu06_mixer_r_mute = false;
+ 	rt722->fu0f_mixer_l_mute = rt722->fu0f_mixer_r_mute = true;
+ 	rt722->fu1e_mixer_mute[0] = rt722->fu1e_mixer_mute[1] =
+ 		rt722->fu1e_mixer_mute[2] = rt722->fu1e_mixer_mute[3] = true;
+diff --git a/sound/soc/codecs/rt722-sdca.h b/sound/soc/codecs/rt722-sdca.h
+index 823abee9ab76..fc50beff9424 100644
+--- a/sound/soc/codecs/rt722-sdca.h
++++ b/sound/soc/codecs/rt722-sdca.h
+@@ -36,6 +36,10 @@ struct  rt722_sdca_priv {
+ 	bool fu0f_dapm_mute;
+ 	bool fu0f_mixer_l_mute;
+ 	bool fu0f_mixer_r_mute;
++	/* For AMP */
++	bool fu06_dapm_mute;
++	bool fu06_mixer_l_mute;
++	bool fu06_mixer_r_mute;
+ 	/* For DMIC */
+ 	bool fu1e_dapm_mute;
+ 	bool fu1e_mixer_mute[4];
 diff --git a/tools/testing/selftests/bpf/Makefile b/tools/testing/selftests/bpf/Makefile
 index 65485967c968..e44f47e01027 100644
 --- a/tools/testing/selftests/bpf/Makefile

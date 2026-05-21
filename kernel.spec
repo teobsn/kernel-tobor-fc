@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.9
 %define specversion 7.0.9
 %define patchversion 7.0
-%define pkgrelease 204
+%define pkgrelease 205
 %define kversion 7
 %define tarfile_release 7.0.9
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 204%{?buildid}%{?dist}
+%define specrelease 205%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.9
 
@@ -4871,6 +4871,21 @@ fi\
 #
 #
 %changelog
+* Thu May 21 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-5]
+- xfrm: esp: restore combined single-frag length gate (Jingguo Tan)
+- rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer (David Howells)
+- rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg (David Howells)
+- crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks (David Howells)
+- Revert "v3 crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks" (Justin M. Forbes)
+- Revert "v3 rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg" (Justin M. Forbes)
+- Revert "v3 rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer" (Justin M. Forbes)
+- nfc: nxp-nci: i2c: use rising-edge IRQ on ACPI systems (Carl Lee)
+- ASoC: rt722-sdca: add FU06 Playback Switch for speaker mute control (Aaron Ma)
+- ASoC: amd: ps: fix the pcm device numbering for acp pdm dmic (Syed Saba Kareem)
+- ASoC: amd: acp: add Lenovo P16s G5 AMD quirk for legacy SDW machine (Mark Pearson)
+- ASoC: amd: acp-sdw-legacy: rename the dmic component name (Vijendar Mukunda)
+- ASoC: amd: acp: update dmic_num logic for acp pdm dmic (Vijendar Mukunda)
+
 * Tue May 19 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-4]
 - rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer (David Howells)
 - rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg (David Howells)

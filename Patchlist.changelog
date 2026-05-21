@@ -1,3 +1,42 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/2c1c0335d00d83e2487cced3cb0c36544079b03e
+ 2c1c0335d00d83e2487cced3cb0c36544079b03e xfrm: esp: restore combined single-frag length gate
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/d18e8ce949589271f1c3f59063403dca5241c2fd
+ d18e8ce949589271f1c3f59063403dca5241c2fd rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/004055d8b9c5166594c8959ec2e30af41eba1cb1
+ 004055d8b9c5166594c8959ec2e30af41eba1cb1 rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/acf504daf9486f4d70aca6ee47c09fad805278e5
+ acf504daf9486f4d70aca6ee47c09fad805278e5 crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/1bc5ac734104f6a63242bf08e23e1b7f50f70182
+ 1bc5ac734104f6a63242bf08e23e1b7f50f70182 Revert "v3 crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/1d5d7049beb3317ac0662a73007342a9ed614989
+ 1d5d7049beb3317ac0662a73007342a9ed614989 Revert "v3 rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/56f6f10127fd2812cf527d65c7a419f3d1226ccd
+ 56f6f10127fd2812cf527d65c7a419f3d1226ccd Revert "v3 rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e20508823df3daa1a3729775de3e43753383fa96
+ e20508823df3daa1a3729775de3e43753383fa96 nfc: nxp-nci: i2c: use rising-edge IRQ on ACPI systems
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/1b1b0cc3b774866f672cf6ca9bb6b1956ce9bf13
+ 1b1b0cc3b774866f672cf6ca9bb6b1956ce9bf13 ASoC: rt722-sdca: add FU06 Playback Switch for speaker mute control
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/835c963b9ca980bd6f88bc60d223466763073125
+ 835c963b9ca980bd6f88bc60d223466763073125 ASoC: amd: ps: fix the pcm device numbering for acp pdm dmic
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/bdd7caf85886b80b384832a26e6bfa28869c9441
+ bdd7caf85886b80b384832a26e6bfa28869c9441 ASoC: amd: acp: add Lenovo P16s G5 AMD quirk for legacy SDW machine
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/90ed4bb8f3f668223c3fd099ab62926b24cedc84
+ 90ed4bb8f3f668223c3fd099ab62926b24cedc84 ASoC: amd: acp-sdw-legacy: rename the dmic component name
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/be17670a1f14a3cee601a220ebfe70cdbe9fef62
+ be17670a1f14a3cee601a220ebfe70cdbe9fef62 ASoC: amd: acp: update dmic_num logic for acp pdm dmic
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/9e9264cdf81ef84b11b2d0411744a8e3c2ca31f2
  9e9264cdf81ef84b11b2d0411744a8e3c2ca31f2 rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer
 
