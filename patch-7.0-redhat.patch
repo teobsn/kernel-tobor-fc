@@ -25,7 +25,6 @@
  drivers/acpi/irq.c                                 |   17 +-
  drivers/acpi/scan.c                                |    9 +
  drivers/ata/libahci.c                              |   18 +
- drivers/bluetooth/btmtk.c                          |    4 +-
  drivers/char/ipmi/ipmi_dmi.c                       |   15 +
  drivers/char/ipmi/ipmi_msghandler.c                |   16 +-
  drivers/firmware/efi/Makefile                      |    1 +
@@ -70,10 +69,8 @@
  include/linux/security.h                           |    9 +
  include/trace/events/rxrpc.h                       |    1 +
  kernel/module/signing.c                            |    9 +-
- net/core/gro.c                                     |    7 +
- net/core/skbuff.c                                  |   11 +-
+ net/core/gro.c                                     |    3 +
  net/ipv4/esp4.c                                    |    5 +-
- net/ipv4/tcp_output.c                              |    1 +
  net/ipv6/esp6.c                                    |    5 +-
  net/rxrpc/ar-internal.h                            |   14 +-
  net/rxrpc/call_event.c                             |   22 +-
@@ -91,13 +88,12 @@
  security/integrity/platform_certs/load_uefi.c      |    6 +-
  security/lockdown/Kconfig                          |   13 +
  security/lockdown/lockdown.c                       |   11 +
- sound/soc/amd/acp/acp-sdw-legacy-mach.c            |   22 +-
- sound/soc/amd/ps/ps-pdm-dma.c                      |    1 +
+ sound/soc/amd/acp/acp-sdw-legacy-mach.c            |   18 +-
  sound/soc/codecs/rt722-sdca.c                      |   77 +-
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 99 files changed, 5892 insertions(+), 893 deletions(-)
+ 95 files changed, 5872 insertions(+), 888 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -260,7 +256,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index 9da9c1f3b238..934965d11a75 100644
+index a95f0b3d26bf..99b2c764c4c9 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -281,7 +277,7 @@ index 9da9c1f3b238..934965d11a75 100644
  ifdef mixed-build
  # ===========================================================================
  # We're called with mixed targets (*config and build targets).
-@@ -1364,6 +1375,8 @@ uapi-asm-generic:
+@@ -1366,6 +1377,8 @@ uapi-asm-generic:
  # Generate some files
  # ---------------------------------------------------------------------------
  
@@ -290,7 +286,7 @@ index 9da9c1f3b238..934965d11a75 100644
  # KERNELRELEASE can change from a few different places, meaning version.h
  # needs to be updated, so this check is forced on all builds
  
-@@ -2029,6 +2042,23 @@ endif
+@@ -2031,6 +2044,23 @@ endif
  
  ifdef CONFIG_MODULES
  
@@ -1085,21 +1081,6 @@ index c79abdfcd7a9..e23bfb7f94c7 100644
  	/* wait for engine to stop. This could be as long as 500 msec */
  	tmp = ata_wait_register(ap, port_mmio + PORT_CMD,
  				PORT_CMD_LIST_ON, PORT_CMD_LIST_ON, 1, 500);
-diff --git a/drivers/bluetooth/btmtk.c b/drivers/bluetooth/btmtk.c
-index 31ff133b6159..a4b4dacfd2ad 100644
---- a/drivers/bluetooth/btmtk.c
-+++ b/drivers/bluetooth/btmtk.c
-@@ -678,8 +678,8 @@ static int btmtk_usb_hci_wmt_sync(struct hci_dev *hdev,
- 	case BTMTK_WMT_FUNC_CTRL:
- 		if (!skb_pull_data(data->evt_skb,
- 				   sizeof(wmt_evt_funcc->status))) {
--			err = -EINVAL;
--			goto err_free_skb;
-+			status = BTMTK_WMT_ON_UNDONE;
-+			break;
- 		}
- 
- 		wmt_evt_funcc = (struct btmtk_hci_wmt_evt_funcc *)wmt_evt;
 diff --git a/drivers/char/ipmi/ipmi_dmi.c b/drivers/char/ipmi/ipmi_dmi.c
 index 505e32911c34..26f7ee0ccf40 100644
 --- a/drivers/char/ipmi/ipmi_dmi.c
@@ -1793,7 +1774,7 @@ index ccd9338a44db..5c54e522e8a4 100644
  	if (data->f01_container->dev.driver) {
  		/* Driver already bound, so enable ATTN now. */
 diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
-index ee83850c7060..53ad11f18182 100644
+index ef08c2c4ec95..c22d02658ea4 100644
 --- a/drivers/iommu/iommu.c
 +++ b/drivers/iommu/iommu.c
 @@ -8,6 +8,7 @@
@@ -1804,7 +1785,7 @@ index ee83850c7060..53ad11f18182 100644
  #include <linux/kernel.h>
  #include <linux/bits.h>
  #include <linux/bug.h>
-@@ -3068,6 +3069,27 @@ int iommu_fwspec_add_ids(struct device *dev, const u32 *ids, int num_ids)
+@@ -3108,6 +3109,27 @@ int iommu_fwspec_add_ids(struct device *dev, const u32 *ids, int num_ids)
  }
  EXPORT_SYMBOL_GPL(iommu_fwspec_add_ids);
  
@@ -7698,7 +7679,7 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  
  int module_sig_check(struct load_info *info, int flags)
 diff --git a/net/core/gro.c b/net/core/gro.c
-index 31d21de5b15a..c7b8eab61e02 100644
+index 9f8960789b2c..c7b8eab61e02 100644
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
 @@ -123,6 +123,9 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
@@ -7711,78 +7692,6 @@ index 31d21de5b15a..c7b8eab61e02 100644
  	if (headlen <= offset) {
  		skb_frag_t *frag;
  		skb_frag_t *frag2;
-@@ -213,10 +216,12 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
- 	p->data_len += len;
- 	p->truesize += delta_truesize;
- 	p->len += len;
-+	skb_shinfo(p)->flags |= skbinfo->flags & SKBFL_SHARED_FRAG;
- 	if (lp != p) {
- 		lp->data_len += len;
- 		lp->truesize += delta_truesize;
- 		lp->len += len;
-+		skb_shinfo(lp)->flags |= skbinfo->flags & SKBFL_SHARED_FRAG;
- 	}
- 	NAPI_GRO_CB(skb)->same_flow = 1;
- 	return 0;
-@@ -244,6 +249,8 @@ int skb_gro_receive_list(struct sk_buff *p, struct sk_buff *skb)
- 	p->truesize += skb->truesize;
- 	p->len += skb->len;
- 
-+	skb_shinfo(p)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
-+
- 	NAPI_GRO_CB(skb)->same_flow = 1;
- 
- 	return 0;
-diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 43ee86dcf2ea..d0ad034c911f 100644
---- a/net/core/skbuff.c
-+++ b/net/core/skbuff.c
-@@ -2258,6 +2258,7 @@ struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,
- 			skb_frag_ref(skb, i);
- 		}
- 		skb_shinfo(n)->nr_frags = i;
-+		skb_shinfo(n)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
- 	}
- 
- 	if (skb_has_frag_list(skb)) {
-@@ -4373,6 +4374,8 @@ int skb_shift(struct sk_buff *tgt, struct sk_buff *skb, int shiftlen)
- 	tgt->ip_summed = CHECKSUM_PARTIAL;
- 	skb->ip_summed = CHECKSUM_PARTIAL;
- 
-+	skb_shinfo(tgt)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
-+
- 	skb_len_add(skb, -shiftlen);
- 	skb_len_add(tgt, shiftlen);
- 
-@@ -4983,7 +4986,8 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
- 		skb_copy_from_linear_data_offset(head_skb, offset,
- 						 skb_put(nskb, hsize), hsize);
- 
--		skb_shinfo(nskb)->flags |= skb_shinfo(head_skb)->flags &
-+		skb_shinfo(nskb)->flags |= (skb_shinfo(head_skb)->flags |
-+					    skb_shinfo(frag_skb)->flags) &
- 					   SKBFL_SHARED_FRAG;
- 
- 		if (skb_zerocopy_clone(nskb, frag_skb, GFP_ATOMIC))
-@@ -5000,6 +5004,9 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
- 				nfrags = skb_shinfo(list_skb)->nr_frags;
- 				frag = skb_shinfo(list_skb)->frags;
- 				frag_skb = list_skb;
-+
-+				skb_shinfo(nskb)->flags |= skb_shinfo(frag_skb)->flags & SKBFL_SHARED_FRAG;
-+
- 				if (!skb_headlen(list_skb)) {
- 					BUG_ON(!nfrags);
- 				} else {
-@@ -6226,6 +6233,8 @@ bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
- 	       from_shinfo->frags,
- 	       from_shinfo->nr_frags * sizeof(skb_frag_t));
- 	to_shinfo->nr_frags += from_shinfo->nr_frags;
-+	if (from_shinfo->nr_frags)
-+		to_shinfo->flags |= from_shinfo->flags & SKBFL_SHARED_FRAG;
- 
- 	if (!skb_cloned(from))
- 		from_shinfo->nr_frags = 0;
 diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
 index 6a5febbdbee4..2d7daca8516c 100644
 --- a/net/ipv4/esp4.c
@@ -7806,18 +7715,6 @@ index 6a5febbdbee4..2d7daca8516c 100644
  		goto cow;
  
  	if (!skb_cloned(skb)) {
-diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
-index 326b58ff1118..691fc76c5508 100644
---- a/net/ipv4/tcp_output.c
-+++ b/net/ipv4/tcp_output.c
-@@ -2606,6 +2606,7 @@ static int tcp_clone_payload(struct sock *sk, struct sk_buff *to,
- 			todo = min_t(int, skb_frag_size(fragfrom),
- 				     probe_size - len);
- 			len += todo;
-+			skb_shinfo(to)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;
- 			if (lastfrag &&
- 			    skb_frag_page(fragfrom) == skb_frag_page(lastfrag) &&
- 			    skb_frag_off(fragfrom) == skb_frag_off(lastfrag) +
 diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
 index 9c06c5a1419d..0fad1dc558b8 100644
 --- a/net/ipv6/esp6.c
@@ -9124,7 +9021,7 @@ index 8d46886d2cca..14a9cdff942b 100644
  	LSM_HOOK_INIT(locked_down, lockdown_is_locked_down),
  };
 diff --git a/sound/soc/amd/acp/acp-sdw-legacy-mach.c b/sound/soc/amd/acp/acp-sdw-legacy-mach.c
-index cd7b1acc7216..097e191cedde 100644
+index a9c8d9545281..097e191cedde 100644
 --- a/sound/soc/amd/acp/acp-sdw-legacy-mach.c
 +++ b/sound/soc/amd/acp/acp-sdw-legacy-mach.c
 @@ -95,6 +95,22 @@ static const struct dmi_system_id soc_sdw_quirk_table[] = {
@@ -9150,33 +9047,15 @@ index cd7b1acc7216..097e191cedde 100644
  	{
  		.callback = soc_sdw_quirk_cb,
  		.matches = {
-@@ -551,11 +567,11 @@ static int mc_probe(struct platform_device *pdev)
- 					  " cfg-amp:%d", amp_num);
- 	if (!card->components)
+@@ -553,7 +569,7 @@ static int mc_probe(struct platform_device *pdev)
  		return -ENOMEM;
--	if (mach->mach_params.dmic_num) {
-+	if (soc_sdw_quirk & ASOC_SDW_ACP_DMIC) {
+ 	if (soc_sdw_quirk & ASOC_SDW_ACP_DMIC) {
  		card->components = devm_kasprintf(card->dev, GFP_KERNEL,
 -						  "%s mic:dmic cfg-mics:%d",
 +						  "%s mic:acp-dmic cfg-mics:%d",
  						  card->components,
--						  mach->mach_params.dmic_num);
-+						  1);
+ 						  1);
  		if (!card->components)
- 			return -ENOMEM;
- 	}
-diff --git a/sound/soc/amd/ps/ps-pdm-dma.c b/sound/soc/amd/ps/ps-pdm-dma.c
-index 7c529fc6ba99..b7741ef2ba21 100644
---- a/sound/soc/amd/ps/ps-pdm-dma.c
-+++ b/sound/soc/amd/ps/ps-pdm-dma.c
-@@ -352,6 +352,7 @@ static const struct snd_soc_component_driver acp63_pdm_component = {
- 	.hw_params	= acp63_pdm_dma_hw_params,
- 	.pointer	= acp63_pdm_dma_pointer,
- 	.pcm_construct	= acp63_pdm_dma_new,
-+	.use_dai_pcm_id = true,
- };
- 
- static int acp63_pdm_audio_probe(struct platform_device *pdev)
 diff --git a/sound/soc/codecs/rt722-sdca.c b/sound/soc/codecs/rt722-sdca.c
 index 79b8b7e70a33..23d2f63d68ef 100644
 --- a/sound/soc/codecs/rt722-sdca.c

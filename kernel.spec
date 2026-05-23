@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.9
-%define specversion 7.0.9
+%define specrpmversion 7.0.10
+%define specversion 7.0.10
 %define patchversion 7.0
-%define pkgrelease 205
+%define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.0.9
+%define tarfile_release 7.0.10
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 205%{?buildid}%{?dist}
+%define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.9
+%define kabiversion 7.0.10
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4871,6 +4871,9 @@ fi\
 #
 #
 %changelog
+* Sat May 23 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.10-0]
+- Linux v7.0.10
+
 * Thu May 21 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.9-5]
 - net: skbuff: preserve shared-frag marker during coalescing (William Bowling)
 - xfrm: esp: restore combined single-frag length gate (Jingguo Tan)
