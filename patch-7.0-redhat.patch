@@ -25,6 +25,11 @@
  drivers/acpi/irq.c                                 |   17 +-
  drivers/acpi/scan.c                                |    9 +
  drivers/ata/libahci.c                              |   18 +
+ drivers/ata/libata-core.c                          |    9 +-
+ drivers/ata/libata-eh.c                            |    8 +-
+ drivers/ata/libata-pmp.c                           |   18 +-
+ drivers/ata/libata-scsi.c                          |  100 +-
+ drivers/ata/sata_sil24.c                           |    6 +-
  drivers/char/ipmi/ipmi_dmi.c                       |   15 +
  drivers/char/ipmi/ipmi_msghandler.c                |   16 +-
  drivers/firmware/efi/Makefile                      |    1 +
@@ -32,10 +37,16 @@
  drivers/firmware/efi/libstub/fdt.c                 |    5 +
  drivers/firmware/efi/libstub/secureboot.c          |   14 +-
  drivers/firmware/efi/secureboot.c                  |   38 +
+ drivers/gpu/drm/i915/display/intel_cx0_phy.c       |   14 +-
+ drivers/gpu/drm/i915/display/intel_cx0_phy.h       |    4 +-
+ drivers/gpu/drm/i915/display/intel_ddi.c           |    6 +-
  drivers/gpu/drm/i915/display/intel_dp_tunnel.c     |   11 +-
+ drivers/gpu/drm/i915/display/intel_dpll_mgr.c      |    5 +
+ drivers/gpu/drm/i915/display/intel_lt_phy.c        |    2 +-
  drivers/hid/hid-rmi.c                              |   66 --
  drivers/hwtracing/coresight/coresight-etm4x-core.c |   19 +
  drivers/input/rmi4/rmi_driver.c                    |  124 ++-
+ drivers/iommu/amd/debugfs.c                        |   43 +-
  drivers/iommu/iommu.c                              |   22 +
  drivers/media/platform/Kconfig                     |    1 +
  drivers/media/platform/Makefile                    |    1 +
@@ -61,8 +72,11 @@
  drivers/nfc/nxp-nci/i2c.c                          |   21 +-
  drivers/pci/quirks.c                               |   24 +
  drivers/usb/core/hub.c                             |    7 +
+ fs/smb/client/cifs_spnego.c                        |   16 +
+ fs/smb/server/vfs_cache.c                          |  102 +-
  include/crypto/krb5.h                              |    9 +-
  include/linux/efi.h                                |   22 +-
+ include/linux/libata.h                             |    7 +-
  include/linux/lsm_hook_defs.h                      |    1 +
  include/linux/mfd/bcm2835-pm.h                     |    7 +
  include/linux/rmi.h                                |    1 +
@@ -93,7 +107,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 95 files changed, 5872 insertions(+), 888 deletions(-)
+ 109 files changed, 6097 insertions(+), 1003 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -1081,6 +1095,326 @@ index c79abdfcd7a9..e23bfb7f94c7 100644
  	/* wait for engine to stop. This could be as long as 500 msec */
  	tmp = ata_wait_register(ap, port_mmio + PORT_CMD,
  				PORT_CMD_LIST_ON, PORT_CMD_LIST_ON, 1, 500);
+diff --git a/drivers/ata/libata-core.c b/drivers/ata/libata-core.c
+index 374993031895..f8c2e3192a70 100644
+--- a/drivers/ata/libata-core.c
++++ b/drivers/ata/libata-core.c
+@@ -5579,6 +5579,7 @@ void ata_link_init(struct ata_port *ap, struct ata_link *link, int pmp)
+ 	link->pmp = pmp;
+ 	link->active_tag = ATA_TAG_POISON;
+ 	link->hw_sata_spd_limit = UINT_MAX;
++	INIT_WORK(&link->deferred_qc_work, ata_scsi_deferred_qc_work);
+ 
+ 	/* can't use iterator, ap isn't initialized yet */
+ 	for (i = 0; i < ATA_MAX_DEVICES; i++) {
+@@ -5661,7 +5662,6 @@ struct ata_port *ata_port_alloc(struct ata_host *host)
+ 	mutex_init(&ap->scsi_scan_mutex);
+ 	INIT_DELAYED_WORK(&ap->hotplug_task, ata_scsi_hotplug);
+ 	INIT_DELAYED_WORK(&ap->scsi_rescan_task, ata_scsi_dev_rescan);
+-	INIT_WORK(&ap->deferred_qc_work, ata_scsi_deferred_qc_work);
+ 	INIT_LIST_HEAD(&ap->eh_done_q);
+ 	init_waitqueue_head(&ap->eh_wait_q);
+ 	init_completion(&ap->park_req_pending);
+@@ -6286,12 +6286,15 @@ static void ata_port_detach(struct ata_port *ap)
+ 
+ 	/* It better be dead now and not have any remaining deferred qc. */
+ 	WARN_ON(!(ap->pflags & ATA_PFLAG_UNLOADED));
+-	WARN_ON(ap->deferred_qc);
+ 
+-	cancel_work_sync(&ap->deferred_qc_work);
+ 	cancel_delayed_work_sync(&ap->hotplug_task);
+ 	cancel_delayed_work_sync(&ap->scsi_rescan_task);
+ 
++	ata_for_each_link(link, ap, PMP_FIRST) {
++		WARN_ON(link->deferred_qc);
++		cancel_work_sync(&link->deferred_qc_work);
++	}
++
+ 	/* Delete port multiplier link transport devices */
+ 	if (ap->pmp_link) {
+ 		int i;
+diff --git a/drivers/ata/libata-eh.c b/drivers/ata/libata-eh.c
+index 23be85418b3b..5e8a63206108 100644
+--- a/drivers/ata/libata-eh.c
++++ b/drivers/ata/libata-eh.c
+@@ -643,11 +643,11 @@ void ata_scsi_cmd_error_handler(struct Scsi_Host *host, struct ata_port *ap,
+ 			if (qc->scsicmd != scmd)
+ 				continue;
+ 			if ((qc->flags & ATA_QCFLAG_ACTIVE) ||
+-			    qc == ap->deferred_qc)
++			    qc == qc->dev->link->deferred_qc)
+ 				break;
+ 		}
+ 
+-		if (i < ATA_MAX_QUEUE && qc == ap->deferred_qc) {
++		if (i < ATA_MAX_QUEUE && qc == qc->dev->link->deferred_qc) {
+ 			/*
+ 			 * This is a deferred command that timed out while
+ 			 * waiting for the command queue to drain. Since the qc
+@@ -658,8 +658,8 @@ void ata_scsi_cmd_error_handler(struct Scsi_Host *host, struct ata_port *ap,
+ 			 * deferred qc work from issuing this qc.
+ 			 */
+ 			WARN_ON_ONCE(qc->flags & ATA_QCFLAG_ACTIVE);
+-			ap->deferred_qc = NULL;
+-			cancel_work(&ap->deferred_qc_work);
++			qc->dev->link->deferred_qc = NULL;
++			cancel_work(&qc->dev->link->deferred_qc_work);
+ 			set_host_byte(scmd, DID_TIME_OUT);
+ 			scsi_eh_finish_cmd(scmd, &ap->eh_done_q);
+ 		} else if (i < ATA_MAX_QUEUE) {
+diff --git a/drivers/ata/libata-pmp.c b/drivers/ata/libata-pmp.c
+index e3adc008fed1..e8540931b4a1 100644
+--- a/drivers/ata/libata-pmp.c
++++ b/drivers/ata/libata-pmp.c
+@@ -110,13 +110,24 @@ int sata_pmp_qc_defer_cmd_switch(struct ata_queued_cmd *qc)
+ {
+ 	struct ata_link *link = qc->dev->link;
+ 	struct ata_port *ap = link->ap;
++	int ret;
+ 
+ 	if (ap->excl_link == NULL || ap->excl_link == link) {
+ 		if (ap->nr_active_links == 0 || ata_link_active(link)) {
+ 			qc->flags |= ATA_QCFLAG_CLEAR_EXCL;
+-			return ata_std_qc_defer(qc);
++			ret = ata_std_qc_defer(qc);
++			if (ret == ATA_DEFER_LINK)
++				return ATA_DEFER_LINK_EXCL;
++			return ret;
+ 		}
+ 
++		/*
++		 * Note: ap->excl_link contains the link that is next in line,
++		 * i.e. implicit round robin. If there is only one link
++		 * dispatching, ap->excl_link will be left unclaimed, allowing
++		 * other links to set ap->excl_link, ensuring that the currently
++		 * active link cannot queue any more.
++		 */
+ 		ap->excl_link = link;
+ 	}
+ 
+@@ -571,8 +582,11 @@ static void sata_pmp_detach(struct ata_device *dev)
+ 	if (ap->ops->pmp_detach)
+ 		ap->ops->pmp_detach(ap);
+ 
+-	ata_for_each_link(tlink, ap, EDGE)
++	ata_for_each_link(tlink, ap, EDGE) {
++		WARN_ON(tlink->deferred_qc);
++		cancel_work_sync(&tlink->deferred_qc_work);
+ 		ata_eh_detach_dev(tlink->device);
++	}
+ 
+ 	spin_lock_irqsave(ap->lock, flags);
+ 	ap->nr_pmp_links = 0;
+diff --git a/drivers/ata/libata-scsi.c b/drivers/ata/libata-scsi.c
+index cd607911d724..0b4adfc8dc84 100644
+--- a/drivers/ata/libata-scsi.c
++++ b/drivers/ata/libata-scsi.c
+@@ -1660,8 +1660,9 @@ static void ata_qc_done(struct ata_queued_cmd *qc)
+ 
+ void ata_scsi_deferred_qc_work(struct work_struct *work)
+ {
+-	struct ata_port *ap =
+-		container_of(work, struct ata_port, deferred_qc_work);
++	struct ata_link *link =
++		container_of(work, struct ata_link, deferred_qc_work);
++	struct ata_port *ap = link->ap;
+ 	struct ata_queued_cmd *qc;
+ 	unsigned long flags;
+ 
+@@ -1672,10 +1673,10 @@ void ata_scsi_deferred_qc_work(struct work_struct *work)
+ 	 * such case, we should not need any more deferring the qc, so warn if
+ 	 * qc_defer() says otherwise.
+ 	 */
+-	qc = ap->deferred_qc;
++	qc = link->deferred_qc;
+ 	if (qc && !ata_port_eh_scheduled(ap)) {
+ 		WARN_ON_ONCE(ap->ops->qc_defer(qc));
+-		ap->deferred_qc = NULL;
++		link->deferred_qc = NULL;
+ 		ata_qc_issue(qc);
+ 	}
+ 
+@@ -1684,8 +1685,7 @@ void ata_scsi_deferred_qc_work(struct work_struct *work)
+ 
+ void ata_scsi_requeue_deferred_qc(struct ata_port *ap)
+ {
+-	struct ata_queued_cmd *qc = ap->deferred_qc;
+-	struct scsi_cmnd *scmd;
++	struct ata_link *link;
+ 
+ 	lockdep_assert_held(ap->lock);
+ 
+@@ -1694,20 +1694,25 @@ void ata_scsi_requeue_deferred_qc(struct ata_port *ap)
+ 	 * do not try to be smart about what to do with this deferred command
+ 	 * and simply requeue it by completing it with DID_REQUEUE.
+ 	 */
+-	if (!qc)
+-		return;
+-
+-	scmd = qc->scsicmd;
+-	ap->deferred_qc = NULL;
+-	cancel_work(&ap->deferred_qc_work);
+-	ata_qc_free(qc);
+-	scmd->result = (DID_REQUEUE << 16);
+-	scsi_done(scmd);
++	ata_for_each_link(link, ap, PMP_FIRST) {
++		struct ata_queued_cmd *qc = link->deferred_qc;
++		struct scsi_cmnd *scmd;
++
++		if (qc) {
++			scmd = qc->scsicmd;
++			link->deferred_qc = NULL;
++			cancel_work(&link->deferred_qc_work);
++			ata_qc_free(qc);
++			scmd->result = (DID_REQUEUE << 16);
++			scsi_done(scmd);
++		}
++	}
+ }
+ 
+-static void ata_scsi_schedule_deferred_qc(struct ata_port *ap)
++static void ata_scsi_schedule_deferred_qc(struct ata_link *link)
+ {
+-	struct ata_queued_cmd *qc = ap->deferred_qc;
++	struct ata_queued_cmd *qc = link->deferred_qc;
++	struct ata_port *ap = link->ap;
+ 
+ 	lockdep_assert_held(ap->lock);
+ 
+@@ -1724,12 +1729,12 @@ static void ata_scsi_schedule_deferred_qc(struct ata_port *ap)
+ 		return;
+ 	}
+ 	if (!ap->ops->qc_defer(qc))
+-		queue_work(system_highpri_wq, &ap->deferred_qc_work);
++		queue_work(system_highpri_wq, &link->deferred_qc_work);
+ }
+ 
+ static void ata_scsi_qc_complete(struct ata_queued_cmd *qc)
+ {
+-	struct ata_port *ap = qc->ap;
++	struct ata_link *link = qc->dev->link;
+ 	struct scsi_cmnd *cmd = qc->scsicmd;
+ 	u8 *cdb = cmd->cmnd;
+ 	bool have_sense = qc->flags & ATA_QCFLAG_SENSE_VALID;
+@@ -1760,22 +1765,23 @@ static void ata_scsi_qc_complete(struct ata_queued_cmd *qc)
+ 
+ 	ata_qc_done(qc);
+ 
+-	ata_scsi_schedule_deferred_qc(ap);
++	ata_scsi_schedule_deferred_qc(link);
+ }
+ 
+ static int ata_scsi_qc_issue(struct ata_port *ap, struct ata_queued_cmd *qc)
+ {
++	struct ata_link *link = qc->dev->link;
+ 	int ret;
+ 
+ 	if (!ap->ops->qc_defer)
+-		goto issue;
++		goto issue_qc;
+ 
+ 	/*
+ 	 * If we already have a deferred qc, then rely on the SCSI layer to
+ 	 * requeue and defer all incoming commands until the deferred qc is
+ 	 * processed, once all on-going commands complete.
+ 	 */
+-	if (ap->deferred_qc) {
++	if (link->deferred_qc) {
+ 		ata_qc_free(qc);
+ 		return SCSI_MLQUEUE_DEVICE_BUSY;
+ 	}
+@@ -1787,38 +1793,46 @@ static int ata_scsi_qc_issue(struct ata_port *ap, struct ata_queued_cmd *qc)
+ 		break;
+ 	case ATA_DEFER_LINK:
+ 		ret = SCSI_MLQUEUE_DEVICE_BUSY;
+-		break;
++		goto defer_qc;
++	case ATA_DEFER_LINK_EXCL:
++		/*
++		 * Drivers making use of ap->excl_link cannot store the QC in
++		 * link->deferred_qc, because the ap->excl_link handling is
++		 * incompatible with the link->deferred_qc workqueue handling.
++		 */
++		ret = SCSI_MLQUEUE_DEVICE_BUSY;
++		goto free_qc;
+ 	case ATA_DEFER_PORT:
+ 		ret = SCSI_MLQUEUE_HOST_BUSY;
+-		break;
++		goto free_qc;
+ 	default:
+ 		WARN_ON_ONCE(1);
+ 		ret = SCSI_MLQUEUE_HOST_BUSY;
+-		break;
++		goto free_qc;
+ 	}
+ 
+-	if (ret) {
+-		/*
+-		 * We must defer this qc: if this is not an NCQ command, keep
+-		 * this qc as a deferred one and report to the SCSI layer that
+-		 * we issued it so that it is not requeued. The deferred qc will
+-		 * be issued with the port deferred_qc_work once all on-going
+-		 * commands complete.
+-		 */
+-		if (!ata_is_ncq(qc->tf.protocol)) {
+-			ap->deferred_qc = qc;
+-			return 0;
+-		}
++issue_qc:
++	ata_qc_issue(qc);
++	return 0;
+ 
+-		/* Force a requeue of the command to defer its execution. */
+-		ata_qc_free(qc);
+-		return ret;
++defer_qc:
++	/*
++	 * We must defer this qc: if this is not an NCQ command, keep
++	 * this qc as a deferred one and report to the SCSI layer that
++	 * we issued it so that it is not requeued. The deferred qc will
++	 * be issued with the port deferred_qc_work once all on-going
++	 * commands complete.
++	 */
++	if (!ata_is_ncq(qc->tf.protocol)) {
++		link->deferred_qc = qc;
++		return 0;
+ 	}
+ 
+-issue:
+-	ata_qc_issue(qc);
++free_qc:
++	/* Force a requeue of the command to defer its execution. */
++	ata_qc_free(qc);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ /**
+diff --git a/drivers/ata/sata_sil24.c b/drivers/ata/sata_sil24.c
+index d642ece9f07a..57f1081b86db 100644
+--- a/drivers/ata/sata_sil24.c
++++ b/drivers/ata/sata_sil24.c
+@@ -789,6 +789,7 @@ static int sil24_qc_defer(struct ata_queued_cmd *qc)
+ 	struct ata_link *link = qc->dev->link;
+ 	struct ata_port *ap = link->ap;
+ 	u8 prot = qc->tf.protocol;
++	int ret;
+ 
+ 	/*
+ 	 * There is a bug in the chip:
+@@ -826,7 +827,10 @@ static int sil24_qc_defer(struct ata_queued_cmd *qc)
+ 		qc->flags |= ATA_QCFLAG_CLEAR_EXCL;
+ 	}
+ 
+-	return ata_std_qc_defer(qc);
++	ret = ata_std_qc_defer(qc);
++	if (ret == ATA_DEFER_LINK)
++		return ATA_DEFER_LINK_EXCL;
++	return ret;
+ }
+ 
+ static enum ata_completion_errors sil24_qc_prep(struct ata_queued_cmd *qc)
 diff --git a/drivers/char/ipmi/ipmi_dmi.c b/drivers/char/ipmi/ipmi_dmi.c
 index 505e32911c34..26f7ee0ccf40 100644
 --- a/drivers/char/ipmi/ipmi_dmi.c
@@ -1395,6 +1729,98 @@ index 000000000000..de0a3714a5d4
 +		}
 +	}
 +}
+diff --git a/drivers/gpu/drm/i915/display/intel_cx0_phy.c b/drivers/gpu/drm/i915/display/intel_cx0_phy.c
+index 7288065d2461..3ef25c942f44 100644
+--- a/drivers/gpu/drm/i915/display/intel_cx0_phy.c
++++ b/drivers/gpu/drm/i915/display/intel_cx0_phy.c
+@@ -127,8 +127,8 @@ static void intel_cx0_phy_transaction_end(struct intel_encoder *encoder, struct
+ 	intel_display_power_put(display, POWER_DOMAIN_DC_OFF, wakeref);
+ }
+ 
+-void intel_clear_response_ready_flag(struct intel_encoder *encoder,
+-				     int lane)
++void intel_cx0_clear_response_ready_flag(struct intel_encoder *encoder,
++					 int lane)
+ {
+ 	struct intel_display *display = to_intel_display(encoder);
+ 
+@@ -155,7 +155,7 @@ void intel_cx0_bus_reset(struct intel_encoder *encoder, int lane)
+ 		return;
+ 	}
+ 
+-	intel_clear_response_ready_flag(encoder, lane);
++	intel_cx0_clear_response_ready_flag(encoder, lane);
+ }
+ 
+ int intel_cx0_wait_for_ack(struct intel_encoder *encoder,
+@@ -222,6 +222,8 @@ static int __intel_cx0_read_once(struct intel_encoder *encoder,
+ 		return -ETIMEDOUT;
+ 	}
+ 
++	intel_cx0_clear_response_ready_flag(encoder, lane);
++
+ 	intel_de_write(display, XELPDP_PORT_M2P_MSGBUS_CTL(display, port, lane),
+ 		       XELPDP_PORT_M2P_TRANSACTION_PENDING |
+ 		       XELPDP_PORT_M2P_COMMAND_READ |
+@@ -231,7 +233,7 @@ static int __intel_cx0_read_once(struct intel_encoder *encoder,
+ 	if (ack < 0)
+ 		return ack;
+ 
+-	intel_clear_response_ready_flag(encoder, lane);
++	intel_cx0_clear_response_ready_flag(encoder, lane);
+ 
+ 	/*
+ 	 * FIXME: Workaround to let HW to settle
+@@ -293,6 +295,8 @@ static int __intel_cx0_write_once(struct intel_encoder *encoder,
+ 		return -ETIMEDOUT;
+ 	}
+ 
++	intel_cx0_clear_response_ready_flag(encoder, lane);
++
+ 	intel_de_write(display, XELPDP_PORT_M2P_MSGBUS_CTL(display, port, lane),
+ 		       XELPDP_PORT_M2P_TRANSACTION_PENDING |
+ 		       (committed ? XELPDP_PORT_M2P_COMMAND_WRITE_COMMITTED :
+@@ -321,7 +325,7 @@ static int __intel_cx0_write_once(struct intel_encoder *encoder,
+ 		return -EINVAL;
+ 	}
+ 
+-	intel_clear_response_ready_flag(encoder, lane);
++	intel_cx0_clear_response_ready_flag(encoder, lane);
+ 
+ 	/*
+ 	 * FIXME: Workaround to let HW to settle
+diff --git a/drivers/gpu/drm/i915/display/intel_cx0_phy.h b/drivers/gpu/drm/i915/display/intel_cx0_phy.h
+index ae98ac23ea22..87d3bdaca3ec 100644
+--- a/drivers/gpu/drm/i915/display/intel_cx0_phy.h
++++ b/drivers/gpu/drm/i915/display/intel_cx0_phy.h
+@@ -25,8 +25,8 @@ struct intel_dpll_hw_state;
+ struct intel_encoder;
+ struct intel_hdmi;
+ 
+-void intel_clear_response_ready_flag(struct intel_encoder *encoder,
+-				     int lane);
++void intel_cx0_clear_response_ready_flag(struct intel_encoder *encoder,
++					 int lane);
+ bool intel_encoder_is_c10phy(struct intel_encoder *encoder);
+ void intel_mtl_pll_enable(struct intel_encoder *encoder,
+ 			  struct intel_dpll *pll,
+diff --git a/drivers/gpu/drm/i915/display/intel_ddi.c b/drivers/gpu/drm/i915/display/intel_ddi.c
+index cb91d07cdaa6..1784fa687c03 100644
+--- a/drivers/gpu/drm/i915/display/intel_ddi.c
++++ b/drivers/gpu/drm/i915/display/intel_ddi.c
+@@ -2653,8 +2653,10 @@ static void mtl_ddi_pre_enable_dp(struct intel_atomic_state *state,
+ 	/* 3. Select Thunderbolt */
+ 	mtl_port_buf_ctl_io_selection(encoder);
+ 
+-	/* 4. Enable Panel Power if PPS is required */
+-	intel_pps_on(intel_dp);
++	/*
++	 * 4. Enable Panel Power if PPS is required
++	 *    moved to intel_dpll_mgr .enable hook
++	 */
+ 
+ 	/* 5. Enable the port PLL */
+ 	intel_ddi_enable_clock(encoder, crtc_state);
 diff --git a/drivers/gpu/drm/i915/display/intel_dp_tunnel.c b/drivers/gpu/drm/i915/display/intel_dp_tunnel.c
 index 55b423fd6b6f..7894ae25e2a7 100644
 --- a/drivers/gpu/drm/i915/display/intel_dp_tunnel.c
@@ -1428,6 +1854,42 @@ index 55b423fd6b6f..7894ae25e2a7 100644
  }
  
  /**
+diff --git a/drivers/gpu/drm/i915/display/intel_dpll_mgr.c b/drivers/gpu/drm/i915/display/intel_dpll_mgr.c
+index 9aa84a430f09..b5655c734c53 100644
+--- a/drivers/gpu/drm/i915/display/intel_dpll_mgr.c
++++ b/drivers/gpu/drm/i915/display/intel_dpll_mgr.c
+@@ -40,6 +40,7 @@
+ #include "intel_hti.h"
+ #include "intel_mg_phy_regs.h"
+ #include "intel_pch_refclk.h"
++#include "intel_pps.h"
+ #include "intel_step.h"
+ #include "intel_tc.h"
+ 
+@@ -4401,6 +4402,10 @@ static void mtl_pll_enable(struct intel_display *display,
+ 	if (drm_WARN_ON(display->drm, !encoder))
+ 		return;
+ 
++	/* Enable Panel Power if PPS is required */
++	if (intel_encoder_is_dp(encoder))
++		intel_pps_on(enc_to_intel_dp(encoder));
++
+ 	intel_mtl_pll_enable(encoder, pll, dpll_hw_state);
+ }
+ 
+diff --git a/drivers/gpu/drm/i915/display/intel_lt_phy.c b/drivers/gpu/drm/i915/display/intel_lt_phy.c
+index 6cdae03ee172..e174ca011d50 100644
+--- a/drivers/gpu/drm/i915/display/intel_lt_phy.c
++++ b/drivers/gpu/drm/i915/display/intel_lt_phy.c
+@@ -1106,7 +1106,7 @@ static int __intel_lt_phy_p2p_write_once(struct intel_encoder *encoder,
+ 	 * This is the time PHY takes to settle down after programming the PHY.
+ 	 */
+ 	udelay(150);
+-	intel_clear_response_ready_flag(encoder, lane);
++	intel_cx0_clear_response_ready_flag(encoder, lane);
+ 	intel_lt_phy_clear_status_p2p(encoder, lane);
+ 
+ 	return 0;
 diff --git a/drivers/hid/hid-rmi.c b/drivers/hid/hid-rmi.c
 index d4af17fdba46..154f0403cbf4 100644
 --- a/drivers/hid/hid-rmi.c
@@ -1773,6 +2235,114 @@ index ccd9338a44db..5c54e522e8a4 100644
  
  	if (data->f01_container->dev.driver) {
  		/* Driver already bound, so enable ATTN now. */
+diff --git a/drivers/iommu/amd/debugfs.c b/drivers/iommu/amd/debugfs.c
+index 20b04996441d..3909a1fb218e 100644
+--- a/drivers/iommu/amd/debugfs.c
++++ b/drivers/iommu/amd/debugfs.c
+@@ -26,22 +26,20 @@ static ssize_t iommu_mmio_write(struct file *filp, const char __user *ubuf,
+ {
+ 	struct seq_file *m = filp->private_data;
+ 	struct amd_iommu *iommu = m->private;
+-	int ret;
+-
+-	iommu->dbg_mmio_offset = -1;
++	int ret, dbg_mmio_offset = iommu->dbg_mmio_offset = -1;
+ 
+ 	if (cnt > OFS_IN_SZ)
+ 		return -EINVAL;
+ 
+-	ret = kstrtou32_from_user(ubuf, cnt, 0, &iommu->dbg_mmio_offset);
++	ret = kstrtos32_from_user(ubuf, cnt, 0, &dbg_mmio_offset);
+ 	if (ret)
+ 		return ret;
+ 
+-	if (iommu->dbg_mmio_offset > iommu->mmio_phys_end - sizeof(u64)) {
+-		iommu->dbg_mmio_offset = -1;
+-		return  -EINVAL;
+-	}
++	if (dbg_mmio_offset < 0 || dbg_mmio_offset >
++			iommu->mmio_phys_end - sizeof(u64))
++		return -EINVAL;
+ 
++	iommu->dbg_mmio_offset = dbg_mmio_offset;
+ 	return cnt;
+ }
+ 
+@@ -49,14 +47,16 @@ static int iommu_mmio_show(struct seq_file *m, void *unused)
+ {
+ 	struct amd_iommu *iommu = m->private;
+ 	u64 value;
++	int dbg_mmio_offset = iommu->dbg_mmio_offset;
+ 
+-	if (iommu->dbg_mmio_offset < 0) {
++	if (dbg_mmio_offset < 0 || dbg_mmio_offset >
++			iommu->mmio_phys_end - sizeof(u64)) {
+ 		seq_puts(m, "Please provide mmio register's offset\n");
+ 		return 0;
+ 	}
+ 
+-	value = readq(iommu->mmio_base + iommu->dbg_mmio_offset);
+-	seq_printf(m, "Offset:0x%x Value:0x%016llx\n", iommu->dbg_mmio_offset, value);
++	value = readq(iommu->mmio_base + dbg_mmio_offset);
++	seq_printf(m, "Offset:0x%x Value:0x%016llx\n", dbg_mmio_offset, value);
+ 
+ 	return 0;
+ }
+@@ -67,23 +67,20 @@ static ssize_t iommu_capability_write(struct file *filp, const char __user *ubuf
+ {
+ 	struct seq_file *m = filp->private_data;
+ 	struct amd_iommu *iommu = m->private;
+-	int ret;
+-
+-	iommu->dbg_cap_offset = -1;
++	int ret, dbg_cap_offset = iommu->dbg_cap_offset = -1;
+ 
+ 	if (cnt > OFS_IN_SZ)
+ 		return -EINVAL;
+ 
+-	ret = kstrtou32_from_user(ubuf, cnt, 0, &iommu->dbg_cap_offset);
++	ret = kstrtos32_from_user(ubuf, cnt, 0, &dbg_cap_offset);
+ 	if (ret)
+ 		return ret;
+ 
+ 	/* Capability register at offset 0x14 is the last IOMMU capability register. */
+-	if (iommu->dbg_cap_offset > 0x14) {
+-		iommu->dbg_cap_offset = -1;
++	if (dbg_cap_offset < 0 || dbg_cap_offset > 0x14)
+ 		return -EINVAL;
+-	}
+ 
++	iommu->dbg_cap_offset = dbg_cap_offset;
+ 	return cnt;
+ }
+ 
+@@ -91,21 +88,21 @@ static int iommu_capability_show(struct seq_file *m, void *unused)
+ {
+ 	struct amd_iommu *iommu = m->private;
+ 	u32 value;
+-	int err;
++	int err, dbg_cap_offset = iommu->dbg_cap_offset;
+ 
+-	if (iommu->dbg_cap_offset < 0) {
++	if (dbg_cap_offset < 0 || dbg_cap_offset > 0x14) {
+ 		seq_puts(m, "Please provide capability register's offset in the range [0x00 - 0x14]\n");
+ 		return 0;
+ 	}
+ 
+-	err = pci_read_config_dword(iommu->dev, iommu->cap_ptr + iommu->dbg_cap_offset, &value);
++	err = pci_read_config_dword(iommu->dev, iommu->cap_ptr + dbg_cap_offset, &value);
+ 	if (err) {
+ 		seq_printf(m, "Not able to read capability register at 0x%x\n",
+-			   iommu->dbg_cap_offset);
++			   dbg_cap_offset);
+ 		return 0;
+ 	}
+ 
+-	seq_printf(m, "Offset:0x%x Value:0x%08x\n", iommu->dbg_cap_offset, value);
++	seq_printf(m, "Offset:0x%x Value:0x%08x\n", dbg_cap_offset, value);
+ 
+ 	return 0;
+ }
 diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
 index ef08c2c4ec95..c22d02658ea4 100644
 --- a/drivers/iommu/iommu.c
@@ -7490,6 +8060,209 @@ index 24960ba9caa9..32597cdb72ef 100644
  	/* Lock the device, then check to see if we were
  	 * disconnected while waiting for the lock to succeed. */
  	usb_lock_device(hdev);
+diff --git a/fs/smb/client/cifs_spnego.c b/fs/smb/client/cifs_spnego.c
+index 3a41bbada04c..44c407275680 100644
+--- a/fs/smb/client/cifs_spnego.c
++++ b/fs/smb/client/cifs_spnego.c
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include <linux/list.h>
++#include <linux/cred.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <keys/user-type.h>
+@@ -40,12 +41,27 @@ cifs_spnego_key_destroy(struct key *key)
+ 	kfree(key->payload.data[0]);
+ }
+ 
++static int
++cifs_spnego_key_vet_description(const char *description)
++{
++	/*
++	 * cifs.spnego descriptions are authority-bearing inputs to cifs.upcall.
++	 * They are only valid when produced by CIFS while using the private
++	 * spnego_cred installed below.  Do not let userspace create this type
++	 * of key through request_key(2)/add_key(2), since the helper treats
++	 * pid/uid/creduid/upcall_target as kernel-originating fields.
++	 */
++	if (current_cred() != spnego_cred)
++		return -EPERM;
++	return 0;
++}
+ 
+ /*
+  * keytype for CIFS spnego keys
+  */
+ struct key_type cifs_spnego_key_type = {
+ 	.name		= "cifs.spnego",
++	.vet_description = cifs_spnego_key_vet_description,
+ 	.instantiate	= cifs_spnego_key_instantiate,
+ 	.destroy	= cifs_spnego_key_destroy,
+ 	.describe	= user_describe,
+diff --git a/fs/smb/server/vfs_cache.c b/fs/smb/server/vfs_cache.c
+index 3551f01a3fa0..60b7a2d60238 100644
+--- a/fs/smb/server/vfs_cache.c
++++ b/fs/smb/server/vfs_cache.c
+@@ -418,6 +418,14 @@ static void __ksmbd_remove_durable_fd(struct ksmbd_file *fp)
+ 		return;
+ 
+ 	idr_remove(global_ft.idr, fp->persistent_id);
++	/*
++	 * Clear persistent_id so a later __ksmbd_close_fd() that runs from a
++	 * delayed putter (e.g. when a concurrent ksmbd_lookup_fd_inode()
++	 * walker held the final reference) does not re-issue idr_remove() on
++	 * an id that idr_alloc_cyclic() may have already handed out to a new
++	 * durable handle.
++	 */
++	fp->persistent_id = KSMBD_NO_FID;
+ }
+ 
+ static void ksmbd_remove_durable_fd(struct ksmbd_file *fp)
+@@ -510,6 +518,20 @@ static struct ksmbd_file *__ksmbd_lookup_fd(struct ksmbd_file_table *ft,
+ 
+ static void __put_fd_final(struct ksmbd_work *work, struct ksmbd_file *fp)
+ {
++	/*
++	 * Detached durable fp -- session_fd_check() cleared fp->conn at
++	 * preserve, so this fp is no longer tracked by any conn's
++	 * stats.open_files_count.  This happens when
++	 * ksmbd_scavenger_dispose_dh() hands the final close off to an
++	 * m_fp_list walker (e.g. ksmbd_lookup_fd_inode()) whose work->conn
++	 * is unrelated to the conn that originally opened the handle; close
++	 * via the NULL-ft path so we do not underflow that unrelated
++	 * counter.
++	 */
++	if (!fp->conn) {
++		__ksmbd_close_fd(NULL, fp);
++		return;
++	}
+ 	__ksmbd_close_fd(&work->sess->file_table, fp);
+ 	atomic_dec(&work->conn->stats.open_files_count);
+ }
+@@ -881,24 +903,37 @@ static bool ksmbd_durable_scavenger_alive(void)
+ 	return true;
+ }
+ 
+-static void ksmbd_scavenger_dispose_dh(struct list_head *head)
++static void ksmbd_scavenger_dispose_dh(struct ksmbd_file *fp)
+ {
+-	while (!list_empty(head)) {
+-		struct ksmbd_file *fp;
++	/*
++	 * Durable-preserved fp can remain linked on f_ci->m_fp_list for
++	 * share-mode checks.  Unlink it before final close; fp->node is not
++	 * available as a scavenger-private list node because re-adding it to
++	 * another list corrupts m_fp_list.
++	 */
++	down_write(&fp->f_ci->m_lock);
++	list_del_init(&fp->node);
++	up_write(&fp->f_ci->m_lock);
+ 
+-		fp = list_first_entry(head, struct ksmbd_file, node);
+-		list_del_init(&fp->node);
++	/*
++	 * Drop both the durable lifetime reference and the transient reference
++	 * taken by the scavenger under global_ft.lock.  If a concurrent
++	 * ksmbd_lookup_fd_inode() (or any other m_fp_list walker) snatched fp
++	 * before the unlink above, that holder owns the final close via
++	 * ksmbd_fd_put() -> __ksmbd_close_fd().  Otherwise the scavenger is
++	 * the last putter and finalises fp here.
++	 */
++	if (atomic_sub_and_test(2, &fp->refcount))
+ 		__ksmbd_close_fd(NULL, fp);
+-	}
+ }
+ 
+ static int ksmbd_durable_scavenger(void *dummy)
+ {
+ 	struct ksmbd_file *fp = NULL;
++	struct ksmbd_file *expired_fp;
+ 	unsigned int id;
+ 	unsigned int min_timeout = 1;
+ 	bool found_fp_timeout;
+-	LIST_HEAD(scavenger_list);
+ 	unsigned long remaining_jiffies;
+ 
+ 	__module_get(THIS_MODULE);
+@@ -908,8 +943,6 @@ static int ksmbd_durable_scavenger(void *dummy)
+ 		if (try_to_freeze())
+ 			continue;
+ 
+-		found_fp_timeout = false;
+-
+ 		remaining_jiffies = wait_event_timeout(dh_wq,
+ 				   ksmbd_durable_scavenger_alive() == false,
+ 				   __msecs_to_jiffies(min_timeout));
+@@ -918,23 +951,39 @@ static int ksmbd_durable_scavenger(void *dummy)
+ 		else
+ 			min_timeout = DURABLE_HANDLE_MAX_TIMEOUT;
+ 
+-		write_lock(&global_ft.lock);
+-		idr_for_each_entry(global_ft.idr, fp, id) {
+-			if (!fp->durable_timeout)
+-				continue;
++		do {
++			expired_fp = NULL;
++			found_fp_timeout = false;
+ 
+-			if (atomic_read(&fp->refcount) > 1 ||
+-			    fp->conn)
+-				continue;
+-
+-			found_fp_timeout = true;
+-			if (fp->durable_scavenger_timeout <=
+-			    jiffies_to_msecs(jiffies)) {
+-				__ksmbd_remove_durable_fd(fp);
+-				list_add(&fp->node, &scavenger_list);
+-			} else {
++			write_lock(&global_ft.lock);
++			idr_for_each_entry(global_ft.idr, fp, id) {
+ 				unsigned long durable_timeout;
+ 
++				if (!fp->durable_timeout)
++					continue;
++
++				if (atomic_read(&fp->refcount) > 1 ||
++				    fp->conn)
++					continue;
++
++				found_fp_timeout = true;
++				if (fp->durable_scavenger_timeout <=
++				    jiffies_to_msecs(jiffies)) {
++					__ksmbd_remove_durable_fd(fp);
++					/*
++					 * Take a transient reference so fp
++					 * cannot be freed by an in-flight
++					 * ksmbd_lookup_fd_inode() that found
++					 * it through f_ci->m_fp_list while we
++					 * drop global_ft.lock and reach the
++					 * m_fp_list unlink in
++					 * ksmbd_scavenger_dispose_dh().
++					 */
++					atomic_inc(&fp->refcount);
++					expired_fp = fp;
++					break;
++				}
++
+ 				durable_timeout =
+ 					fp->durable_scavenger_timeout -
+ 						jiffies_to_msecs(jiffies);
+@@ -942,10 +991,11 @@ static int ksmbd_durable_scavenger(void *dummy)
+ 				if (min_timeout > durable_timeout)
+ 					min_timeout = durable_timeout;
+ 			}
+-		}
+-		write_unlock(&global_ft.lock);
++			write_unlock(&global_ft.lock);
+ 
+-		ksmbd_scavenger_dispose_dh(&scavenger_list);
++			if (expired_fp)
++				ksmbd_scavenger_dispose_dh(expired_fp);
++		} while (expired_fp);
+ 
+ 		if (found_fp_timeout == false)
+ 			break;
 diff --git a/include/crypto/krb5.h b/include/crypto/krb5.h
 index 71dd38f59be1..aac3ecf88467 100644
 --- a/include/crypto/krb5.h
@@ -7578,6 +8351,38 @@ index 664898d09ff5..34f476d02181 100644
  static inline
  enum efi_secureboot_mode efi_get_secureboot_mode(efi_get_variable_t *get_var)
  {
+diff --git a/include/linux/libata.h b/include/linux/libata.h
+index 00346ce3af5e..93ab3595c640 100644
+--- a/include/linux/libata.h
++++ b/include/linux/libata.h
+@@ -371,6 +371,7 @@ enum {
+ 	/* return values for ->qc_defer */
+ 	ATA_DEFER_LINK		= 1,
+ 	ATA_DEFER_PORT		= 2,
++	ATA_DEFER_LINK_EXCL	= 3,
+ 
+ 	/* desc_len for ata_eh_info and context */
+ 	ATA_EH_DESC_LEN		= 80,
+@@ -854,6 +855,9 @@ struct ata_link {
+ 	unsigned int		sata_spd;	/* current SATA PHY speed */
+ 	enum ata_lpm_policy	lpm_policy;
+ 
++	struct work_struct	deferred_qc_work;
++	struct ata_queued_cmd	*deferred_qc;
++
+ 	/* record runtime error info, protected by host_set lock */
+ 	struct ata_eh_info	eh_info;
+ 	/* EH context */
+@@ -899,9 +903,6 @@ struct ata_port {
+ 	u64			qc_active;
+ 	int			nr_active_links; /* #links with active qcs */
+ 
+-	struct work_struct	deferred_qc_work;
+-	struct ata_queued_cmd	*deferred_qc;
+-
+ 	struct ata_link		link;		/* host default link */
+ 	struct ata_link		*slave_link;	/* see ata_slave_link_init() */
+ 
 diff --git a/include/linux/lsm_hook_defs.h b/include/linux/lsm_hook_defs.h
 index b4958167e381..64ffe8c2dacd 100644
 --- a/include/linux/lsm_hook_defs.h

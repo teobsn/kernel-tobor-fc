@@ -1,3 +1,36 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/d82d5fbd2b0d6b36f3e2eb180bec55ebee49f64a
+ d82d5fbd2b0d6b36f3e2eb180bec55ebee49f64a ata: libata-scsi: do not needlessly defer commands when using PMP with FBS
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5b3693b70165664ce941249fec8e005a5b093264
+ 5b3693b70165664ce941249fec8e005a5b093264 ata: libata-scsi: do not use the deferred QC feature on PMPs with CBS
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/3214dc5ecbb2743ef43dd00b76dce3b3714328f6
+ 3214dc5ecbb2743ef43dd00b76dce3b3714328f6 ata: libata-scsi: do not use the deferred QC feature for ATA_DEFER_PORT
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/8be710d3949bd63939d269ba8083eb408b5366f8
+ 8be710d3949bd63939d269ba8083eb408b5366f8 ata: libata-scsi: improve readability of ata_scsi_qc_issue()
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/889538e346244d6596349bc7b2248cfed20b3661
+ 889538e346244d6596349bc7b2248cfed20b3661 smb: client: reject userspace cifs.spnego descriptions
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/9e32b643f570a31ca38e4d09db93a43e0c59173c
+ 9e32b643f570a31ca38e4d09db93a43e0c59173c ksmbd: close durable scavenger races against m_fp_list lookups
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5bc92df226d9dd13446919ea2840119c105d48d9
+ 5bc92df226d9dd13446919ea2840119c105d48d9 iommu/amd: Remove latent out-of-bounds access in IOMMU debugfs
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/ad844ac8ba8a30ae974c57e0f140cd9088f50983
+ ad844ac8ba8a30ae974c57e0f140cd9088f50983 iommu/amd: Fix illegal cap/mmio access in IOMMU debugfs
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/a63bd8dc4b346de2b7c204787ed29e56db84a711
+ a63bd8dc4b346de2b7c204787ed29e56db84a711 drm/i915/cx0: Rename intel_clear_response_ready flag
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/be87cc2732d4e6e651fac2004da0c84f6b1a80d5
+ be87cc2732d4e6e651fac2004da0c84f6b1a80d5 drm/i915/cx0: Clear response ready & error bit
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/401ee756f0ef11595447f673aba5f858f4dcb85d
+ 401ee756f0ef11595447f673aba5f858f4dcb85d drm/i915/pps: Enable panel power earlier
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/2dd4102a953ba3020914a47e6984d2f462deebc4
  2dd4102a953ba3020914a47e6984d2f462deebc4 net: skbuff: preserve shared-frag marker during coalescing
 
