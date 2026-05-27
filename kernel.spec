@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.10
 %define specversion 7.0.10
 %define patchversion 7.0
-%define pkgrelease 200
+%define pkgrelease 201
 %define kversion 7
 %define tarfile_release 7.0.10
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 200%{?buildid}%{?dist}
+%define specrelease 201%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.10
 
