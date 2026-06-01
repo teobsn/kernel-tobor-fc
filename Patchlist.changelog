@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/9a0b5572ccfd1b7c79dfb9c683e89758893ecf0a
+ 9a0b5572ccfd1b7c79dfb9c683e89758893ecf0a Revert "crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/92fc56ac678ac274ab0237bfa037b66bbd55b48c
+ 92fc56ac678ac274ab0237bfa037b66bbd55b48c Revert "rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/703c1c4d9d6e52276954a909aa59a1fc33cbc2b8
+ 703c1c4d9d6e52276954a909aa59a1fc33cbc2b8 Revert "rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer"
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/d82d5fbd2b0d6b36f3e2eb180bec55ebee49f64a
  d82d5fbd2b0d6b36f3e2eb180bec55ebee49f64a ata: libata-scsi: do not needlessly defer commands when using PMP with FBS
 

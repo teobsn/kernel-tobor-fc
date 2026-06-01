@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.10
-%define specversion 7.0.10
+%define specrpmversion 7.0.11
+%define specversion 7.0.11
 %define patchversion 7.0
-%define pkgrelease 201
+%define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.0.10
+%define tarfile_release 7.0.11
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 201%{?buildid}%{?dist}
+%define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.10
+%define kabiversion 7.0.11
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4871,6 +4871,12 @@ fi\
 #
 #
 %changelog
+* Mon Jun 01 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.11-1]
+- Revert "crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks" (Justin M. Forbes)
+- Revert "rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg" (Justin M. Forbes)
+- Revert "rxrpc: Fix RESPONSE packet verification to extract skb to a linear buffer" (Justin M. Forbes)
+- Linux v7.0.11
+
 * Wed May 27 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.10-1]
 - ata: libata-scsi: do not needlessly defer commands when using PMP with FBS (Niklas Cassel)
 - ata: libata-scsi: do not use the deferred QC feature on PMPs with CBS (Niklas Cassel)
