@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.11
-%define specversion 7.0.11
+%define specrpmversion 7.0.12
+%define specversion 7.0.12
 %define patchversion 7.0
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.0.11
+%define tarfile_release 7.0.12
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.11
+%define kabiversion 7.0.12
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4847,6 +4847,12 @@ fi\
 #
 #
 %changelog
+* Tue Jun 09 2026 Augusto Caringi <acaringi@redhat.com> [7.0.12-1]
+- Revert "xfrm: esp: restore combined single-frag length gate" (Justin M. Forbes)
+- Revert "ipv6: preserve insertion order for same-scope addresses" (Justin M. Forbes)
+- scsi: target: iscsi: Validate CHAP_R length before base64 decode (Alexandru Hossu)
+- Linux v7.0.12
+
 * Mon Jun 01 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.11-1]
 - Revert "crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks" (Justin M. Forbes)
 - Revert "rxrpc: Fix DATA decrypt vs splice() by copying data to buffer in recvmsg" (Justin M. Forbes)

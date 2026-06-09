@@ -61,7 +61,6 @@
  drivers/mfd/bcm2835-pm.c                           |    9 +-
  drivers/net/ethernet/cadence/macb.h                |   35 +
  drivers/net/ethernet/cadence/macb_main.c           |  736 ++++++++------
- drivers/nfc/nxp-nci/i2c.c                          |   21 +-
  drivers/pci/quirks.c                               |   24 +
  drivers/usb/core/hub.c                             |    7 +
  include/linux/efi.h                                |   22 +-
@@ -71,8 +70,6 @@
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    3 +
- net/ipv4/esp4.c                                    |    5 +-
- net/ipv6/esp6.c                                    |    5 +-
  net/sched/act_pedit.c                              |   72 +-
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
@@ -84,7 +81,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 86 files changed, 5584 insertions(+), 593 deletions(-)
+ 83 files changed, 5558 insertions(+), 588 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -216,7 +213,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index d2a1c3a1ab44..5343e34c0fb1 100644
+index 7c25748018cb..9e9860c591f5 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -7397,54 +7394,6 @@ index 99e7d5cf3786..a12aa21244e8 100644
  		disable_irq_wake(bp->queues[0].irq);
  
  		/* Now make sure we disable phy before moving
-diff --git a/drivers/nfc/nxp-nci/i2c.c b/drivers/nfc/nxp-nci/i2c.c
-index b3d34433bd14..a6c08175d9dd 100644
---- a/drivers/nfc/nxp-nci/i2c.c
-+++ b/drivers/nfc/nxp-nci/i2c.c
-@@ -16,6 +16,7 @@
- #include <linux/delay.h>
- #include <linux/i2c.h>
- #include <linux/interrupt.h>
-+#include <linux/irq.h>
- #include <linux/module.h>
- #include <linux/nfc.h>
- #include <linux/gpio/consumer.h>
-@@ -267,6 +268,7 @@ static int nxp_nci_i2c_probe(struct i2c_client *client)
- {
- 	struct device *dev = &client->dev;
- 	struct nxp_nci_i2c_phy *phy;
-+	unsigned long irqflags;
- 	int r;
- 
- 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
-@@ -303,9 +305,26 @@ static int nxp_nci_i2c_probe(struct i2c_client *client)
- 	if (r < 0)
- 		return r;
- 
-+	/*
-+	 * ACPI platforms may report incorrect IRQ trigger types
-+	 * (e.g. level-high), which can lead to interrupt storms.
-+	 *
-+	 * Use the historically stable rising-edge trigger for ACPI devices.
-+	 *
-+	 * On non-ACPI systems (e.g. Device Tree), prefer the firmware-
-+	 * provided trigger type, falling back to rising-edge if not set.
-+	 */
-+	if (ACPI_COMPANION(dev)) {
-+		irqflags = IRQF_TRIGGER_RISING;
-+	} else {
-+		irqflags = irq_get_trigger_type(client->irq);
-+		if (!irqflags)
-+			irqflags = IRQF_TRIGGER_RISING;
-+	}
-+
- 	r = request_threaded_irq(client->irq, NULL,
- 				 nxp_nci_i2c_irq_thread_fn,
--				 IRQF_ONESHOT,
-+				 irqflags | IRQF_ONESHOT,
- 				 NXP_NCI_I2C_DRIVER_NAME, phy);
- 	if (r < 0)
- 		nfc_err(&client->dev, "Unable to register IRQ handler\n");
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
 index 48946cca4be7..a1f5fe8e583f 100644
 --- a/drivers/pci/quirks.c
@@ -7668,52 +7617,6 @@ index a84753983467..3e20f61724ad 100644
  	if (headlen <= offset) {
  		skb_frag_t *frag;
  		skb_frag_t *frag2;
-diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
-index 6a5febbdbee4..2d7daca8516c 100644
---- a/net/ipv4/esp4.c
-+++ b/net/ipv4/esp4.c
-@@ -410,6 +410,7 @@ int esp_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info *
- 	struct page *page;
- 	struct sk_buff *trailer;
- 	int tailen = esp->tailen;
-+	unsigned int allocsize;
- 
- 	/* this is non-NULL only with TCP/UDP Encapsulation */
- 	if (x->encap) {
-@@ -419,8 +420,8 @@ int esp_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info *
- 			return err;
- 	}
- 
--	if (ALIGN(tailen, L1_CACHE_BYTES) > PAGE_SIZE ||
--	    ALIGN(skb->data_len, L1_CACHE_BYTES) > PAGE_SIZE)
-+	allocsize = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);
-+	if (allocsize > PAGE_SIZE)
- 		goto cow;
- 
- 	if (!skb_cloned(skb)) {
-diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
-index 9c06c5a1419d..0fad1dc558b8 100644
---- a/net/ipv6/esp6.c
-+++ b/net/ipv6/esp6.c
-@@ -440,6 +440,7 @@ int esp6_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info
- 	struct page *page;
- 	struct sk_buff *trailer;
- 	int tailen = esp->tailen;
-+	unsigned int allocsize;
- 
- 	if (x->encap) {
- 		int err = esp6_output_encap(x, skb, esp);
-@@ -448,8 +449,8 @@ int esp6_output_head(struct xfrm_state *x, struct sk_buff *skb, struct esp_info
- 			return err;
- 	}
- 
--	if (ALIGN(tailen, L1_CACHE_BYTES) > PAGE_SIZE ||
--	    ALIGN(skb->data_len, L1_CACHE_BYTES) > PAGE_SIZE)
-+	allocsize = ALIGN(skb->data_len + tailen, L1_CACHE_BYTES);
-+	if (allocsize > PAGE_SIZE)
- 		goto cow;
- 
- 	if (!skb_cloned(skb)) {
 diff --git a/net/sched/act_pedit.c b/net/sched/act_pedit.c
 index bc20f08a2789..1aa95c34ad87 100644
 --- a/net/sched/act_pedit.c

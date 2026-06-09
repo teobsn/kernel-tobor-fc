@@ -1,3 +1,12 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/111e288c147f0d1312f96b47bfbb69f6e2bc73b4
+ 111e288c147f0d1312f96b47bfbb69f6e2bc73b4 Revert "xfrm: esp: restore combined single-frag length gate"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/7fd666cd6c4ebc9914a1c349dbc923541b4d35c6
+ 7fd666cd6c4ebc9914a1c349dbc923541b4d35c6 Revert "ipv6: preserve insertion order for same-scope addresses"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/66b536bf79c4d6f755b31fb631887fe3d214dd2d
+ 66b536bf79c4d6f755b31fb631887fe3d214dd2d scsi: target: iscsi: Validate CHAP_R length before base64 decode
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/9a0b5572ccfd1b7c79dfb9c683e89758893ecf0a
  9a0b5572ccfd1b7c79dfb9c683e89758893ecf0a Revert "crypto/krb5, rxrpc: Fix lack of pre-decrypt/pre-verify length checks"
 
