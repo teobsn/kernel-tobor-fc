@@ -193,13 +193,13 @@ Summary: The Linux kernel
 %define specrpmversion 7.0.12
 %define specversion 7.0.12
 %define patchversion 7.0
-%define pkgrelease 200
+%define pkgrelease 201
 %define kversion 7
 %define tarfile_release 7.0.12
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 200%{?buildid}%{?dist}
+%define specrelease 201%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.0.12
 
@@ -4847,6 +4847,13 @@ fi\
 #
 #
 %changelog
+* Wed Jun 10 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.12-1]
+- New config setting for ARM64 Erratum (Justin M. Forbes)
+- arm64: errata: Mitigate TLBI errata on NVIDIA Olympus CPU (Shanker Donthineni)
+- arm64: errata: Mitigate TLBI errata on various Arm CPUs (Mark Rutland)
+- arm64: cputype: Add C1-Premium definitions (Mark Rutland)
+- arm64: cputype: Add C1-Ultra definitions (Mark Rutland)
+
 * Tue Jun 09 2026 Augusto Caringi <acaringi@redhat.com> [7.0.12-1]
 - Revert "xfrm: esp: restore combined single-frag length gate" (Justin M. Forbes)
 - Revert "ipv6: preserve insertion order for same-scope addresses" (Justin M. Forbes)

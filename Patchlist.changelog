@@ -1,3 +1,15 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/ba3d5305b04a5b4c142b5f72b592a0d2f303a85b
+ ba3d5305b04a5b4c142b5f72b592a0d2f303a85b arm64: errata: Mitigate TLBI errata on NVIDIA Olympus CPU
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/0eb833109dca73afde4b7836e40b3e4bb5f561cc
+ 0eb833109dca73afde4b7836e40b3e4bb5f561cc arm64: errata: Mitigate TLBI errata on various Arm CPUs
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/18bb2a3f33bd8f17168952979a5287ba4fea2daa
+ 18bb2a3f33bd8f17168952979a5287ba4fea2daa arm64: cputype: Add C1-Premium definitions
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/29be6ea60e21ddb274c7cb199c864ab304ffd23c
+ 29be6ea60e21ddb274c7cb199c864ab304ffd23c arm64: cputype: Add C1-Ultra definitions
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/111e288c147f0d1312f96b47bfbb69f6e2bc73b4
  111e288c147f0d1312f96b47bfbb69f6e2bc73b4 Revert "xfrm: esp: restore combined single-frag length gate"
 
