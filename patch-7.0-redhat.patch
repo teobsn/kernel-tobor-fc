@@ -1,20 +1,17 @@
  Documentation/admin-guide/media/amdisp4-1.rst      |   63 ++
  Documentation/admin-guide/media/amdisp4.dot        |    6 +
  Documentation/admin-guide/media/v4l-drivers.rst    |    1 +
- Documentation/arch/arm64/silicon-errata.rst        |   46 +
  MAINTAINERS                                        |   25 +
  Makefile                                           |   30 +
  arch/arm/Kconfig                                   |    4 +-
  arch/arm/boot/dts/broadcom/bcm2835-common.dtsi     |    7 +-
  arch/arm/boot/dts/broadcom/bcm2835-rpi.dtsi        |   16 +-
- arch/arm64/Kconfig                                 |   39 +-
+ arch/arm64/Kconfig                                 |    2 +-
  .../boot/dts/broadcom/bcm2712-rpi-5-b-base.dtsi    |   55 +-
  arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts   |   24 +
  arch/arm64/boot/dts/broadcom/bcm2712.dtsi          |   29 +-
  arch/arm64/boot/dts/broadcom/rp1-common.dtsi       |  105 ++
  arch/arm64/boot/dts/freescale/imx93.dtsi           |   24 +
- arch/arm64/include/asm/cputype.h                   |    6 +
- arch/arm64/kernel/cpu_errata.c                     |   33 +-
  arch/arm64/kernel/setup.c                          |   27 +
  arch/s390/include/asm/ipl.h                        |    1 +
  arch/s390/kernel/ipl.c                             |    5 +
@@ -73,7 +70,6 @@
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    3 +
- net/sched/act_pedit.c                              |   72 +-
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
@@ -84,7 +80,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 86 files changed, 5678 insertions(+), 590 deletions(-)
+ 82 files changed, 5499 insertions(+), 575 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -179,134 +175,6 @@ index 393f83e8dc4d..0fb88449fffd 100644
  	bttv
  	c3-isp
  	cafe_ccic
-diff --git a/Documentation/arch/arm64/silicon-errata.rst b/Documentation/arch/arm64/silicon-errata.rst
-index 4c300caad901..9d680c1a7bef 100644
---- a/Documentation/arch/arm64/silicon-errata.rst
-+++ b/Documentation/arch/arm64/silicon-errata.rst
-@@ -128,16 +128,28 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A76      | #3324349        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A76      | #4193800        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A76AE    | #4193801        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A77      | #1491015        | N/A                         |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A77      | #1508412        | ARM64_ERRATUM_1508412       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A77      | #3324348        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A77      | #4193798        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A78      | #3324344        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A78      | #4193791        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A78AE    | #4193793        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A78C     | #3324346,3324347| ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A78C     | #4193794        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A710     | #2119858        | ARM64_ERRATUM_2119858       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A710     | #2054223        | ARM64_ERRATUM_2054223       |
-@@ -146,6 +158,8 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A710     | #3324338        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-A710     | #4193788        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A715     | #2645198        | ARM64_ERRATUM_2645198       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-A715     | #3456084        | ARM64_ERRATUM_3194386       |
-@@ -158,20 +172,32 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X1       | #3324344        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X1       | #4193791        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X1C      | #3324346        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X1C      | #4193792        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X2       | #2119858        | ARM64_ERRATUM_2119858       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X2       | #2224489        | ARM64_ERRATUM_2224489       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X2       | #3324338        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X2       | #4193788        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X3       | #3324335        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X3       | #4193786        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X4       | #3194386        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X4       | #4118414        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Cortex-X925     | #3324334        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Cortex-X925     | #4193781        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N1     | #1188873,1418040| ARM64_ERRATUM_1418040       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N1     | #1349291        | N/A                         |
-@@ -182,6 +208,8 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N1     | #3324349        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-N1     | #4193800        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N2     | #2139208        | ARM64_ERRATUM_2139208       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N2     | #2067961        | ARM64_ERRATUM_2067961       |
-@@ -190,18 +218,34 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N2     | #3324339        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-N2     | #4193789        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-N3     | #3456111        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-V1     | #1619801        | N/A                         |
- +----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-V1     | #3324341        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-V1     | #4193790        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-V2     | #3324336        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-V2     | #4193787        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-V3     | #3312417        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-V3     | #4193784        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | Neoverse-V3AE   | #3312417        | ARM64_ERRATUM_3194386       |
- +----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | Neoverse-V3AE   | #4193784        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | C1-Premium      | #4193780        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | C1-Pro          | #4193714        | ARM64_ERRATUM_4193714       |
-++----------------+-----------------+-----------------+-----------------------------+
-+| ARM            | C1-Ultra        | #4193780        | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | ARM            | MMU-500         | #841119,826419  | ARM_SMMU_MMU_500_CPRE_ERRATA|
- |                |                 | #562869,1047329 |                             |
- +----------------+-----------------+-----------------+-----------------------------+
-@@ -245,6 +289,8 @@ stable kernels.
- +----------------+-----------------+-----------------+-----------------------------+
- | NVIDIA         | Carmel Core     | N/A             | NVIDIA_CARMEL_CNP_ERRATUM   |
- +----------------+-----------------+-----------------+-----------------------------+
-+| NVIDIA         | Olympus core    | T410-OLY-1029   | ARM64_ERRATUM_4118414       |
-++----------------+-----------------+-----------------+-----------------------------+
- | NVIDIA         | T241 GICv3/4.x  | T241-FABRIC-4   | N/A                         |
- +----------------+-----------------+-----------------+-----------------------------+
- +----------------+-----------------+-----------------+-----------------------------+
 diff --git a/MAINTAINERS b/MAINTAINERS
 index d1cc0e12fe1f..985c66951475 100644
 --- a/MAINTAINERS
@@ -344,7 +212,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index 7c25748018cb..9e9860c591f5 100644
+index 3466a58e8435..c73faad6e97d 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -365,7 +233,7 @@ index 7c25748018cb..9e9860c591f5 100644
  ifdef mixed-build
  # ===========================================================================
  # We're called with mixed targets (*config and build targets).
-@@ -1366,6 +1377,8 @@ uapi-asm-generic:
+@@ -1367,6 +1378,8 @@ uapi-asm-generic:
  # Generate some files
  # ---------------------------------------------------------------------------
  
@@ -374,7 +242,7 @@ index 7c25748018cb..9e9860c591f5 100644
  # KERNELRELEASE can change from a few different places, meaning version.h
  # needs to be updated, so this check is forced on all builds
  
-@@ -2031,6 +2044,23 @@ endif
+@@ -2032,6 +2045,23 @@ endif
  
  ifdef CONFIG_MODULES
  
@@ -399,7 +267,7 @@ index 7c25748018cb..9e9860c591f5 100644
  	@:
  
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index ec33376f8e2b..255679ba5351 100644
+index 0bbf2fbc76e0..a51d50ffb33b 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -1213,9 +1213,9 @@ config HIGHMEM
@@ -470,54 +338,10 @@ index e9bf41b9f5c1..46c91468f4c5 100644
  			compatible = "brcm,bcm2835-vchiq";
  			reg = <0x7e00b840 0x3c>;
 diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 9ea19b74b6c3..fa7636f85d77 100644
+index 81fa36603e3e..7b7fa5a70b37 100644
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -1176,6 +1176,43 @@ config ARM64_ERRATUM_4311569
- 
- 	  If unsure, say Y.
- 
-+config ARM64_ERRATUM_4118414
-+	bool "Cortex-*/Neoverse-*/C1-*/Olympus: Completion of affected memory accesses might not be guaranteed by completion of a TLBI"
-+	default y
-+	select ARM64_WORKAROUND_REPEAT_TLBI
-+	help
-+	  This option adds a workaround for the following errata:
-+
-+	  * ARM C1-Premium erratum 4193780
-+	  * ARM C1-Ultra erratum 4193780
-+	  * ARM Cortex-A76 erratum 4193800
-+	  * ARM Cortex-A76AE erratum 4193801
-+	  * ARM Cortex-A77 erratum 4193798
-+	  * ARM Cortex-A78 erratum 4193791
-+	  * ARM Cortex-A78AE erratum 4193793
-+	  * ARM Cortex-A78C erratum 4193794
-+	  * ARM Cortex-A710 erratum 4193788
-+	  * ARM Cortex-X1 erratum 4193791
-+	  * ARM Cortex-X1C erratum 4193792
-+	  * ARM Cortex-X2 erratum 4193788
-+	  * ARM Cortex-X3 erratum 4193786
-+	  * ARM Cortex-X4 erratum 4118414
-+	  * ARM Cortex-X925 erratum 4193781
-+	  * ARM Neoverse-N1 erratum 4193800
-+	  * ARM Neoverse-N2 erratum 4193789
-+	  * ARM Neoverse-V1 erratum 4193790
-+	  * ARM Neoverse-V2 erratum 4193787
-+	  * ARM Neoverse-V3 erratum 4193784
-+	  * ARM Neoverse-V3AE erratum 4193784
-+	  * NVIDIA Olympus erratum T410-OLY-1029
-+
-+	  On affected cores, some memory accesses might not be completed by
-+	  broadcast TLB invalidation.
-+
-+	  This issue is also known as CVE-2025-10263.
-+
-+	  If unsure, say Y.
-+
- config CAVIUM_ERRATUM_22375
- 	bool "Cavium erratum 22375, 24313"
- 	default y
-@@ -1454,7 +1491,7 @@ endchoice
+@@ -1492,7 +1492,7 @@ endchoice
  
  config ARM64_FORCE_52BIT
  	bool "Force 52-bit virtual addresses for userspace"
@@ -849,83 +673,6 @@ index 7b27012dfcb5..27c9d88eaa96 100644
  };
  
  &aips1 {
-diff --git a/arch/arm64/include/asm/cputype.h b/arch/arm64/include/asm/cputype.h
-index 08860d482e60..1b9f0cda1336 100644
---- a/arch/arm64/include/asm/cputype.h
-+++ b/arch/arm64/include/asm/cputype.h
-@@ -97,7 +97,10 @@
- #define ARM_CPU_PART_CORTEX_X925	0xD85
- #define ARM_CPU_PART_CORTEX_A725	0xD87
- #define ARM_CPU_PART_CORTEX_A720AE	0xD89
-+#define ARM_CPU_PART_C1_ULTRA		0xD8C
- #define ARM_CPU_PART_NEOVERSE_N3	0xD8E
-+#define ARM_CPU_PART_C1_PRO		0xD8B
-+#define ARM_CPU_PART_C1_PREMIUM		0xD90
- 
- #define APM_CPU_PART_XGENE		0x000
- #define APM_CPU_VAR_POTENZA		0x00
-@@ -188,7 +191,10 @@
- #define MIDR_CORTEX_X925 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_X925)
- #define MIDR_CORTEX_A725 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A725)
- #define MIDR_CORTEX_A720AE MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A720AE)
-+#define MIDR_C1_ULTRA MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_C1_ULTRA)
- #define MIDR_NEOVERSE_N3 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_NEOVERSE_N3)
-+#define MIDR_C1_PRO MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_C1_PRO)
-+#define MIDR_C1_PREMIUM MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_C1_PREMIUM)
- #define MIDR_THUNDERX	MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX)
- #define MIDR_THUNDERX_81XX MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX_81XX)
- #define MIDR_THUNDERX_83XX MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX_83XX)
-diff --git a/arch/arm64/kernel/cpu_errata.c b/arch/arm64/kernel/cpu_errata.c
-index 5c0ab6bfd44a..0b39556c8834 100644
---- a/arch/arm64/kernel/cpu_errata.c
-+++ b/arch/arm64/kernel/cpu_errata.c
-@@ -339,7 +339,36 @@ static const struct arm64_cpu_capabilities arm64_repeat_tlbi_list[] = {
- 		ERRATA_MIDR_RANGE(MIDR_CORTEX_A510, 0, 0, 1, 1),
- 	},
- #endif
--	{},
-+#ifdef CONFIG_ARM64_ERRATUM_4118414
-+	{
-+		ERRATA_MIDR_RANGE_LIST(((const struct midr_range[]) {
-+			MIDR_ALL_VERSIONS(MIDR_C1_PREMIUM),
-+			MIDR_ALL_VERSIONS(MIDR_C1_ULTRA),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A76),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A76AE),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A77),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A78),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A78AE),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A78C),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_A710),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X1),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X1C),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X2),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X3),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X4),
-+			MIDR_ALL_VERSIONS(MIDR_CORTEX_X925),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N1),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N2),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V1),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V2),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V3),
-+			MIDR_ALL_VERSIONS(MIDR_NEOVERSE_V3AE),
-+			MIDR_ALL_VERSIONS(MIDR_NVIDIA_OLYMPUS),
-+			{}
-+		})),
-+	},
-+#endif
-+	{}
- };
- #endif
- 
-@@ -675,7 +704,7 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
- #endif
- #ifdef CONFIG_ARM64_WORKAROUND_REPEAT_TLBI
- 	{
--		.desc = "Qualcomm erratum 1009, or ARM erratum 1286807, 2441009",
-+		.desc = "Broken broadcast TLBI completion",
- 		.capability = ARM64_WORKAROUND_REPEAT_TLBI,
- 		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
- 		.matches = cpucap_multi_entry_cap_matches,
 diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
 index 23c05dc7a8f2..d7b7b2f39e16 100644
 --- a/arch/arm64/kernel/setup.c
@@ -7856,7 +7603,7 @@ index a2ff4242e623..f0d2be1ee4f1 100644
  
  int module_sig_check(struct load_info *info, int flags)
 diff --git a/net/core/gro.c b/net/core/gro.c
-index a84753983467..3e20f61724ad 100644
+index 35f2f708f010..f773e9facfa4 100644
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
 @@ -126,6 +126,9 @@ int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb)
@@ -7869,128 +7616,6 @@ index a84753983467..3e20f61724ad 100644
  	if (headlen <= offset) {
  		skb_frag_t *frag;
  		skb_frag_t *frag2;
-diff --git a/net/sched/act_pedit.c b/net/sched/act_pedit.c
-index bc20f08a2789..1aa95c34ad87 100644
---- a/net/sched/act_pedit.c
-+++ b/net/sched/act_pedit.c
-@@ -16,6 +16,7 @@
- #include <linux/ip.h>
- #include <linux/ipv6.h>
- #include <linux/slab.h>
-+#include <linux/overflow.h>
- #include <net/ipv6.h>
- #include <net/netlink.h>
- #include <net/pkt_sched.h>
-@@ -323,8 +324,10 @@ static bool offset_valid(struct sk_buff *skb, int offset)
- 	if (offset > 0 && offset > skb->len)
- 		return false;
- 
--	if  (offset < 0 && -offset > skb_headroom(skb))
--		return false;
-+	if (offset < 0) {
-+		if (offset == INT_MIN || -offset > skb_headroom(skb))
-+			return false;
-+	}
- 
- 	return true;
- }
-@@ -398,12 +401,21 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
- 
- 	parms = rcu_dereference_bh(p->parms);
- 
--	max_offset = (skb_transport_header_was_set(skb) ?
--		      skb_transport_offset(skb) :
--		      skb_network_offset(skb)) +
--		     parms->tcfp_off_max_hint;
--	if (skb_ensure_writable(skb, min(skb->len, max_offset)))
--		goto done;
-+	max_offset = min_t(u32, skb->len,
-+			   (skb_transport_header_was_set(skb) ?
-+			    skb_transport_offset(skb) :
-+			    skb_network_offset(skb)) +
-+			   parms->tcfp_off_max_hint);
-+
-+	/* If the skb has shared frags the user is likely using zero-copy
-+	 * (e.g. sendfile).  Those page frags may point to page-cache pages;
-+	 * writing into them would silently corrupt the page cache.
-+	 * Linearize so pedit operates on a private copy.
-+	 * TL;DR if you want to use ZC, don't use pedit */
-+	if (skb_has_shared_frag(skb)) {
-+		if (__skb_linearize(skb))
-+			goto bad;
-+	}
- 
- 	tcf_lastuse_update(&p->tcf_tm);
- 	tcf_action_update_bstats(&p->common, skb);
-@@ -414,8 +426,9 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
- 	for (i = parms->tcfp_nkeys; i > 0; i--, tkey++) {
- 		int offset = tkey->off;
- 		int hoffset = 0;
-+		int write_offset, write_len;
- 		u32 *ptr, hdata;
--		u32 val;
-+		u32 val, write_end;
- 		int rc;
- 
- 		if (tkey_ex) {
-@@ -451,12 +464,45 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
- 			}
- 		}
- 
--		if (!offset_valid(skb, hoffset + offset)) {
--			pr_info_ratelimited("tc action pedit offset %d out of bounds\n", hoffset + offset);
-+		write_offset = hoffset + offset;
-+		if (unlikely(check_add_overflow(hoffset, offset,
-+						&write_offset))) {
-+			pr_info_ratelimited("tc action pedit offset overflow\n");
- 			goto bad;
- 		}
- 
--		ptr = skb_header_pointer(skb, hoffset + offset,
-+		if (!offset_valid(skb, write_offset)) {
-+			pr_info_ratelimited("tc action pedit offset %d out of bounds\n",
-+					    write_offset);
-+			goto bad;
-+		}
-+
-+		/* Earlier edits can change later header-relative offsets, so
-+		 * grow the writable window from the final per-key store.
-+		 */
-+		if (write_offset >= 0) {
-+			write_end = (u32)write_offset + sizeof(hdata);
-+			if (write_end > max_offset) {
-+				max_offset = min_t(u32, skb->len, write_end);
-+				if (skb_ensure_writable(skb, max_offset))
-+					goto bad;
-+			}
-+		}
-+
-+		if (write_offset < 0) {
-+			if (skb_cow(skb, -write_offset))
-+				goto bad;
-+		} else {
-+			if (unlikely(check_add_overflow(write_offset,
-+							(int)sizeof(hdata),
-+							&write_len)))
-+				goto bad;
-+			if (skb_ensure_writable(skb, min_t(int, skb->len,
-+							   write_len)))
-+				goto bad;
-+		}
-+
-+		ptr = skb_header_pointer(skb, write_offset,
- 					 sizeof(hdata), &hdata);
- 		if (!ptr)
- 			goto bad;
-@@ -475,7 +521,7 @@ TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
- 
- 		*ptr = ((*ptr & tkey->mask) ^ val);
- 		if (ptr == &hdata)
--			skb_store_bits(skb, hoffset + offset, ptr, 4);
-+			skb_store_bits(skb, write_offset, ptr, sizeof(hdata));
- 	}
- 
- 	goto done;
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0718e39cedda..10e94a1b8b6e 100644
 --- a/scripts/Makefile.lib

@@ -190,18 +190,18 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.0.12
-%define specversion 7.0.12
+%define specrpmversion 7.0.13
+%define specversion 7.0.13
 %define patchversion 7.0
-%define pkgrelease 201
+%define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.0.12
+%define tarfile_release 7.0.13
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 201%{?buildid}%{?dist}
+%define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.0.12
+%define kabiversion 7.0.13
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4847,6 +4847,9 @@ fi\
 #
 #
 %changelog
+* Fri Jun 19 2026 Augusto Caringi <acaringi@redhat.com> [7.0.13-1]
+- Linux v7.0.13
+
 * Wed Jun 10 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.0.12-1]
 - New config setting for ARM64 Erratum (Justin M. Forbes)
 - arm64: errata: Mitigate TLBI errata on NVIDIA Olympus CPU (Shanker Donthineni)
