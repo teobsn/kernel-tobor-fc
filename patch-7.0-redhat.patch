@@ -36,9 +36,7 @@
  drivers/gpu/drm/i915/display/intel_dp_tunnel.c     |   11 +-
  drivers/gpu/drm/i915/display/intel_dpll_mgr.c      |    5 +
  drivers/gpu/drm/i915/display/intel_lt_phy.c        |    2 +-
- drivers/hid/hid-rmi.c                              |   66 --
  drivers/hwtracing/coresight/coresight-etm4x-core.c |   19 +
- drivers/input/rmi4/rmi_driver.c                    |  124 ++-
  drivers/iommu/iommu.c                              |   22 +
  drivers/media/platform/Kconfig                     |    1 +
  drivers/media/platform/Makefile                    |    1 +
@@ -66,7 +64,6 @@
  include/linux/efi.h                                |   22 +-
  include/linux/lsm_hook_defs.h                      |    1 +
  include/linux/mfd/bcm2835-pm.h                     |    7 +
- include/linux/rmi.h                                |    1 +
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    3 +
@@ -80,7 +77,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 82 files changed, 5499 insertions(+), 575 deletions(-)
+ 79 files changed, 5424 insertions(+), 459 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -212,7 +209,7 @@ index d1cc0e12fe1f..985c66951475 100644
  M:	Felix Kuehling <Felix.Kuehling@amd.com>
  L:	amd-gfx@lists.freedesktop.org
 diff --git a/Makefile b/Makefile
-index 3466a58e8435..c73faad6e97d 100644
+index b686fd14631f..c493ac350975 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -1432,108 +1429,6 @@ index 6cdae03ee172..e174ca011d50 100644
  	intel_lt_phy_clear_status_p2p(encoder, lane);
  
  	return 0;
-diff --git a/drivers/hid/hid-rmi.c b/drivers/hid/hid-rmi.c
-index d4af17fdba46..154f0403cbf4 100644
---- a/drivers/hid/hid-rmi.c
-+++ b/drivers/hid/hid-rmi.c
-@@ -321,21 +321,12 @@ static int rmi_input_event(struct hid_device *hdev, u8 *data, int size)
- {
- 	struct rmi_data *hdata = hid_get_drvdata(hdev);
- 	struct rmi_device *rmi_dev = hdata->xport.rmi_dev;
--	unsigned long flags;
- 
- 	if (!(test_bit(RMI_STARTED, &hdata->flags)))
- 		return 0;
- 
--	pm_wakeup_event(hdev->dev.parent, 0);
--
--	local_irq_save(flags);
--
- 	rmi_set_attn_data(rmi_dev, data[1], &data[2], size - 2);
- 
--	generic_handle_irq(hdata->rmi_irq);
--
--	local_irq_restore(flags);
--
- 	return 1;
- }
- 
-@@ -589,56 +580,6 @@ static const struct rmi_transport_ops hid_rmi_ops = {
- 	.reset		= rmi_hid_reset,
- };
- 
--static void rmi_irq_teardown(void *data)
--{
--	struct rmi_data *hdata = data;
--	struct irq_domain *domain = hdata->domain;
--
--	if (!domain)
--		return;
--
--	irq_dispose_mapping(irq_find_mapping(domain, 0));
--
--	irq_domain_remove(domain);
--	hdata->domain = NULL;
--	hdata->rmi_irq = 0;
--}
--
--static int rmi_irq_map(struct irq_domain *h, unsigned int virq,
--		       irq_hw_number_t hw_irq_num)
--{
--	irq_set_chip_and_handler(virq, &dummy_irq_chip, handle_simple_irq);
--
--	return 0;
--}
--
--static const struct irq_domain_ops rmi_irq_ops = {
--	.map = rmi_irq_map,
--};
--
--static int rmi_setup_irq_domain(struct hid_device *hdev)
--{
--	struct rmi_data *hdata = hid_get_drvdata(hdev);
--	int ret;
--
--	hdata->domain = irq_domain_create_linear(hdev->dev.fwnode, 1,
--						 &rmi_irq_ops, hdata);
--	if (!hdata->domain)
--		return -ENOMEM;
--
--	ret = devm_add_action_or_reset(&hdev->dev, &rmi_irq_teardown, hdata);
--	if (ret)
--		return ret;
--
--	hdata->rmi_irq = irq_create_mapping(hdata->domain, 0);
--	if (hdata->rmi_irq <= 0) {
--		hid_err(hdev, "Can't allocate an IRQ\n");
--		return hdata->rmi_irq < 0 ? hdata->rmi_irq : -ENXIO;
--	}
--
--	return 0;
--}
--
- static int rmi_probe(struct hid_device *hdev, const struct hid_device_id *id)
- {
- 	struct rmi_data *data = NULL;
-@@ -711,18 +652,11 @@ static int rmi_probe(struct hid_device *hdev, const struct hid_device_id *id)
- 
- 	mutex_init(&data->page_mutex);
- 
--	ret = rmi_setup_irq_domain(hdev);
--	if (ret) {
--		hid_err(hdev, "failed to allocate IRQ domain\n");
--		return ret;
--	}
--
- 	if (data->device_flags & RMI_DEVICE_HAS_PHYS_BUTTONS)
- 		rmi_hid_pdata.gpio_data.disable = true;
- 
- 	data->xport.dev = hdev->dev.parent;
- 	data->xport.pdata = rmi_hid_pdata;
--	data->xport.pdata.irq = data->rmi_irq;
- 	data->xport.proto_name = "hid";
- 	data->xport.ops = &hid_rmi_ops;
- 
 diff --git a/drivers/hwtracing/coresight/coresight-etm4x-core.c b/drivers/hwtracing/coresight/coresight-etm4x-core.c
 index d565a73f0042..0e64fc7c1004 100644
 --- a/drivers/hwtracing/coresight/coresight-etm4x-core.c
@@ -1585,198 +1480,6 @@ index d565a73f0042..0e64fc7c1004 100644
  	amba_driver_unregister(&etm4x_amba_driver);
  	platform_driver_unregister(&etm4_platform_driver);
  	etm4_pm_clear();
-diff --git a/drivers/input/rmi4/rmi_driver.c b/drivers/input/rmi4/rmi_driver.c
-index ccd9338a44db..5c54e522e8a4 100644
---- a/drivers/input/rmi4/rmi_driver.c
-+++ b/drivers/input/rmi4/rmi_driver.c
-@@ -183,34 +183,47 @@ void rmi_set_attn_data(struct rmi_device *rmi_dev, unsigned long irq_status,
- 	attn_data.data = fifo_data;
- 
- 	kfifo_put(&drvdata->attn_fifo, attn_data);
-+
-+	schedule_work(&drvdata->attn_work);
- }
- EXPORT_SYMBOL_GPL(rmi_set_attn_data);
- 
--static irqreturn_t rmi_irq_fn(int irq, void *dev_id)
-+static void attn_callback(struct work_struct *work)
- {
--	struct rmi_device *rmi_dev = dev_id;
--	struct rmi_driver_data *drvdata = dev_get_drvdata(&rmi_dev->dev);
-+	struct rmi_driver_data *drvdata = container_of(work,
-+							struct rmi_driver_data,
-+							attn_work);
- 	struct rmi4_attn_data attn_data = {0};
- 	int ret, count;
- 
- 	count = kfifo_get(&drvdata->attn_fifo, &attn_data);
--	if (count) {
--		*(drvdata->irq_status) = attn_data.irq_status;
--		drvdata->attn_data = attn_data;
--	}
-+	if (!count)
-+		return;
- 
--	ret = rmi_process_interrupt_requests(rmi_dev);
-+	*(drvdata->irq_status) = attn_data.irq_status;
-+	drvdata->attn_data = attn_data;
-+
-+	ret = rmi_process_interrupt_requests(drvdata->rmi_dev);
- 	if (ret)
--		rmi_dbg(RMI_DEBUG_CORE, &rmi_dev->dev,
-+		rmi_dbg(RMI_DEBUG_CORE, &drvdata->rmi_dev->dev,
- 			"Failed to process interrupt request: %d\n", ret);
- 
--	if (count) {
--		kfree(attn_data.data);
--		drvdata->attn_data.data = NULL;
--	}
-+	kfree(attn_data.data);
-+	drvdata->attn_data.data = NULL;
- 
- 	if (!kfifo_is_empty(&drvdata->attn_fifo))
--		return rmi_irq_fn(irq, dev_id);
-+		schedule_work(&drvdata->attn_work);
-+}
-+
-+static irqreturn_t rmi_irq_fn(int irq, void *dev_id)
-+{
-+	struct rmi_device *rmi_dev = dev_id;
-+	int ret;
-+
-+	ret = rmi_process_interrupt_requests(rmi_dev);
-+	if (ret)
-+		rmi_dbg(RMI_DEBUG_CORE, &rmi_dev->dev,
-+			"Failed to process interrupt request: %d\n", ret);
- 
- 	return IRQ_HANDLED;
- }
-@@ -218,7 +231,6 @@ static irqreturn_t rmi_irq_fn(int irq, void *dev_id)
- static int rmi_irq_init(struct rmi_device *rmi_dev)
- {
- 	struct rmi_device_platform_data *pdata = rmi_get_platform_data(rmi_dev);
--	struct rmi_driver_data *data = dev_get_drvdata(&rmi_dev->dev);
- 	int irq_flags = irq_get_trigger_type(pdata->irq);
- 	int ret;
- 
-@@ -236,8 +248,6 @@ static int rmi_irq_init(struct rmi_device *rmi_dev)
- 		return ret;
- 	}
- 
--	data->enabled = true;
--
- 	return 0;
- }
- 
-@@ -887,23 +897,27 @@ void rmi_enable_irq(struct rmi_device *rmi_dev, bool clear_wake)
- 	if (data->enabled)
- 		goto out;
- 
--	enable_irq(irq);
--	data->enabled = true;
--	if (clear_wake && device_may_wakeup(rmi_dev->xport->dev)) {
--		retval = disable_irq_wake(irq);
--		if (retval)
--			dev_warn(&rmi_dev->dev,
--				 "Failed to disable irq for wake: %d\n",
--				 retval);
--	}
-+	if (irq) {
-+		enable_irq(irq);
-+		data->enabled = true;
-+		if (clear_wake && device_may_wakeup(rmi_dev->xport->dev)) {
-+			retval = disable_irq_wake(irq);
-+			if (retval)
-+				dev_warn(&rmi_dev->dev,
-+					 "Failed to disable irq for wake: %d\n",
-+					 retval);
-+		}
- 
--	/*
--	 * Call rmi_process_interrupt_requests() after enabling irq,
--	 * otherwise we may lose interrupt on edge-triggered systems.
--	 */
--	irq_flags = irq_get_trigger_type(pdata->irq);
--	if (irq_flags & IRQ_TYPE_EDGE_BOTH)
--		rmi_process_interrupt_requests(rmi_dev);
-+		/*
-+		 * Call rmi_process_interrupt_requests() after enabling irq,
-+		 * otherwise we may lose interrupt on edge-triggered systems.
-+		 */
-+		irq_flags = irq_get_trigger_type(pdata->irq);
-+		if (irq_flags & IRQ_TYPE_EDGE_BOTH)
-+			rmi_process_interrupt_requests(rmi_dev);
-+	} else {
-+		data->enabled = true;
-+	}
- 
- out:
- 	mutex_unlock(&data->enabled_mutex);
-@@ -923,20 +937,22 @@ void rmi_disable_irq(struct rmi_device *rmi_dev, bool enable_wake)
- 		goto out;
- 
- 	data->enabled = false;
--	disable_irq(irq);
--	if (enable_wake && device_may_wakeup(rmi_dev->xport->dev)) {
--		retval = enable_irq_wake(irq);
--		if (retval)
--			dev_warn(&rmi_dev->dev,
--				 "Failed to enable irq for wake: %d\n",
--				 retval);
--	}
--
--	/* make sure the fifo is clean */
--	while (!kfifo_is_empty(&data->attn_fifo)) {
--		count = kfifo_get(&data->attn_fifo, &attn_data);
--		if (count)
--			kfree(attn_data.data);
-+	if (irq) {
-+		disable_irq(irq);
-+		if (enable_wake && device_may_wakeup(rmi_dev->xport->dev)) {
-+			retval = enable_irq_wake(irq);
-+			if (retval)
-+				dev_warn(&rmi_dev->dev,
-+					 "Failed to enable irq for wake: %d\n",
-+					 retval);
-+		}
-+	} else {
-+		/* make sure the fifo is clean */
-+		while (!kfifo_is_empty(&data->attn_fifo)) {
-+			count = kfifo_get(&data->attn_fifo, &attn_data);
-+			if (count)
-+				kfree(attn_data.data);
-+		}
- 	}
- 
- out:
-@@ -979,6 +995,8 @@ static int rmi_driver_remove(struct device *dev)
- 
- 	rmi_disable_irq(rmi_dev, false);
- 
-+	cancel_work_sync(&data->attn_work);
-+
- 	rmi_f34_remove_sysfs(rmi_dev);
- 	rmi_free_function_list(rmi_dev);
- 
-@@ -1224,9 +1242,15 @@ static int rmi_driver_probe(struct device *dev)
- 		}
- 	}
- 
--	retval = rmi_irq_init(rmi_dev);
--	if (retval < 0)
--		goto err_destroy_functions;
-+	if (pdata->irq) {
-+		retval = rmi_irq_init(rmi_dev);
-+		if (retval < 0)
-+			goto err_destroy_functions;
-+	}
-+
-+	data->enabled = true;
-+
-+	INIT_WORK(&data->attn_work, attn_callback);
- 
- 	if (data->f01_container->dev.driver) {
- 		/* Driver already bound, so enable ATTN now. */
 diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
 index 93c908170740..428b0c3b2519 100644
 --- a/drivers/iommu/iommu.c
@@ -7549,18 +7252,6 @@ index f70a810c55f7..d2e17ab1dbfc 100644
  };
  
  #endif /* BCM2835_MFD_PM_H */
-diff --git a/include/linux/rmi.h b/include/linux/rmi.h
-index ab7eea01ab42..fff7c5f737fc 100644
---- a/include/linux/rmi.h
-+++ b/include/linux/rmi.h
-@@ -364,6 +364,7 @@ struct rmi_driver_data {
- 
- 	struct rmi4_attn_data attn_data;
- 	DECLARE_KFIFO(attn_fifo, struct rmi4_attn_data, 16);
-+	struct work_struct attn_work;
- };
- 
- int rmi_register_transport_device(struct rmi_transport_dev *xport);
 diff --git a/include/linux/security.h b/include/linux/security.h
 index 8d2d4856934e..d6b1aec4340f 100644
 --- a/include/linux/security.h
