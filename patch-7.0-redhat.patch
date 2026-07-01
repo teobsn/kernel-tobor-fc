@@ -67,6 +67,8 @@
  include/linux/security.h                           |    9 +
  kernel/module/signing.c                            |    9 +-
  net/core/gro.c                                     |    3 +
+ net/ipv4/ip_output.c                               |    7 +-
+ net/ipv6/ip6_output.c                              |    9 +-
  scripts/Makefile.lib                               |    3 +
  scripts/tags.sh                                    |    2 +
  security/integrity/platform_certs/load_uefi.c      |    6 +-
@@ -77,7 +79,7 @@
  sound/soc/codecs/rt722-sdca.h                      |    4 +
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 79 files changed, 5424 insertions(+), 459 deletions(-)
+ 81 files changed, 5429 insertions(+), 470 deletions(-)
 
 diff --git a/Documentation/admin-guide/media/amdisp4-1.rst b/Documentation/admin-guide/media/amdisp4-1.rst
 new file mode 100644
@@ -7307,6 +7309,58 @@ index 35f2f708f010..f773e9facfa4 100644
  	if (headlen <= offset) {
  		skb_frag_t *frag;
  		skb_frag_t *frag2;
+diff --git a/net/ipv4/ip_output.c b/net/ipv4/ip_output.c
+index 5bcd73cbdb41..ec790bad1679 100644
+--- a/net/ipv4/ip_output.c
++++ b/net/ipv4/ip_output.c
+@@ -1117,8 +1117,8 @@ static int __ip_append_data(struct sock *sk,
+ 				  !(rt->dst.dev->features & NETIF_F_SG)))
+ 				alloclen = fraglen;
+ 			else {
+-				alloclen = fragheaderlen + transhdrlen;
+-				pagedlen = datalen - transhdrlen;
++				alloclen = fragheaderlen + transhdrlen + fraggap;
++				pagedlen = datalen - transhdrlen - fraggap;
+ 			}
+ 
+ 			alloclen += alloc_extra;
+@@ -1165,9 +1165,6 @@ static int __ip_append_data(struct sock *sk,
+ 			}
+ 
+ 			copy = datalen - transhdrlen - fraggap - pagedlen;
+-			/* [!] NOTE: copy will be negative if pagedlen>0
+-			 * because then the equation reduces to -fraggap.
+-			 */
+ 			if (copy > 0 &&
+ 			    INDIRECT_CALL_1(getfrag, ip_generic_getfrag,
+ 					    from, data + transhdrlen, offset,
+diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
+index 3f14e363c96e..d2aa48a0acaa 100644
+--- a/net/ipv6/ip6_output.c
++++ b/net/ipv6/ip6_output.c
+@@ -1636,8 +1636,8 @@ static int __ip6_append_data(struct sock *sk,
+ 				  !(rt->dst.dev->features & NETIF_F_SG)))
+ 				alloclen = fraglen;
+ 			else {
+-				alloclen = fragheaderlen + transhdrlen;
+-				pagedlen = datalen - transhdrlen;
++				alloclen = fragheaderlen + transhdrlen + fraggap;
++				pagedlen = datalen - transhdrlen - fraggap;
+ 			}
+ 			alloclen += alloc_extra;
+ 
+@@ -1652,10 +1652,7 @@ static int __ip6_append_data(struct sock *sk,
+ 			fraglen = datalen + fragheaderlen;
+ 
+ 			copy = datalen - transhdrlen - fraggap - pagedlen;
+-			/* [!] NOTE: copy may be negative if pagedlen>0
+-			 * because then the equation may reduces to -fraggap.
+-			 */
+-			if (copy < 0 && !(flags & MSG_SPLICE_PAGES)) {
++			if (copy < 0) {
+ 				err = -EINVAL;
+ 				goto error;
+ 			}
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0718e39cedda..10e94a1b8b6e 100644
 --- a/scripts/Makefile.lib
