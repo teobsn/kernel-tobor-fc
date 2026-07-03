@@ -2181,8 +2181,26 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch cachy_cumulative-4121542d6f7d23d09c7459bc1d14be5c7c195fb5.patch
-ApplyOptionalPatch other-asus-ga402-increase-power-limit.patch
+#ApplyOptionalPatch cachy-0001-amd-isp4.patch
+ApplyOptionalPatch cachy-0002-bbr3.patch
+#ApplyOptionalPatch cachy-0003-cachy.patch
+#ApplyOptionalPatch cachy-0004-fixes.patch
+ApplyOptionalPatch cachy-0005-hdmi.patch
+ApplyOptionalPatch cachy-0006-t2.patch
+ApplyOptionalPatch cachy-0007-cache-aware.patch
+ApplyOptionalPatch cachy-0008-cgroup-vram.patch
+#ApplyOptionalPatch cachy-0009-gaming-sched.patch
+#ApplyOptionalPatch cachy-0010-handheld.patch
+ApplyOptionalPatch cachy-0011-lenovo-wmi.patch
+ApplyOptionalPatch cachy-0012-mglru.patch
+#ApplyOptionalPatch cachy-0013-mglru-dev.patch
+ApplyOptionalPatch cachy-0014-ntfs.patch
+ApplyOptionalPatch cachy-0015-panther-sched.patch
+ApplyOptionalPatch cachy-0016-rt.patch
+#ApplyOptionalPatch cachy-0017-snd-codecs.patch
+ApplyOptionalPatch cachy-0018-vesa-dsc-bpp.patch
+ApplyOptionalPatch other-0001-drm-amdgpu-Preserve-custom-power-limits-on-ASUS-GA402.patch
+ApplyOptionalPatch other-0001-platform-asus-armoury-increase-power-limit-GA402.patch
 ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.16+.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 ApplyOptionalPatch xanmod-0001-XANMOD-x86-build-Add-more-CFLAGS-optimizations.patch
