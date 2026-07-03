@@ -196,6 +196,29 @@ Summary: The Linux kernel
 %define pkgrelease 201
 %define kversion 7
 %define tarfile_release 7.0.14
+%define download_tarball %(
+  FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
+  if [ ! -f "$FILE" ]; then
+    echo "Kernel tarball not found. Attempting to download from kernel.org..." >&2
+    URL="https://cdn.kernel.org/pub/linux/kernel/v%{kversion}.x/linux-%{tarfile_release}.tar.xz"
+    mkdir -p "%{_sourcedir}"
+    if curl -s -f -L -o "$FILE" "$URL" || wget -q -O "$FILE" "$URL"; then
+      echo "Download successful." >&2
+    else
+      echo "Download failed. Cloning from git..." >&2
+      TMPDIR=$(mktemp -d -p "%{_sourcedir}")
+      if git clone --depth 1 --branch v%{tarfile_release} https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git "$TMPDIR/linux-%{tarfile_release}" || \
+         git clone --depth 1 --branch v%{tarfile_release} https://github.com/torvalds/linux.git "$TMPDIR/linux-%{tarfile_release}"; then
+        tar -cJf "$FILE" -C "$TMPDIR" "linux-%{tarfile_release}"
+        echo "Git clone and tar creation successful." >&2
+      else
+        echo "Error: Failed to clone kernel from git." >&2
+      fi
+      rm -rf "$TMPDIR"
+    fi
+  fi
+)
+%{download_tarball}
 # This is needed to do merge window version magic
 %define patchlevel 0
 # This allows pkg_release to have configurable %%{?dist} tag
