@@ -1,4 +1,4 @@
-From e30f3120b0009a45f6f4130cc6019df224fa2cfe Mon Sep 17 00:00:00 2001
+From ce3f22c3f34ebc703f66192af1222a80ae71d3b3 Mon Sep 17 00:00:00 2001
 From: Arjan van de Ven <arjan@linux.intel.com>
 Date: Sun, 18 Feb 2018 23:35:41 +0000
 Subject: [PATCH 3/4] locking: rwsem: spin faster
@@ -33,5 +33,5 @@ index 24df4d98f7d2..1d5923996fa5 100644
  
  	return state;
 -- 
-2.47.2
+2.47.3
 

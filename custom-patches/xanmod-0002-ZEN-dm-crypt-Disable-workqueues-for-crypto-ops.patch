@@ -1,4 +1,4 @@
-From c2b0cd8f3963a3a6946a4f8836cea1f421401012 Mon Sep 17 00:00:00 2001
+From 2e08ddbf34f853185a01d7a7da2df81b24c864d9 Mon Sep 17 00:00:00 2001
 From: Steven Barrett <steven@liquorix.net>
 Date: Sat, 21 May 2022 15:15:09 -0500
 Subject: [PATCH 2/2] ZEN: dm-crypt: Disable workqueues for crypto ops
@@ -17,7 +17,7 @@ Signed-off-by: Alexandre Frade <kernel@xanmod.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
-index 79704fbc523b..2ccc40954c4c 100644
+index 54823341c9fd..18e2f03f1133 100644
 --- a/drivers/md/dm-crypt.c
 +++ b/drivers/md/dm-crypt.c
 @@ -3264,6 +3264,9 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
@@ -31,5 +31,5 @@ index 79704fbc523b..2ccc40954c4c 100644
  	if (ret < 0)
  		goto bad;
 -- 
-2.47.2
+2.47.3
 

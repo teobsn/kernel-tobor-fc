@@ -3,6 +3,11 @@ From: Teodor B <teobsn@gmail.com>
 Date: Mon, 16 Mar 2026 03:23:22 +0200
 Subject: [PATCH] Update ASUS GA402R power limits
 
+This patch extends the power limits for the Asus Zephyrus G14 GA402R
+line of laptops, as the firmware allows it and because these limits
+are exposed by default on Windows under G-Helper.
+
+The sPPT limits, in particular, significantly improve GPU performance.
 ---
  drivers/platform/x86/asus-armoury.h | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)

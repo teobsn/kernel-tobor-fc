@@ -2181,33 +2181,9 @@ tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch cachy-0001-amd-isp4.patch
-ApplyOptionalPatch cachy-0001-bore.patch
-ApplyOptionalPatch cachy-0001-cgroup-vram.patch
-ApplyOptionalPatch cachy-0002-bbr3.patch
-#ApplyOptionalPatch cachy-0003-cachy.patch
-#ApplyOptionalPatch cachy-0004-fixes.patch
-ApplyOptionalPatch cachy-0005-hdmi.patch
-#ApplyOptionalPatch cachy-0006-t2.patch
-ApplyOptionalPatch cachy-0007-vesa-dsc-bpp.patch
-ApplyOptionalPatch cachy-0008-vmscape.patch
-#ApplyOptionalPatch cachy-nap-governor.patch
-ApplyOptionalPatch cachy-poc-selector.patch
-ApplyOptionalPatch cachy-reflex-governor.patch
+ApplyOptionalPatch cachy_cumulative-4121542d6f7d23d09c7459bc1d14be5c7c195fb5.patch
 ApplyOptionalPatch other-asus-ga402-increase-power-limit.patch
 ApplyOptionalPatch other-more-ISA-levels-and-uarches-for-kernel-6.16+.patch
-ApplyOptionalPatch solus-0001-Bluetooth-Check-key-sizes-only-when-Secure-Simple-Pa.patch
-ApplyOptionalPatch solus-0001-drivers-firmware-skip-simpledrm-if-nvidia-drm.modese.patch
-ApplyOptionalPatch solus-0001-set-ds-controller-bluetooth-pollrate-to-1-ms.patch
-ApplyOptionalPatch solus-0004-ZEN-PCI-Add-Intel-remapped-NVMe-device-support.patch
-#ApplyOptionalPatch solus-0014-ZEN-drm-amdgpu-pm-Allow-override-of-min_power_limit-.patch
-ApplyOptionalPatch solus-0015-ZEN-Set-default-max-map-count-to-INT_MAX-5.patch
-ApplyOptionalPatch solus-0016-ZEN-mm-Stop-kswapd-early-when-nothing-s-waiting-for-.patch
-ApplyOptionalPatch solus-0017-ZEN-ahci-Disable-staggered-spinup-by-default.patch
-#ApplyOptionalPatch solus-0023-ZEN-INTERACTIVE-Enable-background-reclaim-of-hugepag.patch
-#ApplyOptionalPatch solus-0026-ZEN-INTERACTIVE-mm-Disable-unevictable-compaction.patch
-#ApplyOptionalPatch solus-0027-ZEN-INTERACTIVE-mm-Disable-watermark-boosting-by-def.patch
-#ApplyOptionalPatch solus-0028-ZEN-INTERACTIVE-mm-swap-Disable-swap-in-readahead.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
 ApplyOptionalPatch xanmod-0001-XANMOD-x86-build-Add-more-CFLAGS-optimizations.patch
 ApplyOptionalPatch xanmod-0001-ZEN-input-evdev-Use-call_rcu-when-detaching-client.patch
