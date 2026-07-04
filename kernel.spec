@@ -209,6 +209,7 @@ Summary: The Linux kernel
       TMPDIR=$(mktemp -d -p "%{_sourcedir}")
       if git clone --depth 1 --branch v%{tarfile_release} https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git "$TMPDIR/linux-%{tarfile_release}" || \
          git clone --depth 1 --branch v%{tarfile_release} https://github.com/torvalds/linux.git "$TMPDIR/linux-%{tarfile_release}"; then
+        rm -rf "$TMPDIR/linux-%{tarfile_release}/.git"
         tar -cJf "$FILE" -C "$TMPDIR" "linux-%{tarfile_release}"
         echo "Git clone and tar creation successful." >&2
       else
