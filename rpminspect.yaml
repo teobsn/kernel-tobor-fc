@@ -39,7 +39,7 @@ emptyrpm:
 patches:
     ignore_list:
         - linux-kernel-test.patch
-        - patch-7.0-redhat.patch
+        - patch-7.1-redhat.patch
 
 runpath:
     ignore:
