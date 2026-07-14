@@ -1,3 +1,18 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/5585ecd6249f39a050e0abf77338d180faaa9faf
+ 5585ecd6249f39a050e0abf77338d180faaa9faf xfs: resample the data fork mapping after cycling ILOCK
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/9ee4564815c09a7894d23379003702741d7addd2
+ 9ee4564815c09a7894d23379003702741d7addd2 media: i2c: imx471: Add Sony IMX471 image sensor driver
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/c36e6ceaa41224da4cef5e5e62bc3140af744cc4
+ c36e6ceaa41224da4cef5e5e62bc3140af744cc4 platform: int3472: discrete: con_id vana for Sony IMX471 as power enable
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e58d32db363d78098583b869019adc75096c132e
+ e58d32db363d78098583b869019adc75096c132e media: ipu-bridge: Add Sony IMX471 for Lenovo X1 Carbon G14
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/4b691a6960ed2f621128819dd9e05c024ca37472
+ 4b691a6960ed2f621128819dd9e05c024ca37472 media: ipu-bridge: Add DMI information of Lenovo X9 to the image upside-down list
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/7a09b757ef198b2dfc48dad4a1d3e908e26af396
  7a09b757ef198b2dfc48dad4a1d3e908e26af396 ipv6: account for fraggap on the paged allocation path
 
