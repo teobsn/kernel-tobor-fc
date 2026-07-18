@@ -190,12 +190,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.1.3
-%define specversion 7.1.3
+%define specrpmversion 7.1.4
+%define specversion 7.1.4
 %define patchversion 7.1
-%define pkgrelease 201
+%define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.1.3
+%define tarfile_release 7.1.4
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -223,9 +223,9 @@ Summary: The Linux kernel
 # This is needed to do merge window version magic
 %define patchlevel 1
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 201%{?buildid}%{?dist}
+%define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.1.3
+%define kabiversion 7.1.4
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4921,6 +4921,11 @@ fi\
 #
 #
 %changelog
+* Sat Jul 18 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.4-0]
+- KVM: nVMX: Put vmcs12 pages if nested VM-Enter fails due to invalid guest state (Sean Christopherson)
+- drm/amd: Create a device link between APU display and XHCI devices (Mario Limonciello)
+- Linux v7.1.4
+
 * Tue Jul 14 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.3-1]
 - xfs: resample the data fork mapping after cycling ILOCK (Darrick J. Wong)
 - redhat: configs: fedora: Enable Sony IMX471 image sensor (Kate Hsuan)

@@ -1,3 +1,9 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/7b8efc5af560ec18096b99f3d8b1b6b6ef101ee5
+ 7b8efc5af560ec18096b99f3d8b1b6b6ef101ee5 KVM: nVMX: Put vmcs12 pages if nested VM-Enter fails due to invalid guest state
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/e2e035b8422fed989b46f9679c630cdf1b0bcaae
+ e2e035b8422fed989b46f9679c630cdf1b0bcaae drm/amd: Create a device link between APU display and XHCI devices
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/5585ecd6249f39a050e0abf77338d180faaa9faf
  5585ecd6249f39a050e0abf77338d180faaa9faf xfs: resample the data fork mapping after cycling ILOCK
 

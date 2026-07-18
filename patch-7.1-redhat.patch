@@ -7,6 +7,7 @@
  arch/s390/kernel/ipl.c                             |   5 +
  arch/s390/kernel/setup.c                           |   4 +
  arch/x86/kernel/setup.c                            |  22 +-
+ arch/x86/kvm/vmx/nested.c                          |   2 +
  crypto/akcipher.c                                  |   3 +-
  crypto/dh.c                                        |  25 +
  crypto/drbg.c                                      |  18 +-
@@ -26,6 +27,9 @@
  drivers/firmware/efi/libstub/fdt.c                 |   5 +
  drivers/firmware/efi/libstub/secureboot.c          |  14 +-
  drivers/firmware/efi/secureboot.c                  |  38 +
+ drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c          |  12 +
+ drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h      |  11 +
+ .../gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c   |  45 +
  drivers/gpu/drm/i915/display/intel_ddi.c           |  11 +-
  drivers/hwtracing/coresight/coresight-etm4x-core.c |  19 +
  drivers/iommu/iommu.c                              |  22 +
@@ -36,7 +40,6 @@
  drivers/pci/quirks.c                               |  24 +
  drivers/platform/x86/intel/int3472/discrete.c      |  18 +
  drivers/usb/core/hub.c                             |   7 +
- fs/xfs/xfs_reflink.c                               |  36 +
  include/linux/crypto.h                             |   3 +
  include/linux/efi.h                                |  22 +-
  include/linux/lsm_hook_defs.h                      |   1 +
@@ -53,13 +56,13 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 ++
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 -
- 55 files changed, 2000 insertions(+), 142 deletions(-)
+ 58 files changed, 2034 insertions(+), 142 deletions(-)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index c8d4b913f26c..d0ad37bae20d 100644
+index f74da642290a..06c8bb2075e6 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -24965,6 +24965,12 @@ T:	git git://linuxtv.org/media.git
+@@ -24964,6 +24964,12 @@ T:	git git://linuxtv.org/media.git
  F:	Documentation/devicetree/bindings/media/i2c/sony,imx415.yaml
  F:	drivers/media/i2c/imx415.c
  
@@ -73,7 +76,7 @@ index c8d4b913f26c..d0ad37bae20d 100644
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
 diff --git a/Makefile b/Makefile
-index 9e405218162b..44f47144ebf6 100644
+index b3496dd21312..cb88d3636564 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -94,7 +97,7 @@ index 9e405218162b..44f47144ebf6 100644
  ifdef mixed-build
  # ===========================================================================
  # We're called with mixed targets (*config and build targets).
-@@ -1415,6 +1426,8 @@ uapi-asm-generic:
+@@ -1418,6 +1429,8 @@ uapi-asm-generic:
  # Generate some files
  # ---------------------------------------------------------------------------
  
@@ -103,7 +106,7 @@ index 9e405218162b..44f47144ebf6 100644
  # KERNELRELEASE can change from a few different places, meaning version.h
  # needs to be updated, so this check is forced on all builds
  
-@@ -2080,6 +2093,23 @@ endif
+@@ -2083,6 +2096,23 @@ endif
  
  ifdef CONFIG_MODULES
  
@@ -302,6 +305,19 @@ index 46882ce79c3a..9c73814c31e0 100644
  
  	reserve_initrd();
  
+diff --git a/arch/x86/kvm/vmx/nested.c b/arch/x86/kvm/vmx/nested.c
+index 3fe88f29be7a..f6fd3775ddac 100644
+--- a/arch/x86/kvm/vmx/nested.c
++++ b/arch/x86/kvm/vmx/nested.c
+@@ -3755,6 +3755,8 @@ enum nvmx_vmentry_status nested_vmx_enter_non_root_mode(struct kvm_vcpu *vcpu,
+ 	if (!from_vmentry)
+ 		return NVMX_VMENTRY_VMEXIT;
+ 
++	nested_put_vmcs12_pages(vcpu);
++
+ 	load_vmcs12_host_state(vcpu, vmcs12);
+ 	vmcs12->vm_exit_reason = exit_reason.full;
+ 	if (enable_shadow_vmcs || nested_vmx_is_evmptr12_valid(vmx))
 diff --git a/crypto/akcipher.c b/crypto/akcipher.c
 index dfe87b3ce183..cd1302ca3b36 100644
 --- a/crypto/akcipher.c
@@ -357,10 +373,10 @@ index 7ad4768716c8..01ccc24db074 100644
  	}
  
 diff --git a/crypto/drbg.c b/crypto/drbg.c
-index 9204e6edb426..5c10baf70071 100644
+index e3065fb9541b..ff5393e6797e 100644
 --- a/crypto/drbg.c
 +++ b/crypto/drbg.c
-@@ -1270,13 +1270,14 @@ static int drbg_generate(struct drbg_state *drbg,
+@@ -1271,13 +1271,14 @@ static int drbg_generate(struct drbg_state *drbg,
   * Wrapper around drbg_generate which can pull arbitrary long strings
   * from the DRBG without hitting the maximum request limitation.
   *
@@ -377,7 +393,7 @@ index 9204e6edb426..5c10baf70071 100644
  {
  	unsigned int len = 0;
  	unsigned int slice = 0;
-@@ -1286,6 +1287,8 @@ static int drbg_generate_long(struct drbg_state *drbg,
+@@ -1287,6 +1288,8 @@ static int drbg_generate_long(struct drbg_state *drbg,
  		slice = ((buflen - len) / drbg_max_request_bytes(drbg));
  		chunk = slice ? drbg_max_request_bytes(drbg) : (buflen - len);
  		mutex_lock(&drbg->drbg_mutex);
@@ -386,7 +402,7 @@ index 9204e6edb426..5c10baf70071 100644
  		err = drbg_generate(drbg, buf + len, chunk, addtl);
  		mutex_unlock(&drbg->drbg_mutex);
  		if (0 > err)
-@@ -1687,6 +1690,7 @@ static int drbg_kcapi_random(struct crypto_rng *tfm,
+@@ -1688,6 +1691,7 @@ static int drbg_kcapi_random(struct crypto_rng *tfm,
  	struct drbg_state *drbg = crypto_rng_ctx(tfm);
  	struct drbg_string *addtl = NULL;
  	struct drbg_string string;
@@ -394,7 +410,7 @@ index 9204e6edb426..5c10baf70071 100644
  
  	if (slen) {
  		/* linked list variable is now local to allow modification */
-@@ -1694,7 +1698,15 @@ static int drbg_kcapi_random(struct crypto_rng *tfm,
+@@ -1695,7 +1699,15 @@ static int drbg_kcapi_random(struct crypto_rng *tfm,
  		addtl = &string;
  	}
  
@@ -1356,6 +1372,135 @@ index 000000000000..de0a3714a5d4
 +		}
 +	}
 +}
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c b/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
+index 8faf7de7aaa9..f65bb1dc44ac 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
+@@ -1365,6 +1365,14 @@ static void smu_feature_cap_init(struct smu_context *smu)
+ 	bitmap_zero(fea_cap->cap_map, SMU_FEATURE_CAP_ID__COUNT);
+ }
+ 
++static int smu_set_power_dep(struct smu_context *smu, bool enable)
++{
++	if (!smu->ppt_funcs->set_power_dep)
++		return 0;
++
++	return smu->ppt_funcs->set_power_dep(smu, enable);
++}
++
+ static int smu_sw_init(struct amdgpu_ip_block *ip_block)
+ {
+ 	struct amdgpu_device *adev = ip_block->adev;
+@@ -1426,6 +1434,8 @@ static int smu_sw_init(struct amdgpu_ip_block *ip_block)
+ 	if (!smu->ppt_funcs->get_fan_control_mode)
+ 		smu->adev->pm.no_fan = true;
+ 
++	smu_set_power_dep(smu, true);
++
+ 	return 0;
+ }
+ 
+@@ -1448,6 +1458,8 @@ static int smu_sw_fini(struct amdgpu_ip_block *ip_block)
+ 
+ 	smu_fini_microcode(smu);
+ 
++	smu_set_power_dep(smu, false);
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h b/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
+index d76e0b005308..e14bcc3f937c 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
++++ b/drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h
+@@ -749,6 +749,9 @@ struct smu_context {
+ 	bool pm_enabled;
+ 	bool is_apu;
+ 
++	/* Power dependency link from an integrated xHCI controller to the GPU */
++	struct device_link		*usb_power_link;
++
+ 	uint32_t smc_driver_if_version;
+ 	uint32_t smc_fw_if_version;
+ 	uint32_t smc_fw_version;
+@@ -1654,6 +1657,14 @@ struct pptable_funcs {
+ 	 * Return: ras_smu_drv *
+ 	 */
+ 	int (*get_ras_smu_drv)(struct smu_context *smu, const struct ras_smu_drv **ras_smu_drv);
++
++	/**
++	 * @set_power_dep: Create or destroy a power dependency link
++	 * from an integrated xHCI controller to the GPU so that the GPU is
++	 * resumed before the USB controller during PM resume. @enable is true
++	 * to create the link and false to tear it down.
++	 */
++	int (*set_power_dep)(struct smu_context *smu, bool enable);
+ };
+ 
+ typedef enum {
+diff --git a/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c b/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c
+index 75719c47a41e..3d73f2050bbe 100644
+--- a/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c
++++ b/drivers/gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c
+@@ -1701,6 +1701,50 @@ static int smu_v14_0_0_restore_user_od_settings(struct smu_context *smu)
+ 	return 0;
+ }
+ 
++/*
++ * Link any xHCI controller sharing the GPU's PCIe root port as a consumer
++ * of the GPU so the GPU resumes first, avoiding an xHCI resume race.
++ */
++static int smu_v14_0_0_set_power_dep(struct smu_context *smu, bool enable)
++{
++	struct amdgpu_device *adev = smu->adev;
++	struct pci_dev *gpu_pdev = adev->pdev;
++	struct pci_dev *root_port, *usb_pdev = NULL;
++	struct device_link *link;
++
++	if (!enable) {
++		if (smu->usb_power_link) {
++			device_link_del(smu->usb_power_link);
++			smu->usb_power_link = NULL;
++		}
++		return 0;
++	}
++
++	root_port = pcie_find_root_port(gpu_pdev);
++	while ((usb_pdev = pci_get_class(PCI_CLASS_SERIAL_USB_XHCI, usb_pdev))) {
++		struct pci_dev *usb_root;
++
++		usb_root = pcie_find_root_port(usb_pdev);
++		if (usb_root != root_port)
++			continue;
++
++		/* Create device link: USB (consumer) depends on GPU (supplier) */
++		link = device_link_add(&usb_pdev->dev, &gpu_pdev->dev,
++				       DL_FLAG_STATELESS | DL_FLAG_PM_RUNTIME);
++		if (link) {
++			smu->usb_power_link = link;
++			drm_info(adev_to_drm(adev), "USB controller %s D0 power state depends on %s\n",
++				 pci_name(usb_pdev), pci_name(gpu_pdev));
++			/* Only create one link for the first USB controller found */
++			break;
++		}
++	}
++
++	pci_dev_put(usb_pdev);
++
++	return 0;
++}
++
+ static const struct pptable_funcs smu_v14_0_0_ppt_funcs = {
+ 	.check_fw_status = smu_v14_0_check_fw_status,
+ 	.check_fw_version = smu_cmn_check_fw_version,
+@@ -1734,6 +1778,7 @@ static const struct pptable_funcs smu_v14_0_0_ppt_funcs = {
+ 	.dpm_set_umsch_mm_enable = smu_v14_0_0_set_umsch_mm_enable,
+ 	.get_dpm_clock_table = smu_v14_0_common_get_dpm_table,
+ 	.set_mall_enable = smu_v14_0_common_set_mall_enable,
++	.set_power_dep = smu_v14_0_0_set_power_dep,
+ };
+ 
+ static void smu_v14_0_0_init_msg_ctl(struct smu_context *smu)
 diff --git a/drivers/gpu/drm/i915/display/intel_ddi.c b/drivers/gpu/drm/i915/display/intel_ddi.c
 index ebefa889bc8c..0987eee38bd1 100644
 --- a/drivers/gpu/drm/i915/display/intel_ddi.c
@@ -2532,10 +2677,10 @@ index fc6608e33de4..8cfa3282bf08 100644
  };
  
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index caaed1a01dc0..ec7b94de5515 100644
+index dd0025d3914e..e57d10dc843c 100644
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -4506,6 +4506,30 @@ static void quirk_aspeed_pci_bridge_no_alias(struct pci_dev *pdev)
+@@ -4491,6 +4491,30 @@ static void quirk_aspeed_pci_bridge_no_alias(struct pci_dev *pdev)
  }
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ASPEED, 0x1150, quirk_aspeed_pci_bridge_no_alias);
  
@@ -2613,74 +2758,6 @@ index 24960ba9caa9..32597cdb72ef 100644
  	/* Lock the device, then check to see if we were
  	 * disconnected while waiting for the lock to succeed. */
  	usb_lock_device(hdev);
-diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-index 251dec48f0e3..e7db02579f28 100644
---- a/fs/xfs/xfs_reflink.c
-+++ b/fs/xfs/xfs_reflink.c
-@@ -440,6 +440,7 @@ xfs_reflink_fill_cow_hole(
- 	struct xfs_mount	*mp = ip->i_mount;
- 	struct xfs_trans	*tp;
- 	xfs_filblks_t		resaligned;
-+	unsigned int		seq_before = READ_ONCE(ip->i_df.if_seq);
- 	unsigned int		dblocks = 0, rblocks = 0;
- 	int			nimaps;
- 	int			error;
-@@ -465,6 +466,22 @@ xfs_reflink_fill_cow_hole(
- 
- 	*lockmode = XFS_ILOCK_EXCL;
- 
-+	/*
-+	 * The data fork mapping may have changed while we dropped the ILOCK
-+	 * (a racing O_DIRECT writer under IOLOCK_SHARED can complete a full
-+	 * CoW cycle including xfs_reflink_end_cow(), which remaps this offset
-+	 * and drops the refcount of the old shared block).  Re-read it so the
-+	 * shared-status recheck below and the caller's in-place iomap both
-+	 * operate on the current mapping rather than a stale physical block.
-+	 */
-+	if (seq_before != READ_ONCE(ip->i_df.if_seq)) {
-+		nimaps = 1;
-+		error = xfs_bmapi_read(ip, imap->br_startoff,
-+				imap->br_blockcount, imap, &nimaps, 0);
-+		if (error)
-+			goto out_trans_cancel;
-+	}
-+
- 	error = xfs_find_trim_cow_extent(ip, imap, cmap, shared, &found);
- 	if (error || !*shared)
- 		goto out_trans_cancel;
-@@ -511,6 +528,8 @@ xfs_reflink_fill_delalloc(
- 	bool			found;
- 
- 	do {
-+		unsigned int	seq_before = READ_ONCE(ip->i_df.if_seq);
-+
- 		xfs_iunlock(ip, *lockmode);
- 		*lockmode = 0;
- 
-@@ -521,6 +540,23 @@ xfs_reflink_fill_delalloc(
- 
- 		*lockmode = XFS_ILOCK_EXCL;
- 
-+		/*
-+		 * The data fork mapping may have changed while we dropped the
-+		 * ILOCK (a racing O_DIRECT writer under IOLOCK_SHARED can
-+		 * complete a full CoW cycle including xfs_reflink_end_cow(),
-+		 * which remaps this offset and drops the refcount of the old
-+		 * shared block).  Re-read it so the shared-status recheck
-+		 * below and the caller's in-place iomap both operate on the
-+		 * current mapping rather than a stale physical block.
-+		 */
-+		if (seq_before != READ_ONCE(ip->i_df.if_seq)) {
-+			nimaps = 1;
-+			error = xfs_bmapi_read(ip, imap->br_startoff,
-+					imap->br_blockcount, imap, &nimaps, 0);
-+			if (error)
-+				goto out_trans_cancel;
-+		}
-+
- 		error = xfs_find_trim_cow_extent(ip, imap, cmap, shared,
- 				&found);
- 		if (error || !*shared)
 diff --git a/include/linux/crypto.h b/include/linux/crypto.h
 index a2137e19be7d..df268ca70170 100644
 --- a/include/linux/crypto.h
