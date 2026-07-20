@@ -1,3 +1,6 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/398377259f01c70d2cdb14c206967ccf200ed6bd
+ 398377259f01c70d2cdb14c206967ccf200ed6bd can: bcm: defer rx_op deallocation to workqueue to fix thrtimer UAF
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/7b8efc5af560ec18096b99f3d8b1b6b6ef101ee5
  7b8efc5af560ec18096b99f3d8b1b6b6ef101ee5 KVM: nVMX: Put vmcs12 pages if nested VM-Enter fails due to invalid guest state
 
