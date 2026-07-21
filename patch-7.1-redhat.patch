@@ -7,7 +7,10 @@
  arch/s390/kernel/ipl.c                             |   5 +
  arch/s390/kernel/setup.c                           |   4 +
  arch/x86/kernel/setup.c                            |  22 +-
- arch/x86/kvm/vmx/nested.c                          |   2 +
+ arch/x86/kvm/lapic.c                               |   2 +-
+ arch/x86/kvm/mmu/mmu.c                             |  12 +-
+ arch/x86/kvm/mmu/paging_tmpl.h                     |  10 +-
+ arch/x86/kvm/vmx/nested.c                          |  13 +-
  crypto/akcipher.c                                  |   3 +-
  crypto/dh.c                                        |  25 +
  crypto/drbg.c                                      |  18 +-
@@ -27,6 +30,7 @@
  drivers/firmware/efi/libstub/fdt.c                 |   5 +
  drivers/firmware/efi/libstub/secureboot.c          |  14 +-
  drivers/firmware/efi/secureboot.c                  |  38 +
+ .../gpu/drm/amd/amdkfd/kfd_device_queue_manager.c  |  20 +-
  drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c          |  12 +
  drivers/gpu/drm/amd/pm/swsmu/inc/amdgpu_smu.h      |  11 +
  .../gpu/drm/amd/pm/swsmu/smu14/smu_v14_0_0_ppt.c   |  45 +
@@ -37,9 +41,11 @@
  drivers/media/i2c/Makefile                         |   1 +
  drivers/media/i2c/imx471.c                         | 957 +++++++++++++++++++++
  drivers/media/pci/intel/ipu-bridge.c               |  41 +
+ drivers/pci/msi/msi.c                              |   4 +-
  drivers/pci/quirks.c                               |  24 +
  drivers/platform/x86/intel/int3472/discrete.c      |  18 +
  drivers/usb/core/hub.c                             |   7 +
+ fs/btrfs/compression.c                             |  18 +-
  include/linux/crypto.h                             |   3 +
  include/linux/efi.h                                |  22 +-
  include/linux/lsm_hook_defs.h                      |   1 +
@@ -57,7 +63,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 ++
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 -
- 59 files changed, 2068 insertions(+), 145 deletions(-)
+ 65 files changed, 2100 insertions(+), 190 deletions(-)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
 index f74da642290a..06c8bb2075e6 100644
@@ -306,11 +312,120 @@ index 46882ce79c3a..9c73814c31e0 100644
  
  	reserve_initrd();
  
+diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
+index 92a1e69c5962..1cb243df0bc0 100644
+--- a/arch/x86/kvm/lapic.c
++++ b/arch/x86/kvm/lapic.c
+@@ -2052,7 +2052,7 @@ static void apic_timer_expired(struct kvm_lapic *apic, bool from_timer_fn)
+ 	if (apic_lvtt_tscdeadline(apic) || ktimer->hv_timer_in_use)
+ 		ktimer->expired_tscdeadline = ktimer->tscdeadline;
+ 
+-	if (!from_timer_fn && apic->apicv_active) {
++	if (!from_timer_fn && apic->apicv_active && vcpu->wants_to_run) {
+ 		WARN_ON(kvm_get_running_vcpu() != vcpu);
+ 		kvm_apic_inject_pending_timer_irqs(apic);
+ 		return;
+diff --git a/arch/x86/kvm/mmu/mmu.c b/arch/x86/kvm/mmu/mmu.c
+index 0c2e35e3ffbd..dc4fda3b9769 100644
+--- a/arch/x86/kvm/mmu/mmu.c
++++ b/arch/x86/kvm/mmu/mmu.c
+@@ -2635,6 +2635,7 @@ static int mmu_page_zap_pte(struct kvm *kvm, struct kvm_mmu_page *sp,
+ 			 */
+ 			if (tdp_enabled && invalid_list &&
+ 			    child->role.guest_mode &&
++			    !child->root_count &&
+ 			    !atomic_long_read(&child->parent_ptes.val))
+ 				return kvm_mmu_prepare_zap_page(kvm, child,
+ 								invalid_list);
+@@ -4837,16 +4838,17 @@ static int direct_page_fault(struct kvm_vcpu *vcpu, struct kvm_page_fault *fault
+ 	if (r != RET_PF_CONTINUE)
+ 		return r;
+ 
+-	r = RET_PF_RETRY;
+ 	write_lock(&vcpu->kvm->mmu_lock);
+ 
+-	if (is_page_fault_stale(vcpu, fault))
+-		goto out_unlock;
+-
+ 	r = make_mmu_pages_available(vcpu);
+ 	if (r)
+ 		goto out_unlock;
+ 
++	if (is_page_fault_stale(vcpu, fault)) {
++		r = RET_PF_RETRY;
++		goto out_unlock;
++	}
++
+ 	r = direct_map(vcpu, fault);
+ 
+ out_unlock:
+@@ -7501,7 +7503,9 @@ void kvm_mmu_invalidate_mmio_sptes(struct kvm *kvm, u64 gen)
+ static void mmu_destroy_caches(void)
+ {
+ 	kmem_cache_destroy(pte_list_desc_cache);
++	pte_list_desc_cache = NULL;
+ 	kmem_cache_destroy(mmu_page_header_cache);
++	mmu_page_header_cache = NULL;
+ }
+ 
+ static void kvm_wake_nx_recovery_thread(struct kvm *kvm)
+diff --git a/arch/x86/kvm/mmu/paging_tmpl.h b/arch/x86/kvm/mmu/paging_tmpl.h
+index 901cd2bd40b8..6465de820e70 100644
+--- a/arch/x86/kvm/mmu/paging_tmpl.h
++++ b/arch/x86/kvm/mmu/paging_tmpl.h
+@@ -827,15 +827,17 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, struct kvm_page_fault *fault
+ 	}
+ #endif
+ 
+-	r = RET_PF_RETRY;
+ 	write_lock(&vcpu->kvm->mmu_lock);
+ 
+-	if (is_page_fault_stale(vcpu, fault))
+-		goto out_unlock;
+-
+ 	r = make_mmu_pages_available(vcpu);
+ 	if (r)
+ 		goto out_unlock;
++
++	if (is_page_fault_stale(vcpu, fault)) {
++		r = RET_PF_RETRY;
++		goto out_unlock;
++	}
++
+ 	r = FNAME(fetch)(vcpu, fault, &walker);
+ 
+ out_unlock:
 diff --git a/arch/x86/kvm/vmx/nested.c b/arch/x86/kvm/vmx/nested.c
-index 3fe88f29be7a..f6fd3775ddac 100644
+index 3fe88f29be7a..2a50f8fab45d 100644
 --- a/arch/x86/kvm/vmx/nested.c
 +++ b/arch/x86/kvm/vmx/nested.c
-@@ -3755,6 +3755,8 @@ enum nvmx_vmentry_status nested_vmx_enter_non_root_mode(struct kvm_vcpu *vcpu,
+@@ -336,6 +336,7 @@ static void nested_put_vmcs12_pages(struct kvm_vcpu *vcpu)
+ static void free_nested(struct kvm_vcpu *vcpu)
+ {
+ 	struct vcpu_vmx *vmx = to_vmx(vcpu);
++	struct vmcs *shadow_vmcs;
+ 
+ 	if (WARN_ON_ONCE(vmx->loaded_vmcs != &vmx->vmcs01))
+ 		vmx_switch_vmcs(vcpu, &vmx->vmcs01);
+@@ -353,9 +354,15 @@ static void free_nested(struct kvm_vcpu *vcpu)
+ 	vmx->nested.current_vmptr = INVALID_GPA;
+ 	if (enable_shadow_vmcs) {
+ 		vmx_disable_shadow_vmcs(vmx);
+-		vmcs_clear(vmx->vmcs01.shadow_vmcs);
+-		free_vmcs(vmx->vmcs01.shadow_vmcs);
++
++		/*
++		 * Keep the pointer visible until after VMCLEAR, so migration
++		 * can clear an active shadow VMCS on the old CPU.
++		 */
++		shadow_vmcs = vmx->vmcs01.shadow_vmcs;
++		vmcs_clear(shadow_vmcs);
+ 		vmx->vmcs01.shadow_vmcs = NULL;
++		free_vmcs(shadow_vmcs);
+ 	}
+ 	kfree(vmx->nested.cached_vmcs12);
+ 	vmx->nested.cached_vmcs12 = NULL;
+@@ -3755,6 +3762,8 @@ enum nvmx_vmentry_status nested_vmx_enter_non_root_mode(struct kvm_vcpu *vcpu,
  	if (!from_vmentry)
  		return NVMX_VMENTRY_VMEXIT;
  
@@ -1373,6 +1488,49 @@ index 000000000000..de0a3714a5d4
 +		}
 +	}
 +}
+diff --git a/drivers/gpu/drm/amd/amdkfd/kfd_device_queue_manager.c b/drivers/gpu/drm/amd/amdkfd/kfd_device_queue_manager.c
+index 31187ddbb79e..ee413117b0ff 100644
+--- a/drivers/gpu/drm/amd/amdkfd/kfd_device_queue_manager.c
++++ b/drivers/gpu/drm/amd/amdkfd/kfd_device_queue_manager.c
+@@ -3095,32 +3095,24 @@ int kfd_dqm_suspend_bad_queue_mes(struct kfd_node *knode, u32 pasid, u32 doorbel
+ 
+ 		list_for_each_entry(q, &qpd->queues_list, list) {
+ 			if (q->doorbell_id == doorbell_id && q->properties.is_active) {
+-				ret = suspend_all_queues_mes(dqm);
+-				if (ret) {
+-					dev_err(dev, "Suspending all queues failed");
+-					goto out;
+-				}
++				/* suspend all queues will save any good queues and mark the rest as bad */
++				suspend_all_queues_mes(dqm);
+ 
+ 				q->properties.is_evicted = true;
+ 				q->properties.is_active = false;
+ 				decrement_queue_count(dqm, qpd, q);
+ 
++				/* this will remove the bad queue and sched a GPU reset if needed */
+ 				ret = remove_queue_mes(dqm, q, qpd);
+-				if (ret) {
+-					dev_err(dev, "Removing bad queue failed");
+-					goto out;
+-				}
+-
+-				ret = resume_all_queues_mes(dqm);
+ 				if (ret)
+-					dev_err(dev, "Resuming all queues failed");
+-
++					dev_err(dev, "Removing bad queue failed");
++				/* resume the good queues */
++				resume_all_queues_mes(dqm);
+ 				break;
+ 			}
+ 		}
+ 	}
+ 
+-out:
+ 	dqm_unlock(dqm);
+ 	kfd_unref_process(p);
+ 	return ret;
 diff --git a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c b/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
 index 8faf7de7aaa9..f65bb1dc44ac 100644
 --- a/drivers/gpu/drm/amd/pm/swsmu/amdgpu_smu.c
@@ -2677,6 +2835,28 @@ index fc6608e33de4..8cfa3282bf08 100644
  	{} /* Terminating entry */
  };
  
+diff --git a/drivers/pci/msi/msi.c b/drivers/pci/msi/msi.c
+index 81d24a270a79..a3e0daff0988 100644
+--- a/drivers/pci/msi/msi.c
++++ b/drivers/pci/msi/msi.c
+@@ -749,7 +749,7 @@ static int msix_capability_init(struct pci_dev *dev, struct msix_entry *entries,
+ 
+ 	ret = msix_setup_interrupts(dev, entries, nvec, affd);
+ 	if (ret)
+-		goto out_unmap;
++		goto out_disable;
+ 
+ 	/* Disable INTX */
+ 	pci_intx_for_msi(dev, 0);
+@@ -770,8 +770,6 @@ static int msix_capability_init(struct pci_dev *dev, struct msix_entry *entries,
+ 	pcibios_free_irq(dev);
+ 	return 0;
+ 
+-out_unmap:
+-	iounmap(dev->msix_base);
+ out_disable:
+ 	dev->msix_enabled = 0;
+ 	pci_msix_clear_and_set_ctrl(dev, PCI_MSIX_FLAGS_MASKALL | PCI_MSIX_FLAGS_ENABLE, 0);
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
 index dd0025d3914e..e57d10dc843c 100644
 --- a/drivers/pci/quirks.c
@@ -2759,6 +2939,42 @@ index 24960ba9caa9..32597cdb72ef 100644
  	/* Lock the device, then check to see if we were
  	 * disconnected while waiting for the lock to succeed. */
  	usb_lock_device(hdev);
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index a02b62e0a8f3..2ceb5661e071 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -1191,22 +1191,6 @@ void __cold btrfs_exit_compress(void)
+ 	bioset_exit(&btrfs_compressed_bioset);
+ }
+ 
+-/*
+- * The bvec is a single page bvec from a bio that contains folios from a filemap.
+- *
+- * Since the folio may be a large one, and if the bv_page is not a head page of
+- * a large folio, then page->index is unreliable.
+- *
+- * Thus we need this helper to grab the proper file offset.
+- */
+-static u64 file_offset_from_bvec(const struct bio_vec *bvec)
+-{
+-	const struct page *page = bvec->bv_page;
+-	const struct folio *folio = page_folio(page);
+-
+-	return (page_pgoff(folio, page) << PAGE_SHIFT) + bvec->bv_offset;
+-}
+-
+ /*
+  * Copy decompressed data from working buffer to pages.
+  *
+@@ -1259,7 +1243,7 @@ int btrfs_decompress_buf2page(const char *buf, u32 buf_len,
+ 		 * cb->start may underflow, but subtracting that value can still
+ 		 * give us correct offset inside the full decompressed extent.
+ 		 */
+-		bvec_offset = file_offset_from_bvec(&bvec) - cb->start;
++		bvec_offset = page_offset(bvec.bv_page) + bvec.bv_offset - cb->start;
+ 
+ 		/* Haven't reached the bvec range, exit */
+ 		if (decompressed + buf_len <= bvec_offset)
 diff --git a/include/linux/crypto.h b/include/linux/crypto.h
 index a2137e19be7d..df268ca70170 100644
 --- a/include/linux/crypto.h

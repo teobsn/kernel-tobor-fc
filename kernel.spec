@@ -193,7 +193,7 @@ Summary: The Linux kernel
 %define specrpmversion 7.1.4
 %define specversion 7.1.4
 %define patchversion 7.1
-%define pkgrelease 201
+%define pkgrelease 202
 %define kversion 7
 %define tarfile_release 7.1.4
 %define download_tarball %(
@@ -223,7 +223,7 @@ Summary: The Linux kernel
 # This is needed to do merge window version magic
 %define patchlevel 1
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 201%{?buildid}%{?dist}
+%define specrelease 202%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.1.4
 
@@ -4921,6 +4921,16 @@ fi\
 #
 #
 %changelog
+* Tue Jul 21 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.4-2]
+- Revert "PCI/MSI: Unmap MSI-X region on error" (Yuanhe Shu)
+- Revert "btrfs: fix the file offset calculation inside btrfs_decompress_buf2page()" (Matthew Wilcox (Oracle))
+- drm/amdkfd: always resume_all after suspend_all (Alex Deucher)
+- KVM: nVMX: Hide shadow VMCS right after VMCLEAR (Hyunwoo Kim)
+- KVM: x86: Only reset TSC Deadline Timer in apic_timer_expired on KVM_RUN (Venkatesh Srinivas)
+- KVM: x86/mmu: Fix use-after-free on vendor module reload (Phil Rosenthal)
+- KVM: x86/mmu: Preserve nested TDP shadow page tables if they are used as roots (Hyunwoo Kim)
+- KVM: x86: Check for invalid/obsolete root *after* making MMU pages available (Sean Christopherson)
+
 * Mon Jul 20 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.4-1]
 - can: bcm: defer rx_op deallocation to workqueue to fix thrtimer UAF (Lee Jones)
 

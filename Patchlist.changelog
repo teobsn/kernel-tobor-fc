@@ -1,3 +1,27 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/038190229a7c4ce9fd78a0ece5998a483e917b10
+ 038190229a7c4ce9fd78a0ece5998a483e917b10 Revert "PCI/MSI: Unmap MSI-X region on error"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/c4b8fa261b601be3efe517f7e3556f2bfd033bfa
+ c4b8fa261b601be3efe517f7e3556f2bfd033bfa Revert "btrfs: fix the file offset calculation inside btrfs_decompress_buf2page()"
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/6ad64fbb803d084eda1f7b830040b74917abc494
+ 6ad64fbb803d084eda1f7b830040b74917abc494 drm/amdkfd: always resume_all after suspend_all
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/1cbc8746210f2e89a1eacd96824cba825c38fe9d
+ 1cbc8746210f2e89a1eacd96824cba825c38fe9d KVM: nVMX: Hide shadow VMCS right after VMCLEAR
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/d9fce3c9c9d63614ee75b5f754776c37b791906d
+ d9fce3c9c9d63614ee75b5f754776c37b791906d KVM: x86: Only reset TSC Deadline Timer in apic_timer_expired on KVM_RUN
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5756e32f73944676e04836e6bbece6f93a39f0a0
+ 5756e32f73944676e04836e6bbece6f93a39f0a0 KVM: x86/mmu: Fix use-after-free on vendor module reload
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/57dc31ebbe44ece86899db083cdca9149312d50b
+ 57dc31ebbe44ece86899db083cdca9149312d50b KVM: x86/mmu: Preserve nested TDP shadow page tables if they are used as roots
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/6f9d82f308cc06fdeb6cb1ca5d1ff162797f695f
+ 6f9d82f308cc06fdeb6cb1ca5d1ff162797f695f KVM: x86: Check for invalid/obsolete root *after* making MMU pages available
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/398377259f01c70d2cdb14c206967ccf200ed6bd
  398377259f01c70d2cdb14c206967ccf200ed6bd can: bcm: defer rx_op deallocation to workqueue to fix thrtimer UAF
 
