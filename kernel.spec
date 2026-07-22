@@ -193,7 +193,7 @@ Summary: The Linux kernel
 %define specrpmversion 7.1.4
 %define specversion 7.1.4
 %define patchversion 7.1
-%define pkgrelease 203
+%define pkgrelease 204
 %define kversion 7
 %define tarfile_release 7.1.4
 %define download_tarball %(
@@ -223,7 +223,7 @@ Summary: The Linux kernel
 # This is needed to do merge window version magic
 %define patchlevel 1
 # This allows pkg_release to have configurable %%{?dist} tag
-%define specrelease 203%{?buildid}%{?dist}
+%define specrelease 204%{?buildid}%{?dist}
 # This defines the kabi tarball version
 %define kabiversion 7.1.4
 
@@ -4921,6 +4921,9 @@ fi\
 #
 #
 %changelog
+* Wed Jul 22 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.4-4]
+- net/packet: avoid fanout hook re-registration after unregister (David Lee)
+
 * Wed Jul 22 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.4-3]
 - net/sched: cls_api: Handle TC_ACT_CONSUMED in tcf_qevent_handle (Jamal Hadi Salim)
 

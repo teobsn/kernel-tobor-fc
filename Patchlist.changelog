@@ -1,3 +1,6 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/4735f2eec63a6a192b69a79921f8559570f1ebf9
+ 4735f2eec63a6a192b69a79921f8559570f1ebf9 net/packet: avoid fanout hook re-registration after unregister
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/ce4210e437cef5c58d496117632473f6ad20f1d1
  ce4210e437cef5c58d496117632473f6ad20f1d1 net/sched: cls_api: Handle TC_ACT_CONSUMED in tcf_qevent_handle
 

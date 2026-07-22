@@ -53,6 +53,7 @@
  include/linux/security.h                           |   9 +
  kernel/module/signing.c                            |   9 +-
  net/can/bcm.c                                      |  37 +-
+ net/packet/af_packet.c                             |   6 +-
  net/sched/cls_api.c                                |   3 +
  scripts/Makefile.lib                               |   3 +
  scripts/tags.sh                                    |   2 +
@@ -64,7 +65,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 ++
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 -
- 66 files changed, 2103 insertions(+), 190 deletions(-)
+ 67 files changed, 2108 insertions(+), 191 deletions(-)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
 index f74da642290a..06c8bb2075e6 100644
@@ -3258,6 +3259,23 @@ index a4bef2c48a55..bdf53241bd7b 100644
  }
  
  module_init(bcm_module_init);
+diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
+index 8e6f3a734ba0..e75d2932475a 100644
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -4561,7 +4561,11 @@ static int packet_set_ring(struct sock *sk, union tpacket_req_u *req_u,
+ 
+ 	spin_lock(&po->bind_lock);
+ 	WRITE_ONCE(po->num, num);
+-	if (was_running)
++	/*
++	 * NETDEV_UNREGISTER may have invalidated the binding while bind_lock
++	 * was dropped above.  Do not re-add a fanout hook to a dead device.
++	 */
++	if (was_running && READ_ONCE(po->ifindex) != -1)
+ 		register_prot_hook(sk);
+ 
+ 	spin_unlock(&po->bind_lock);
 diff --git a/net/sched/cls_api.c b/net/sched/cls_api.c
 index 20f7f9ee0b35..3e67600a4a1a 100644
 --- a/net/sched/cls_api.c
