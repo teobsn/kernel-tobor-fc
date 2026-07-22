@@ -53,6 +53,7 @@
  include/linux/security.h                           |   9 +
  kernel/module/signing.c                            |   9 +-
  net/can/bcm.c                                      |  37 +-
+ net/sched/cls_api.c                                |   3 +
  scripts/Makefile.lib                               |   3 +
  scripts/tags.sh                                    |   2 +
  security/integrity/platform_certs/load_uefi.c      |   6 +-
@@ -63,7 +64,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 ++
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 -
- 65 files changed, 2100 insertions(+), 190 deletions(-)
+ 66 files changed, 2103 insertions(+), 190 deletions(-)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
 index f74da642290a..06c8bb2075e6 100644
@@ -3257,6 +3258,20 @@ index a4bef2c48a55..bdf53241bd7b 100644
  }
  
  module_init(bcm_module_init);
+diff --git a/net/sched/cls_api.c b/net/sched/cls_api.c
+index 20f7f9ee0b35..3e67600a4a1a 100644
+--- a/net/sched/cls_api.c
++++ b/net/sched/cls_api.c
+@@ -4049,6 +4049,9 @@ struct sk_buff *tcf_qevent_handle(struct tcf_qevent *qe, struct Qdisc *sch, stru
+ 		skb_do_redirect(skb);
+ 		*ret = __NET_XMIT_STOLEN;
+ 		return NULL;
++	case TC_ACT_CONSUMED:
++		*ret = __NET_XMIT_STOLEN;
++		return NULL;
+ 	}
+ 
+ 	return skb;
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0718e39cedda..10e94a1b8b6e 100644
 --- a/scripts/Makefile.lib
