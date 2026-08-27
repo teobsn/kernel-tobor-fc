@@ -26,7 +26,6 @@
  drivers/firmware/efi/libstub/fdt.c                 |    5 +
  drivers/firmware/efi/libstub/secureboot.c          |   14 +-
  drivers/firmware/efi/secureboot.c                  |   38 +
- drivers/gpu/drm/xe/display/xe_fb_pin.c             |   33 +-
  drivers/hwtracing/coresight/coresight-etm4x-core.c |   19 +
  drivers/iommu/iommu.c                              |   22 +
  drivers/media/i2c/Kconfig                          |   10 +
@@ -72,7 +71,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |   76 ++
  tools/testing/selftests/bpf/Makefile               |    2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |   31 -
- 74 files changed, 5905 insertions(+), 153 deletions(-)
+ 73 files changed, 5897 insertions(+), 128 deletions(-)
 
 diff --git a/MAINTAINERS b/MAINTAINERS
 index 624cfb6cf1d4..f9bcd152b09b 100644
@@ -122,7 +121,7 @@ index 624cfb6cf1d4..f9bcd152b09b 100644
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
 diff --git a/Makefile b/Makefile
-index 0e4156b1d188..6579ca621b42 100644
+index 9948c9310f06..01d7d437443c 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -1176,50 +1175,6 @@ index 000000000000..de0a3714a5d4
 +		}
 +	}
 +}
-diff --git a/drivers/gpu/drm/xe/display/xe_fb_pin.c b/drivers/gpu/drm/xe/display/xe_fb_pin.c
-index bfbe3e44e78d..09c6d9fd2983 100644
---- a/drivers/gpu/drm/xe/display/xe_fb_pin.c
-+++ b/drivers/gpu/drm/xe/display/xe_fb_pin.c
-@@ -161,31 +161,14 @@ static int __xe_pin_fb_vma_dpt(const struct intel_framebuffer *fb,
- 		dpt_size = ALIGN(intel_rotation_info_size(&view->rotated) * 8,
- 				 XE_PAGE_SIZE);
- 
--	if (IS_DGFX(xe))
--		dpt = xe_bo_create_pin_map_at_novm(xe, tile0,
--						   dpt_size, ~0ull,
--						   ttm_bo_type_kernel,
--						   XE_BO_FLAG_VRAM0 |
--						   XE_BO_FLAG_GGTT |
--						   XE_BO_FLAG_PAGETABLE,
--						   alignment, false);
--	else
--		dpt = xe_bo_create_pin_map_at_novm(xe, tile0,
--						   dpt_size,  ~0ull,
--						   ttm_bo_type_kernel,
--						   XE_BO_FLAG_STOLEN |
--						   XE_BO_FLAG_GGTT |
--						   XE_BO_FLAG_PAGETABLE,
--						   alignment, false);
--	if (IS_ERR(dpt))
--		dpt = xe_bo_create_pin_map_at_novm(xe, tile0,
--						   dpt_size,  ~0ull,
--						   ttm_bo_type_kernel,
--						   XE_BO_FLAG_SYSTEM |
--						   XE_BO_FLAG_GGTT |
--						   XE_BO_FLAG_PAGETABLE |
--						   XE_BO_FLAG_FORCE_WC,
--						   alignment, false);
-+	dpt = xe_bo_create_pin_map_at_novm(xe, tile0,
-+					   dpt_size,  ~0ull,
-+					   ttm_bo_type_kernel,
-+					   XE_BO_FLAG_VRAM_IF_DGFX(tile0) |
-+					   XE_BO_FLAG_GGTT |
-+					   XE_BO_FLAG_PAGETABLE |
-+					   XE_BO_FLAG_FORCE_WC,
-+					   alignment, false);
- 	if (IS_ERR(dpt))
- 		return PTR_ERR(dpt);
- 
 diff --git a/drivers/hwtracing/coresight/coresight-etm4x-core.c b/drivers/hwtracing/coresight/coresight-etm4x-core.c
 index a251375db24b..2b5337eaeb6d 100644
 --- a/drivers/hwtracing/coresight/coresight-etm4x-core.c
