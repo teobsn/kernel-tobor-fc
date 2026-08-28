@@ -190,12 +190,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.1.11
-%define specversion 7.1.11
+%define specrpmversion 7.1.12
+%define specversion 7.1.12
 %define patchversion 7.1
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.1.11
+%define tarfile_release 7.1.12
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -225,7 +225,7 @@ Summary: The Linux kernel
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.1.11
+%define kabiversion 7.1.12
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4929,6 +4929,9 @@ fi\
 #
 #
 %changelog
+* Fri Aug 28 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.12-0]
+- Linux v7.1.12
+
 * Thu Aug 27 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.11-0]
 - Linux v7.1.11
 

@@ -121,7 +121,7 @@ index 624cfb6cf1d4..f9bcd152b09b 100644
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
 diff --git a/Makefile b/Makefile
-index 9948c9310f06..01d7d437443c 100644
+index af34c633b796..0c8d0b412f67 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -356,6 +356,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
