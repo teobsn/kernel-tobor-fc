@@ -190,12 +190,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.1.12
-%define specversion 7.1.12
+%define specrpmversion 7.1.13
+%define specversion 7.1.13
 %define patchversion 7.1
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.1.12
+%define tarfile_release 7.1.13
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -225,7 +225,7 @@ Summary: The Linux kernel
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.1.12
+%define kabiversion 7.1.13
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -4929,6 +4929,22 @@ fi\
 #
 #
 %changelog
+* Wed Sep 02 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.13-0]
+- New config item for 7.1.13 stable update (Justin M. Forbes)
+- Add more bugs to BugsFixed (Justin M. Forbes)
+- page_pool: keep frag_offset aligned for odd-sized requests (Florian Schauer) [2521546 2521847]
+- ACPI: scan: Do not combine resources that overlap completely (Rafael J. Wysocki) [2514390]
+- ACPI: scan: Avoid registering platform devices with resource overlaps (Rafael J. Wysocki) [2514390]
+- Bluetooth: btusb: limit RTL8761B BROKEN_EXT_SCAN quirk to 0bda:a728 (Junjie Cao) [2521504]
+- redhat: configs: fedora: Enable Intel CVS (Kate Hsuan)
+- media: i2c: cvs: Pass link frequency explicitly to csi_set_link_cfg() (Laurent Pinchart)
+- media: i2c: cvs: Add NVL ACPI ID (Arun T)
+- media: i2c: cvs: Add IPU8 PCI device ID (Arun T)
+- media: i2c: cvs: Add driver of Intel Computer Vision Sensing Controller(CVS) (Miguel Vadillo)
+- Add bugs to BugsFixed for 7.1.13 (Justin M. Forbes)
+- random: Drop the extrng module reference when import_ubuf() fails (Junjie Cao) [2524262]
+- Linux v7.1.13
+
 * Fri Aug 28 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.1.12-0]
 - Linux v7.1.12
 

@@ -1,3 +1,30 @@
+https://gitlab.com/cki-project/kernel-ark/-/commit/3422066c3e6e8aac3af2bd34d8d94ae714892681
+ 3422066c3e6e8aac3af2bd34d8d94ae714892681 Bluetooth: btusb: limit RTL8761B BROKEN_EXT_SCAN quirk to 0bda:a728
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/5b8b38f2720bb3efb35804dc8f82181c6b7ea43e
+ 5b8b38f2720bb3efb35804dc8f82181c6b7ea43e ACPI: scan: Do not combine resources that overlap completely
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/d1bd63f803ce4a7b60de63ed3973265c6d778929
+ d1bd63f803ce4a7b60de63ed3973265c6d778929 ACPI: scan: Avoid registering platform devices with resource overlaps
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/aa4becccf866c958edcd8e24b9dbf42acf213a6e
+ aa4becccf866c958edcd8e24b9dbf42acf213a6e page_pool: keep frag_offset aligned for odd-sized requests
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/02e162bf79251e9f46e429e79eff37a4f1318f5e
+ 02e162bf79251e9f46e429e79eff37a4f1318f5e random: Drop the extrng module reference when import_ubuf() fails
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/17e52fd689161d7083178b64d190e36ef0f0aff2
+ 17e52fd689161d7083178b64d190e36ef0f0aff2 media: i2c: cvs: Pass link frequency explicitly to csi_set_link_cfg()
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/d68b88fd64658e5c08eb608090472c7fb7199802
+ d68b88fd64658e5c08eb608090472c7fb7199802 media: i2c: cvs: Add NVL ACPI ID
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/70d3e18bfadbdc057daa983a97599c3cd93ab000
+ 70d3e18bfadbdc057daa983a97599c3cd93ab000 media: i2c: cvs: Add IPU8 PCI device ID
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/222f96a48d5a774afa4846989b68b5941b950b3f
+ 222f96a48d5a774afa4846989b68b5941b950b3f media: i2c: cvs: Add driver of Intel Computer Vision Sensing Controller(CVS)
+
 https://gitlab.com/cki-project/kernel-ark/-/commit/366f0a4f8abcf72481ac40f6752754b8d2092c9a
  366f0a4f8abcf72481ac40f6752754b8d2092c9a ALSA: hda/realtek: add quirk for Framework F111:0010
 
