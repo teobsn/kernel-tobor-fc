@@ -1,5 +1,14 @@
-https://gitlab.com/cki-project/kernel-ark/-/commit/1148fa221f5ad2173ba880bc7f85184b4ea84f32
- 1148fa221f5ad2173ba880bc7f85184b4ea84f32 Revert af_alg_restrict sysctl for F43/44
+https://gitlab.com/cki-project/kernel-ark/-/commit/5699cbba4c4b3be01d032bfc3c683bf59dbeb943
+ 5699cbba4c4b3be01d032bfc3c683bf59dbeb943 Revert af_alg_restrict sysctl for F43/44
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/31d42d7dbe102bc50033b617a2b50948180a796f
+ 31d42d7dbe102bc50033b617a2b50948180a796f media: i2c: cvs: Get the wake IRQ without claiming the GPIO
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/05303a9e10b77944d377f941386381dcfcb02726
+ 05303a9e10b77944d377f941386381dcfcb02726 soundwire: dmi-quirks: add Lenovo Yoga Slim 7i 14IPH11
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/c96ada9d53cc39ace85606122406a76a99c3ac5c
+ c96ada9d53cc39ace85606122406a76a99c3ac5c media: ipu-bridge: do not use the CVS device lookup for IVSC
 
 https://gitlab.com/cki-project/kernel-ark/-/commit/1d465dd5a33c5477835471da15f11547a8b5ae5f
  1d465dd5a33c5477835471da15f11547a8b5ae5f media: ipu-bridge: Add Sony IMX471 for Lenovo X1 Carbon G14
