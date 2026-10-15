@@ -1,5 +1,8 @@
-https://gitlab.com/cki-project/kernel-ark/-/commit/0f54a47f05e636aadaafc6d165c418a32f1dbf0e
- 0f54a47f05e636aadaafc6d165c418a32f1dbf0e Revert af_alg_restrict sysctl for F43/44
+https://gitlab.com/cki-project/kernel-ark/-/commit/acb8e33caf3128f34b8d477f30fbfe95c7ea1f43
+ acb8e33caf3128f34b8d477f30fbfe95c7ea1f43 Revert af_alg_restrict sysctl for F43/44
+
+https://gitlab.com/cki-project/kernel-ark/-/commit/024b52371a2ca17f49fa8b95f750e33684d3b1ad
+ 024b52371a2ca17f49fa8b95f750e33684d3b1ad media: i2c: imx471: Set max analog gain to 960
 
 https://gitlab.com/cki-project/kernel-ark/-/commit/3142072770d64ee5ced172ddabe2eb8d7e6855c7
  3142072770d64ee5ced172ddabe2eb8d7e6855c7 spi: cs42l43: Workaround for wrong speaker ID on Dell XPS 13 DX13260

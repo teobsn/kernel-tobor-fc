@@ -195,12 +195,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.2.10
-%define specversion 7.2.10
+%define specrpmversion 7.2.11
+%define specversion 7.2.11
 %define patchversion 7.2
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.2.10
+%define tarfile_release 7.2.11
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -230,7 +230,7 @@ Summary: The Linux kernel
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.2.10
+%define kabiversion 7.2.11
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -5024,8 +5024,12 @@ fi\
 #
 #
 %changelog
-* Sun Oct 11 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.10-200]
+* Thu Oct 15 2026 Augusto Caringi <acaringi@redhat.com> [7.2.11-200]
 - Revert af_alg_restrict sysctl for F43/44 (Justin M. Forbes)
+
+* Thu Oct 15 2026 Augusto Caringi <acaringi@redhat.com> [7.2.11-0]
+- media: i2c: imx471: Set max analog gain to 960 (Kate Hsuan)
+- Linux v7.2.11
 
 * Sun Oct 11 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.10-0]
 - Add config for ARM64_ERRATUM_3821522 (Justin M. Forbes)
