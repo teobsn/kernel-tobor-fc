@@ -195,12 +195,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.2.12
-%define specversion 7.2.12
+%define specrpmversion 7.2.13
+%define specversion 7.2.13
 %define patchversion 7.2
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.2.12
+%define tarfile_release 7.2.13
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -230,7 +230,7 @@ Summary: The Linux kernel
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.2.12
+%define kabiversion 7.2.13
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -5024,8 +5024,12 @@ fi\
 #
 #
 %changelog
-* Wed Oct 21 2026 Augusto Caringi <acaringi@redhat.com> [7.2.12-200]
+* Mon Oct 26 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.13-200]
 - Revert af_alg_restrict sysctl for F43/44 (Justin M. Forbes)
+
+* Mon Oct 26 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.13-0]
+- net: skbuff: propagate shared-frag marker in skb_zerocopy() (Zizhen Liu)
+- Linux v7.2.13
 
 * Wed Oct 21 2026 Augusto Caringi <acaringi@redhat.com> [7.2.12-0]
 - ALSA: hda/realtek: Fix cold-boot headset misdetection on Acer Aspire A515-57G (Oleksandr Kovalov)
