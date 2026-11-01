@@ -75,7 +75,6 @@
  include/linux/random.h                             |  10 +
  include/linux/security.h                           |   9 +
  kernel/module/signing.c                            |   9 +-
- net/core/skbuff.c                                  |   2 +
  scripts/Makefile.lib                               |   3 +
  scripts/tags.sh                                    |   2 +
  security/integrity/platform_certs/load_uefi.c      |   6 +-
@@ -85,7 +84,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 ++
  tools/testing/selftests/bpf/Makefile               |   2 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 -
- 87 files changed, 3822 insertions(+), 257 deletions(-)
+ 86 files changed, 3820 insertions(+), 257 deletions(-)
 
 diff --git a/Documentation/devicetree/bindings/arm/bcm/bcm2835.yaml b/Documentation/devicetree/bindings/arm/bcm/bcm2835.yaml
 index 2729a542c4f3..7ad6583f7fae 100644
@@ -333,7 +332,7 @@ index 95cd976a068c..797dade0f92b 100644
  M:	Maxim Levitsky <maximlevitsky@gmail.com>
  M:	Alex Dubov <oakad@yahoo.com>
 diff --git a/Makefile b/Makefile
-index ab29f857e9ed..34ba03b11033 100644
+index 464c7fc1831a..39878a0e87d8 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -358,6 +358,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
@@ -5507,19 +5506,6 @@ index 590ba29c85ab..02153d857531 100644
  }
  
  int module_sig_check(struct load_info *info, int flags)
-diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index fa5c1c15d417..3de48c5180b4 100644
---- a/net/core/skbuff.c
-+++ b/net/core/skbuff.c
-@@ -3934,6 +3934,8 @@ skb_zerocopy(struct sk_buff *to, struct sk_buff *from, int len, int hlen)
- 	}
- 	skb_shinfo(to)->nr_frags = j;
- 
-+	skb_shinfo(to)->flags |= skb_shinfo(from)->flags & SKBFL_SHARED_FRAG;
-+
- 	return 0;
- }
- EXPORT_SYMBOL_GPL(skb_zerocopy);
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
 index 0a4fdd8bd975..dcb12dad419f 100644
 --- a/scripts/Makefile.lib

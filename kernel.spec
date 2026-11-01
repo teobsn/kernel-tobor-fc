@@ -195,12 +195,12 @@ Summary: The Linux kernel
 #  the --with-release option overrides this setting.)
 %define debugbuildsenabled 1
 %define buildid .tobor
-%define specrpmversion 7.2.14
-%define specversion 7.2.14
+%define specrpmversion 7.2.15
+%define specversion 7.2.15
 %define patchversion 7.2
 %define pkgrelease 200
 %define kversion 7
-%define tarfile_release 7.2.14
+%define tarfile_release 7.2.15
 %define download_tarball %(
   FILE="%{_sourcedir}/linux-%{tarfile_release}.tar.xz"
   if [ ! -f "$FILE" ]; then
@@ -230,7 +230,7 @@ Summary: The Linux kernel
 # This allows pkg_release to have configurable %%{?dist} tag
 %define specrelease 200%{?buildid}%{?dist}
 # This defines the kabi tarball version
-%define kabiversion 7.2.14
+%define kabiversion 7.2.15
 
 # If this variable is set to 1, a bpf selftests build failure will cause a
 # fatal kernel package build error
@@ -5024,8 +5024,11 @@ fi\
 #
 #
 %changelog
-* Fri Oct 30 2026 Augusto Caringi <acaringi@redhat.com> [7.2.14-200]
+* Sun Nov 01 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.15-200]
 - Revert af_alg_restrict sysctl for F43/44 (Justin M. Forbes)
+
+* Sun Nov 01 2026 Justin M. Forbes <jforbes@fedoraproject.org> [7.2.15-0]
+- Linux v7.2.15
 
 * Fri Oct 30 2026 Augusto Caringi <acaringi@redhat.com> [7.2.14-0]
 - media: cvs: Default selection to VIDEO_INTEL_IPU6 (Sakari Ailus)
