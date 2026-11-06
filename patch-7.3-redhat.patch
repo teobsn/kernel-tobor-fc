@@ -313,7 +313,7 @@ index 782389bd5cd3..33671e98b824 100644
  M:	Florian Fainelli <florian.fainelli@broadcom.com>
  M:	Ray Jui <rjui@broadcom.com>
 diff --git a/Makefile b/Makefile
-index 692cda0dfe09..e658bc082d4b 100644
+index a8f35bdca5d4..792c1b4742cc 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -358,6 +358,17 @@ ifneq ($(filter install,$(MAKECMDGOALS)),)
