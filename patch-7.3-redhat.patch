@@ -17,7 +17,6 @@
  arch/s390/kernel/ipl.c                             |   5 +
  arch/s390/kernel/setup.c                           |   4 +
  arch/x86/kernel/setup.c                            |  22 +-
- crypto/af_alg.c                                    |   2 +-
  crypto/akcipher.c                                  |   3 +-
  crypto/algif_hash.c                                |   2 +-
  crypto/dh.c                                        |  25 +
@@ -78,7 +77,7 @@
  tools/testing/selftests/bpf/DENYLIST.rhel          |  76 +++
  tools/testing/selftests/bpf/Makefile               |   4 +-
  tools/testing/selftests/bpf/prog_tests/ksyms_btf.c |  31 --
- 80 files changed, 2849 insertions(+), 139 deletions(-)
+ 79 files changed, 2848 insertions(+), 138 deletions(-)
 
 diff --git a/Documentation/devicetree/bindings/arm/bcm/bcm2835.yaml b/Documentation/devicetree/bindings/arm/bcm/bcm2835.yaml
 index 2729a542c4f3..7ad6583f7fae 100644
@@ -1085,19 +1084,6 @@ index cda6adb9f69c..3c35792b0353 100644
  
  	reserve_initrd();
  
-diff --git a/crypto/af_alg.c b/crypto/af_alg.c
-index ab84c4488a15..6329a02a51a4 100644
---- a/crypto/af_alg.c
-+++ b/crypto/af_alg.c
-@@ -29,7 +29,7 @@
- #include <keys/trusted-type.h>
- #include <keys/encrypted-type.h>
- 
--static int af_alg_restrict = 1;
-+static int af_alg_restrict = 0;
- 
- static const struct ctl_table af_alg_table[] = {
- 	{
 diff --git a/crypto/akcipher.c b/crypto/akcipher.c
 index 630bb19738be..8da7eedce31e 100644
 --- a/crypto/akcipher.c

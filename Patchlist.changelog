@@ -1,6 +1,3 @@
-https://gitlab.com/cki-project/kernel-ark/-/commit/0c25c99571efee1caed3eb25326d8f810166dcf3
- 0c25c99571efee1caed3eb25326d8f810166dcf3 Default af_alg_restrict to unrestricted for F44 and older
-
 https://gitlab.com/cki-project/kernel-ark/-/commit/f03e29f2bf5f5bad488b745c5a9188f895cfde76
  f03e29f2bf5f5bad488b745c5a9188f895cfde76 crypto: testmgr - fix trailing whitespace from merge conflict resolution
 
