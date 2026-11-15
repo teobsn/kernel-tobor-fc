@@ -2134,24 +2134,21 @@ cp -a %{SOURCE1} .
 tar -xf %{_sourcedir}/custom-patches.tar.xz -C %{_sourcedir}
 
 %if !%{nopatches}
-
 ApplyOptionalPatch patch-%{patchversion}-redhat.patch
 %endif
 
-ApplyOptionalPatch cachy-0001-amd-pstate.patch
-ApplyOptionalPatch cachy-0002-bbr3.patch
-#ApplyOptionalPatch cachy-0003-cachy.patch
-ApplyOptionalPatch cachy-0004-fixes.patch
-ApplyOptionalPatch cachy-0005-hdmi.patch
-ApplyOptionalPatch cachy-0006-t2.patch
-ApplyOptionalPatch cachy-0007-cgroup-vram.patch
-#ApplyOptionalPatch cachy-0008-gaming-sched.patch
-#ApplyOptionalPatch cachy-0009-handheld.patch
-ApplyOptionalPatch cachy-0010-ksm.patch
-ApplyOptionalPatch cachy-0011-preempt-ipi.patch
-ApplyOptionalPatch cachy-0012-rt.patch
-#ApplyOptionalPatch cachy-0013-snd-codecs.patch
-ApplyOptionalPatch cachy-0014-vesa-dsc-bpp.patch
+# CUSTOM PATCHES (AUTOMATICALLY GENERATED)
+ApplyOptionalPatch cachy-0001-bbr3.patch
+#ApplyOptionalPatch cachy-0002-cachy.patch  # FAILS TO APPLY CLEANLY
+#ApplyOptionalPatch cachy-0003-fixes.patch  # FAILS TO APPLY CLEANLY
+ApplyOptionalPatch cachy-0004-hdmi.patch
+ApplyOptionalPatch cachy-0005-t2.patch
+ApplyOptionalPatch cachy-0006-amd-iommu.patch
+#ApplyOptionalPatch cachy-0007-handheld.patch  # FAILS TO APPLY CLEANLY
+#ApplyOptionalPatch cachy-0008-sched.patch  # FAILS TO APPLY CLEANLY
+ApplyOptionalPatch cachy-0009-snd-codecs.patch
+ApplyOptionalPatch cachy-0010-vesa-dsc-bpp.patch
+#ApplyOptionalPatch cachy-0011-zram.patch  # FAILS TO APPLY CLEANLY
 ApplyOptionalPatch other-0001-drm-amdgpu-Preserve-custom-power-limits-on-ASUS-GA402.patch
 ApplyOptionalPatch other-0001-platform-asus-armoury-increase-power-limit-GA402.patch
 ApplyOptionalPatch ubuntu-disco-linux-gcp-1-2-UBUNTU-SAUCE-raid6-Add-option-for-default-PQ-algorithm.patch
@@ -2159,12 +2156,13 @@ ApplyOptionalPatch xanmod-0001-XANMOD-x86-build-Add-more-CFLAGS-optimizations.pa
 ApplyOptionalPatch xanmod-0001-ZEN-input-evdev-Use-call_rcu-when-detaching-client.patch
 ApplyOptionalPatch xanmod-0002-XANMOD-kbuild-Add-LLVM-polyhedral-loop-optimizer-fla.patch
 ApplyOptionalPatch xanmod-0002-ZEN-dm-crypt-Disable-workqueues-for-crypto-ops.patch
-ApplyOptionalPatch xanmod-0002-x86-kconfig-more-x86-64-ISA-levels-and-uarches.patch
+#ApplyOptionalPatch xanmod-0002-x86-kconfig-more-x86-64-ISA-levels-and-uarches.patch  # FAILS TO APPLY CLEANLY
 ApplyOptionalPatch xanmod-0003-XANMOD-kbuild-Add-SMS-based-software-pipelining-flag.patch
 ApplyOptionalPatch xanmod-clear-0001-sched-wait-Do-accept-in-LIFO-order-for-cache-efficie.patch
 ApplyOptionalPatch xanmod-clear-0002-firmware-Enable-stateless-firmware-loading.patch
 ApplyOptionalPatch xanmod-clear-0003-locking-rwsem-spin-faster.patch
 ApplyOptionalPatch xanmod-clear-0004-drivers-initialize-ata-before-graphics.patch
+# END OF CUSTOM PATCHES
 
 ApplyOptionalPatch linux-kernel-test.patch
 

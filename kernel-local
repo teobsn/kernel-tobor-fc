@@ -1,6 +1,3 @@
-# This file is intentionally left empty in the stock kernel. Its a nicety
-# added for those wanting to do custom rebuilds with altered config opts.
-
 ### Tobor Kernel Config
 
 ## Initrd-less boot (make NVMe built-in)
@@ -66,9 +63,22 @@ CONFIG_DRM_APPLETBDRM=m
 CONFIG_T2BCE_CORE=m
 CONFIG_T2BCE_VHCI=m
 CONFIG_T2BCE_AUDIO=m
+CONFIG_T2BCE_AVE=m
+CONFIG_MFD_MACSMC_CORE=m
+CONFIG_SENSORS_MACSMC_HWMON=m
+CONFIG_RTC_DRV_MACSMC=m
+CONFIG_MACSMC_ACPI=m
+CONFIG_MACSMC_RTKIT=m
+CONFIG_MACSMC_WDT=m
+CONFIG_LEDS_MACSMC=m
+CONFIG_MACSMC_ACCEL=m
+CONFIG_MACSMC_LIGHT=m
 # CONFIG_APPLE_DOCKCHANNEL is not set
 # CONFIG_HID_DOCKCHANNEL is not set
 # CONFIG_SPI_HID_APPLE_OF is not set
+
+## Audio Codecs (CachyOS snd-codecs patch)
+CONFIG_SND_HDA_SCODEC_MAX98390_I2C=m
 
 ## TCP BBRv3 congestion control (CachyOS BBRv3 patch)
 CONFIG_TCP_CONG_BBR3=y
